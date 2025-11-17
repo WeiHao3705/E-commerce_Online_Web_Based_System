@@ -72,7 +72,7 @@ if (isset($_SESSION['validation_errors'])) {
                         <rect height="42" rx="4" stroke="#FF523B" stroke-width="2" width="95" x="0" y="0"></rect>
                     </svg>
                 </div>
-                <h2>Create Your Account</h2>
+                <h2>Create New Account</h2>
                 <p>Join us to get the best sports equipment!</p>
             </div>
 
@@ -87,6 +87,9 @@ if (isset($_SESSION['validation_errors'])) {
             <?php endif; ?>
 
             <form id="registrationForm" action="<?php echo $prefix; ?>controller/MemberController.php" method="POST">
+                <?php if (isset($_GET['return_to'])): ?>
+                    <input type="hidden" name="return_to" value="<?php echo htmlspecialchars($_GET['return_to']); ?>">
+                <?php endif; ?>
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="username">Username</label>

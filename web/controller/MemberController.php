@@ -86,14 +86,30 @@ class MemberController
                 $result = $this->membershipServices->registerMember($memberDTO);
 
                 if ($result) {
-                    $_SESSION['success_message'] = "Registration successful!";
-                    header('Location: ../views/MemberRegisterForm.php');
+                    $_SESSION['success_message'] = "Member registered successfully!";
+                    
+                    // Check if registration is from admin panel
+                    $returnTo = isset($_POST['return_to']) ? $_POST['return_to'] : (isset($_GET['return_to']) ? $_GET['return_to'] : '');
+                    
+                    if ($returnTo === 'admin') {
+                        header('Location: ../controller/MemberController.php?action=showAll');
+                    } else {
+                        header('Location: ../views/MemberRegisterForm.php');
+                    }
                     exit;
                 }
             }
         } catch (Exception $e) {
             $_SESSION['error_message'] = $e->getMessage();
-            header('Location: ../views/MemberRegisterForm.php');
+            
+            // Check if registration is from admin panel
+            $returnTo = isset($_POST['return_to']) ? $_POST['return_to'] : (isset($_GET['return_to']) ? $_GET['return_to'] : '');
+            
+            if ($returnTo === 'admin') {
+                header('Location: ../views/MemberRegisterForm.php?return_to=admin');
+            } else {
+                header('Location: ../views/MemberRegisterForm.php');
+            }
             exit;
         }
     }
@@ -101,21 +117,29 @@ class MemberController
     public function showAllMembers()
     {
         try {
-            // Get pagination and search parameters
+            // Get pagination, search, and sort parameters
             $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
             $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
             $searchTerm = isset($_GET['search']) ? $_GET['search'] : '';
+            $sortBy = isset($_GET['sortBy']) ? $_GET['sortBy'] : 'created_at';
+            $sortOrder = isset($_GET['sortOrder']) ? strtoupper($_GET['sortOrder']) : 'DESC';
 
             // Validate page number
             if ($page < 1) $page = 1;
             if ($limit < 1) $limit = 10;
 
+            // Validate sort order
+            if ($sortOrder !== 'ASC' && $sortOrder !== 'DESC') {
+                $sortOrder = 'DESC';
+            }
+
             // Get members data from service
-            $data = $this->membershipServices->getAllMembers($page, $limit, $searchTerm);
+            $data = $this->membershipServices->getAllMembers($page, $limit, $searchTerm, $sortBy, $sortOrder);
 
             // Store data in variable to be used in view
             $members = $data['members'];
             $pagination = $data['pagination'];
+            $currentSort = ['sortBy' => $sortBy, 'sortOrder' => $sortOrder];
 
             // Include the view
             require_once __DIR__ . '/../views/AllMembers.php';
@@ -125,6 +149,71 @@ class MemberController
             require_once __DIR__ . '/../views/AllMembers.php';
         }
     }
+
+    public function updateMember()
+    {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                // Validate required fields
+                if (!isset($_POST['user_id']) || empty($_POST['user_id'])) {
+                    throw new Exception("User ID is required");
+                }
+
+                $memberDTO = new MemberUpdateDTO(
+                    (int)$_POST['user_id'],
+                    $_POST['username'],
+                    $_POST['full_name'],
+                    $_POST['email'],
+                    $_POST['gender'],
+                    $_POST['contact_no']
+                );
+
+                $result = $this->membershipServices->updateMember($memberDTO);
+
+                if ($result) {
+                    $_SESSION['success_message'] = "Member updated successfully!";
+                    header('Location: ../controller/MemberController.php?action=showAll');
+                    exit;
+                } else {
+                    throw new Exception("Failed to update member");
+                }
+            }
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
+            header('Location: ../controller/MemberController.php?action=showAll');
+            exit;
+        }
+    }
+
+    public function deleteMember()
+    {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                // Validate required fields
+                if (!isset($_POST['user_id']) || empty($_POST['user_id'])) {
+                    throw new Exception("User ID is required");
+                }
+
+                $userId = (int)$_POST['user_id'];
+
+                $result = $this->membershipServices->deleteMember($userId);
+
+                if ($result) {
+                    $_SESSION['success_message'] = "Member deleted successfully!";
+                } else {
+                    throw new Exception("Failed to delete member. Member may not exist or may not be a regular member.");
+                }
+
+                header('Location: ../controller/MemberController.php?action=showAll');
+                exit;
+            }
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
+            header('Location: ../controller/MemberController.php?action=showAll');
+            exit;
+        }
+    }
+
 }
 
 // Handle the request
@@ -135,8 +224,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'register') {
         $controller->registerMember();
-    } elseif ($action === 'login') {
+    } elseif ($action === 'update') {
+        $controller->updateMember();
+    } elseif ($action === 'delete') {
+        $controller->deleteMember();
+    }elseif ($action === 'login') {
         $controller->login();
+        $action = $_POST['action'] ?? $_GET['action'] ?? 'register';
     }
 } else {
     // Handle GET requests

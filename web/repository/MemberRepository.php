@@ -68,12 +68,24 @@ class MembershipRepository
         return ['exists' => false];
     }
 
-    public function getAllMembers($limit = 10, $offset = 0, $searchTerm = ''): array
+    public function getAllMembers($limit = 10, $offset = 0, $searchTerm = '', $sortBy = 'created_at', $sortOrder = 'DESC'): array
     {
         try {
             // Ensure limit and offset are integers
             $limit = (int)$limit;
             $offset = (int)$offset;
+
+            // Validate sort column to prevent SQL injection
+            $allowedSortColumns = ['username', 'full_name', 'email', 'contact_no', 'gender', 'created_at'];
+            if (!in_array($sortBy, $allowedSortColumns)) {
+                $sortBy = 'created_at';
+            }
+
+            // Validate sort order
+            $sortOrder = strtoupper($sortOrder);
+            if ($sortOrder !== 'ASC' && $sortOrder !== 'DESC') {
+                $sortOrder = 'DESC';
+            }
 
             // Base query
             $sql = "SELECT 
@@ -100,8 +112,8 @@ class MembershipRepository
                 $params[':search'] = "%{$searchTerm}%";
             }
 
-            // Add ordering and pagination (safe integers, not bound as parameters)
-            $sql .= " ORDER BY created_at DESC LIMIT $limit OFFSET $offset";
+            // Add ordering and pagination (safe integers and validated columns, not bound as parameters)
+            $sql .= " ORDER BY $sortBy $sortOrder LIMIT $limit OFFSET $offset";
 
             // Debug logging
             error_log("SQL Query: " . $sql);
@@ -182,6 +194,80 @@ class MembershipRepository
         } catch (PDOException $e) {
             error_log("Database error in updatePasswordHash: " . $e->getMessage());
             return false;
+        }
+    }
+
+    public function updateMember(MemberUpdateDTO $memberDTO): bool
+    {
+        try {
+            $sql = "UPDATE users 
+                    SET full_name = ?, email = ?, gender = ?, contact_no = ? 
+                    WHERE user_id = ?";
+
+            $stmt = $this->db->prepare($sql);
+
+            $result = $stmt->execute([
+                $memberDTO->getFullName(),
+                $memberDTO->getEmail(),
+                $memberDTO->getGender(),
+                $memberDTO->getContactNo(),
+                $memberDTO->getUserId()
+            ]);
+
+            return $result;
+        } catch (PDOException $e) {
+            error_log("Database error in updateMember: " . $e->getMessage());
+            throw new Exception("Error updating member");
+        }
+    }
+
+    public function checkExistingMemberForUpdate($userId, $username, $email, $contactNo): array
+    {
+        // Check username (excluding current user)
+        $sql = "SELECT COUNT(*) as count FROM users WHERE username = ? AND user_id != ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$username, $userId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($result['count'] > 0) {
+            return ['exists' => true, 'field' => 'username', 'message' => 'Username already exists, Try others'];
+        }
+
+        // Check email (excluding current user)
+        $sql = "SELECT COUNT(*) as count FROM users WHERE email = ? AND user_id != ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$email, $userId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($result['count'] > 0) {
+            return ['exists' => true, 'field' => 'email', 'message' => 'Email already exists'];
+        }
+
+        // Check contact number (excluding current user)
+        $sql = "SELECT COUNT(*) as count FROM users WHERE contact_no = ? AND user_id != ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$contactNo, $userId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($result['count'] > 0) {
+            return ['exists' => true, 'field' => 'contact_no', 'message' => 'Contact number already exists'];
+        }
+
+        return ['exists' => false];
+    }
+
+    public function deleteMember($userId): bool
+    {
+        try {
+            $sql = "DELETE FROM users WHERE user_id = ? AND role = 'member'";
+
+            $stmt = $this->db->prepare($sql);
+            $result = $stmt->execute([$userId]);
+
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log("Database error in deleteMember: " . $e->getMessage());
+            throw new Exception("Error deleting member");
         }
     }
 }

@@ -22,6 +22,51 @@ $prefix = '../';
 // }
 
 $pageTitle = 'All Members - Admin Dashboard';
+
+// Get current sort parameters
+$currentSortBy = isset($currentSort['sortBy']) ? $currentSort['sortBy'] : 'created_at';
+$currentSortOrder = isset($currentSort['sortOrder']) ? $currentSort['sortOrder'] : 'DESC';
+
+// Helper function to generate sort URL
+function getSortUrl($column, $currentSortBy, $currentSortOrder) {
+    $params = ['action' => 'showAll'];
+    
+    // Preserve search parameter
+    if (!empty($_GET['search'])) {
+        $params['search'] = $_GET['search'];
+    }
+    
+    // Preserve page parameter
+    if (!empty($_GET['page'])) {
+        $params['page'] = $_GET['page'];
+    }
+    
+    // Determine sort order
+    if ($currentSortBy === $column && $currentSortOrder === 'ASC') {
+        $params['sortBy'] = $column;
+        $params['sortOrder'] = 'DESC';
+    } else {
+        $params['sortBy'] = $column;
+        $params['sortOrder'] = 'ASC';
+    }
+    
+    return 'MemberController.php?' . http_build_query($params);
+}
+
+// Helper function to get sort arrow icon
+function getSortArrow($column, $currentSortBy, $currentSortOrder) {
+    if ($currentSortBy !== $column) {
+        // No sort - show both arrows (neutral)
+        return '<span class="material-symbols-outlined text-gray-400" style="font-size: 16px;">unfold_more</span>';
+    } else {
+        // Show active arrow
+        if ($currentSortOrder === 'ASC') {
+            return '<span class="material-symbols-outlined text-primary" style="font-size: 16px;">arrow_upward</span>';
+        } else {
+            return '<span class="material-symbols-outlined text-primary" style="font-size: 16px;">arrow_downward</span>';
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -119,8 +164,14 @@ $pageTitle = 'All Members - Admin Dashboard';
                     <!-- Search and Actions Bar -->
                     <div class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 mb-6">
                         <div class="w-full md:w-1/2">
-                            <form method="GET" action="" class="flex items-center">
+                            <form method="GET" action="MemberController.php" class="flex items-center">
                                 <input type="hidden" name="action" value="showAll">
+                                <?php if (!empty($_GET['sortBy'])): ?>
+                                    <input type="hidden" name="sortBy" value="<?php echo htmlspecialchars($_GET['sortBy']); ?>">
+                                <?php endif; ?>
+                                <?php if (!empty($_GET['sortOrder'])): ?>
+                                    <input type="hidden" name="sortOrder" value="<?php echo htmlspecialchars($_GET['sortOrder']); ?>">
+                                <?php endif; ?>
                                 <label class="sr-only" for="simple-search">Search</label>
                                 <div class="relative w-full">
                                     <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -140,7 +191,7 @@ $pageTitle = 'All Members - Admin Dashboard';
                             </form>
                         </div>
                         <div class="w-full md:w-auto flex flex-col md:flex-row space-y-2 md:space-y-0 items-stretch md:items-center justify-end md:space-x-3 flex-shrink-0">
-                            <a href="../../views/MemberRegisterForm.php" class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-white bg-primary rounded-lg hover:bg-red-600 focus:ring-4 focus:ring-primary focus:outline-none">
+                            <a href="../views/MemberRegisterForm.php?return_to=admin" class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-white bg-primary rounded-lg hover:bg-red-600 focus:ring-4 focus:ring-primary focus:outline-none">
                                 <span class="material-symbols-outlined mr-2">add</span>
                                 Add new member
                             </a>
@@ -148,18 +199,46 @@ $pageTitle = 'All Members - Admin Dashboard';
                     </div>
                 </div>
 
-                <!-- Table -->
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                         <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                             <tr>
-                                <th class="px-6 py-3" scope="col">Member ID</th>
-                                <th class="px-6 py-3" scope="col">Username</th>
-                                <th class="px-6 py-3" scope="col">Full Name</th>
-                                <th class="px-6 py-3" scope="col">Email</th>
-                                <th class="px-6 py-3" scope="col">Contact Number</th>
-                                <th class="px-6 py-3" scope="col">Gender</th>
-                                <th class="px-6 py-3" scope="col">Joined Date</th>
+                                <th class="px-6 py-3" scope="col">
+                                    <a href="<?php echo getSortUrl('username', $currentSortBy, $currentSortOrder); ?>" class="flex items-center space-x-1 hover:text-primary">
+                                        <span>Username</span>
+                                        <?php echo getSortArrow('username', $currentSortBy, $currentSortOrder); ?>
+                                    </a>
+                                </th>
+                                <th class="px-6 py-3" scope="col">
+                                    <a href="<?php echo getSortUrl('full_name', $currentSortBy, $currentSortOrder); ?>" class="flex items-center space-x-1 hover:text-primary">
+                                        <span>Full Name</span>
+                                        <?php echo getSortArrow('full_name', $currentSortBy, $currentSortOrder); ?>
+                                    </a>
+                                </th>
+                                <th class="px-6 py-3" scope="col">
+                                    <a href="<?php echo getSortUrl('email', $currentSortBy, $currentSortOrder); ?>" class="flex items-center space-x-1 hover:text-primary">
+                                        <span>Email</span>
+                                        <?php echo getSortArrow('email', $currentSortBy, $currentSortOrder); ?>
+                                    </a>
+                                </th>
+                                <th class="px-6 py-3" scope="col">
+                                    <a href="<?php echo getSortUrl('contact_no', $currentSortBy, $currentSortOrder); ?>" class="flex items-center space-x-1 hover:text-primary">
+                                        <span>Contact Number</span>
+                                        <?php echo getSortArrow('contact_no', $currentSortBy, $currentSortOrder); ?>
+                                    </a>
+                                </th>
+                                <th class="px-6 py-3" scope="col">
+                                    <a href="<?php echo getSortUrl('gender', $currentSortBy, $currentSortOrder); ?>" class="flex items-center space-x-1 hover:text-primary">
+                                        <span>Gender</span>
+                                        <?php echo getSortArrow('gender', $currentSortBy, $currentSortOrder); ?>
+                                    </a>
+                                </th>
+                                <th class="px-6 py-3" scope="col">
+                                    <a href="<?php echo getSortUrl('created_at', $currentSortBy, $currentSortOrder); ?>" class="flex items-center space-x-1 hover:text-primary">
+                                        <span>Joined Date</span>
+                                        <?php echo getSortArrow('created_at', $currentSortBy, $currentSortOrder); ?>
+                                    </a>
+                                </th>
                                 <th class="px-6 py-3" scope="col">
                                     <span class="sr-only">Actions</span>
                                 </th>
@@ -170,9 +249,8 @@ $pageTitle = 'All Members - Admin Dashboard';
                                 <?php foreach ($members as $member): ?>
                                     <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                                         <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                            #RSM<?php echo str_pad($member['user_id'], 3, '0', STR_PAD_LEFT); ?>
+                                            <?php echo htmlspecialchars($member['username']); ?>
                                         </td>
-                                        <td class="px-6 py-4"><?php echo htmlspecialchars($member['username']); ?></td>
                                         <td class="px-6 py-4"><?php echo htmlspecialchars($member['full_name']); ?></td>
                                         <td class="px-6 py-4"><?php echo htmlspecialchars($member['email']); ?></td>
                                         <td class="px-6 py-4"><?php echo htmlspecialchars($member['contact_no']); ?></td>
@@ -184,7 +262,12 @@ $pageTitle = 'All Members - Admin Dashboard';
                                             ?>
                                         </td>
                                         <td class="px-6 py-4 text-right">
-                                            <a class="font-medium text-primary hover:underline" href="edit_member.php?id=<?php echo $member['user_id']; ?>">Edit</a>
+                                            <button
+                                                onclick="openEditModal(<?php echo $member['user_id']; ?>, '<?php echo htmlspecialchars($member['username'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['email'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['contact_no'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['gender'], ENT_QUOTES); ?>')"
+                                                class="font-medium text-primary hover:underline">
+                                                Edit
+                                            </button>
+
                                             <button
                                                 onclick="confirmDelete(<?php echo $member['user_id']; ?>, '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>')"
                                                 class="font-medium text-red-600 dark:text-red-500 hover:underline ml-4">
@@ -195,7 +278,7 @@ $pageTitle = 'All Members - Admin Dashboard';
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr class="bg-white dark:bg-gray-800">
-                                    <td colspan="8" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                                    <td colspan="7" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
                                         No members found. <?php echo !empty($_GET['search']) ? 'Try a different search term.' : ''; ?>
                                     </td>
                                 </tr>
@@ -216,8 +299,15 @@ $pageTitle = 'All Members - Admin Dashboard';
                         <ul class="inline-flex items-stretch -space-x-px">
                             <!-- Previous Button -->
                             <li>
+                                <?php 
+                                $prevParams = ['action' => 'showAll', 'page' => $pagination['current_page'] - 1];
+                                if (!empty($_GET['search'])) $prevParams['search'] = $_GET['search'];
+                                if (!empty($_GET['sortBy'])) $prevParams['sortBy'] = $_GET['sortBy'];
+                                if (!empty($_GET['sortOrder'])) $prevParams['sortOrder'] = $_GET['sortOrder'];
+                                $prevUrl = 'MemberController.php?' . http_build_query($prevParams);
+                                ?>
                                 <?php if ($pagination['current_page'] > 1): ?>
-                                    <a href="?action=showAll&page=<?php echo $pagination['current_page'] - 1; ?><?php echo !empty($_GET['search']) ? '&search=' . urlencode($_GET['search']) : ''; ?>"
+                                    <a href="<?php echo $prevUrl; ?>"
                                         class="flex items-center justify-center h-full py-1.5 px-3 ml-0 text-gray-500 bg-white rounded-l-lg border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
                                         <span class="material-symbols-outlined text-lg">chevron_left</span>
                                     </a>
@@ -234,9 +324,14 @@ $pageTitle = 'All Members - Admin Dashboard';
                             $endPage = min($pagination['total_pages'], $pagination['current_page'] + 2);
 
                             for ($i = $startPage; $i <= $endPage; $i++):
+                                $pageParams = ['action' => 'showAll', 'page' => $i];
+                                if (!empty($_GET['search'])) $pageParams['search'] = $_GET['search'];
+                                if (!empty($_GET['sortBy'])) $pageParams['sortBy'] = $_GET['sortBy'];
+                                if (!empty($_GET['sortOrder'])) $pageParams['sortOrder'] = $_GET['sortOrder'];
+                                $pageUrl = 'MemberController.php?' . http_build_query($pageParams);
                             ?>
                                 <li>
-                                    <a href="?action=showAll&page=<?php echo $i; ?><?php echo !empty($_GET['search']) ? '&search=' . urlencode($_GET['search']) : ''; ?>"
+                                    <a href="<?php echo $pageUrl; ?>"
                                         class="flex items-center justify-center text-sm py-2 px-3 leading-tight <?php echo $i == $pagination['current_page'] ? 'z-10 text-primary bg-red-50 border border-primary hover:bg-red-100' : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700'; ?> dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
                                         <?php echo $i; ?>
                                     </a>
@@ -245,8 +340,15 @@ $pageTitle = 'All Members - Admin Dashboard';
 
                             <!-- Next Button -->
                             <li>
+                                <?php 
+                                $nextParams = ['action' => 'showAll', 'page' => $pagination['current_page'] + 1];
+                                if (!empty($_GET['search'])) $nextParams['search'] = $_GET['search'];
+                                if (!empty($_GET['sortBy'])) $nextParams['sortBy'] = $_GET['sortBy'];
+                                if (!empty($_GET['sortOrder'])) $nextParams['sortOrder'] = $_GET['sortOrder'];
+                                $nextUrl = 'MemberController.php?' . http_build_query($nextParams);
+                                ?>
                                 <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
-                                    <a href="?action=showAll&page=<?php echo $pagination['current_page'] + 1; ?><?php echo !empty($_GET['search']) ? '&search=' . urlencode($_GET['search']) : ''; ?>"
+                                    <a href="<?php echo $nextUrl; ?>"
                                         class="flex items-center justify-center h-full py-1.5 px-3 leading-tight text-gray-500 bg-white rounded-r-lg border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
                                         <span class="material-symbols-outlined text-lg">chevron_right</span>
                                     </a>
@@ -264,13 +366,31 @@ $pageTitle = 'All Members - Admin Dashboard';
     </div>
 
     <!-- Delete Confirmation Modal (Hidden Form) -->
-    <form id="deleteForm" method="POST" action="?action=delete" style="display: none;">
+    <form id="deleteForm" method="POST" action="MemberController.php" style="display: none;">
+        <input type="hidden" name="action" value="delete">
         <input type="hidden" name="user_id" id="deleteUserId">
     </form>
 
     <?php include __DIR__ . '/../general/_footer.php'; ?>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        function openEditModal(userId, username, fullName, email, contactNo, gender) {
+            $('#editUserId').val(userId);
+            $('#editUsername').val(username);
+            $('#editFullName').val(fullName);
+            $('#editEmail').val(email);
+            $('#editContactNo').val(contactNo);
+            $('#editGender').val(gender);
+
+            $('#editModal').removeClass('hidden');
+        }
+
+        function closeEditModal() {
+            $('#editModal').addClass('hidden');
+        }
+
+
         function confirmDelete(userId, userName) {
             if (confirm(`Are you sure you want to delete member: ${userName}?\n\nThis action cannot be undone.`)) {
                 document.getElementById('deleteUserId').value = userId;
@@ -278,6 +398,65 @@ $pageTitle = 'All Members - Admin Dashboard';
             }
         }
     </script>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
+            <div class="mt-3">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">Edit Member</h3>
+
+                <form id="editForm" method="POST" action="MemberController.php" class="space-y-4">
+                    <input type="hidden" name="action" value="update">
+                    <input type="hidden" name="user_id" id="editUserId">
+
+                    <div>
+                        <label class="block text-sm font-medium">Username</label>
+                        <input type="text" name="username" id="editUsername" readonly
+                            class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white bg-gray-100 dark:bg-gray-600 cursor-not-allowed"
+                            title="Username cannot be changed">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium">Full Name</label>
+                        <input type="text" name="full_name" id="editFullName"
+                            class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium">Email</label>
+                        <input type="email" name="email" id="editEmail"
+                            class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium">Contact Number</label>
+                        <input type="text" name="contact_no" id="editContactNo"
+                            class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium">Gender</label>
+                        <select name="gender" id="editGender"
+                            class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-300 rounded-md">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 
 </body>
 

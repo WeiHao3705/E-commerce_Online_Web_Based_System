@@ -85,3 +85,42 @@ class MemberRegistrationDTO {
     public function setSecurityAnswer($security_answer) { $this->security_answer = $security_answer; }
 }
 
+// ------------------------------------------------------
+// Member Update DTO
+// ------------------------------------------------------
+class MemberUpdateDTO {
+    private $user_id;
+    private $username;
+    private $full_name;
+    private $email;
+    private $gender;
+    private $contact_no;
+
+    public function __construct(
+        $user_id, $username, $full_name, $email, $gender, $contact_no
+    ) {
+        $this->user_id = $user_id;
+        $this->username = $username;
+        $this->full_name = $full_name;
+        $this->email = $email;
+        $this->gender = $gender;
+        $this->contact_no = $contact_no;
+    }
+
+    //Getters
+    public function getUserId() { return $this->user_id; }
+    public function getUsername() { return $this->username; }
+    public function getFullName() { return $this->full_name; }
+    public function getEmail() { return $this->email; }
+    public function getGender() { return $this->gender; }
+    public function getContactNo() { return $this->contact_no; }
+
+    //Setters
+    public function setUserId($user_id) { $this->user_id = $user_id; }
+    public function setUsername($username) { $this->username = $username; }
+    public function setFullName($full_name) { $this->full_name = $full_name; }
+    public function setEmail($email) { $this->email = $email; }
+    public function setGender($gender) { $this->gender = $gender; }
+    public function setContactNo($contact_no) { $this->contact_no = $contact_no; }
+}
+
