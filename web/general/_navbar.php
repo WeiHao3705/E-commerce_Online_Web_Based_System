@@ -1,6 +1,10 @@
 <?php
 // Define base path
 $base_path = '/E-commerce_Online_Web_Based_System/web/';
+
+$current_dir = dirname($_SERVER['PHP_SELF']);
+$is_in_views = (strpos($current_dir, '/views') !== false);
+$prefix = $is_in_views ? '../' : '';
 ?>
 
 <nav class="navbar">
@@ -8,36 +12,35 @@ $base_path = '/E-commerce_Online_Web_Based_System/web/';
         <div class="nav-wrapper">
             <!-- Logo -->
             <div class="logo">
-                <a href="<?php echo $base_path; ?>index.php">
-                    <img src="<?php echo $base_path; ?>images/logo.png" alt="REDSTORE">
+                <a href="<?php echo $prefix; ?>index.php">
+                    <img src="<?php echo $prefix; ?>images/logo.png" alt="REDSTORE">
                 </a>
             </div>
             
             <!-- Navigation Menu -->
             <ul class="nav-menu" id="navMenu">
-                <li><a href="index.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>">Home</a></li>
-                <li><a href="products.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'products.php' ? 'active' : ''; ?>">Products</a></li>
-                <li><a href="about.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'about.php' ? 'active' : ''; ?>">About</a></li>
-                <li><a href="contact.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'contact.php' ? 'active' : ''; ?>">Contact</a></li>
-                <li><a href="views/PremiumSubscription.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'views/PremiumSubscription.php' ? 'active' : ''; ?>">Premium</a></li>
+                <li><a href="<?php echo $prefix; ?>index.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>">Home</a></li>
+                <li><a href="<?php echo $prefix; ?>products.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'products.php' ? 'active' : ''; ?>">Products</a></li>
+                <li><a href="<?php echo $prefix; ?>about.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'about.php' ? 'active' : ''; ?>">About</a></li>
+                <li><a href="<?php echo $prefix; ?>contact.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'contact.php' ? 'active' : ''; ?>">Contact</a></li>
                 <li class="dropdown">
-                    <a href="account.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'account.php' ? 'active' : ''; ?>">
+                    <a href="<?php echo $prefix; ?>account.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'account.php' ? 'active' : ''; ?>">
                         Account <i class="fas fa-caret-down"></i>
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a href="profile.php"><i class="fas fa-user"></i> My Profile</a></li>
-                        <li><a href="orders.php"><i class="fas fa-box"></i> My Orders</a></li>
-                        <li><a href="wishlist.php"><i class="fas fa-heart"></i> Wishlist</a></li>
-                        <li><a href="settings.php"><i class="fas fa-cog"></i> Settings</a></li>
+                        <li><a href="<?php echo $prefix; ?>profile.php"><i class="fas fa-user"></i> My Profile</a></li>
+                        <li><a href="<?php echo $prefix; ?>orders.php"><i class="fas fa-box"></i> My Orders</a></li>
+                        <li><a href="<?php echo $prefix; ?>wishlist.php"><i class="fas fa-heart"></i> Wishlist</a></li>
+                        <li><a href="<?php echo $prefix; ?>settings.php"><i class="fas fa-cog"></i> Settings</a></li>
                         <li class="divider"></li>
-                        <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                        <li><a href="<?php echo $prefix; ?>logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                     </ul>
                 </li>
             </ul>
             
             <!-- Cart Icon -->
             <div class="nav-icons">
-                <a href="cart.php" class="cart-icon">
+                <a href="<?php echo $prefix; ?>cart.php" class="cart-icon">
                     <i class="fas fa-shopping-bag"></i>
                     <span class="cart-count" id="cartCount">0</span>
                 </a>
