@@ -1,4 +1,4 @@
-CREATE TABLE user (
+CREATE TABLE users (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     full_name VARCHAR(100) NOT NULL,
@@ -8,7 +8,7 @@ CREATE TABLE user (
     password VARCHAR(255) NOT NULL,
     security_question VARCHAR(255),
     security_answer VARCHAR(255),
-    role ENUM('customer','staff','admin') DEFAULT 'customer',
+    role ENUM('member','staff','admin') DEFAULT 'member',
     status ENUM('active','inactive','banned') DEFAULT 'active',
     last_login_at DATETIME NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -5,5 +5,5 @@ CREATE TABLE membership (
     end_date DATE NOT NULL,
     status ENUM('active', 'inactive') DEFAULT 'active',
     
-    FOREIGN KEY (user_id) REFERENCES user(user_id)
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
