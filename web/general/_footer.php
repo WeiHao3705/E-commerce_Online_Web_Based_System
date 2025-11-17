@@ -54,6 +54,12 @@
 </footer>
 
 <style>
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+    
     .footer {
         background-color: #000;
         color: #8a8a8a;
