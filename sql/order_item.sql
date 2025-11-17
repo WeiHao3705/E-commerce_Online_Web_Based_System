@@ -5,7 +5,7 @@ CREATE TABLE order_item (
     product_name_snapshot VARCHAR(255) NOT NULL,
     product_price_snapshot DECIMAL(10, 2) NOT NULL,
     quantity INT NOT NULL CHECK(quantity > 0),
-    subtotal INT(10, 2) NOT NULL CHECK(subtotal >= 0),
+    subtotal DECIMAL(10, 2) NOT NULL CHECK(subtotal >= 0),
 
     FOREIGN KEY (order_id) REFERENCES order(order_id),
     FOREIGN KEY (product_id) REFERENCES product(product_id)
