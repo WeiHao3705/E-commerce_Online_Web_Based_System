@@ -1,0 +1,25 @@
+/* Minimal login-specific tweaks; most styles re-used from MemberRegister.css */
+.registration-wrapper { padding-top: 100px; padding-bottom: 100px; }
+.registration-container { border-radius: 12px; }
+.form-header h2 { font-size: 26px; }
+.form-header p { margin-bottom: 18px; }
+.form-group { margin-bottom: 18px; }
+
+@media (max-width: 768px) {
+    .registration-wrapper { padding-top: 40px; padding-bottom: 40px; }
+}
+
+/* Toggle password icon styles */
+.input-wrapper { position: relative; }
+.toggle-password {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+    cursor: pointer;
+    font-size: 16px;
+    user-select: none;
+}
+.form-control.with-toggle { padding-right: 45px; }
+.toggle-password:hover { color: #FF523B; }

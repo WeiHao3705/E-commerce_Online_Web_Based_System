@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Define base path
 $base_path = '/E-commerce_Online_Web_Based_System/web/';

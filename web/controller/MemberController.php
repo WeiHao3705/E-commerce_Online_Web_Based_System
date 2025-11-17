@@ -16,6 +16,57 @@ class MemberController
         $this->membershipServices = new MembershipServices($membershipRepository);
     }
 
+    public function showLogin()
+    {
+        try {
+            header('Location: ../account.php');
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
+            header('Location: ../index.php');
+            exit;
+        }
+    }
+
+    public function login()
+    {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $username = isset($_POST['username']) ? trim($_POST['username']) : '';
+                $password = isset($_POST['password']) ? $_POST['password'] : '';
+
+                $userDTO = $this->membershipServices->authenticate($username, $password);
+
+                // Save minimal user info in session
+                $_SESSION['user'] = [
+                    'user_id' => $userDTO->getUserId(),
+                    'username' => $userDTO->getUsername(),
+                    'full_name' => $userDTO->getFullName(),
+                    'email' => $userDTO->getEmail(),
+                    'role' => $userDTO->getRole()
+                ];
+
+                $_SESSION['success_message'] = 'Login successful';
+                header('Location: ../index.php');
+                exit;
+            }
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
+            header('Location: ../views/LoginForm.php');
+            exit;
+        }
+    }
+
+    public function logout()
+    {
+        session_unset();
+        session_destroy();
+        session_start();
+        $_SESSION['success_message'] = 'You have been logged out';
+        header('Location: ../index.php');
+        exit;
+    }
+
     public function registerMember()
     {
         try {
@@ -81,15 +132,21 @@ $controller = new MemberController();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? 'register';
-    
+
     if ($action === 'register') {
         $controller->registerMember();
+    } elseif ($action === 'login') {
+        $controller->login();
     }
 } else {
     // Handle GET requests
     $action = $_GET['action'] ?? '';
-    
+
     if ($action === 'showAll') {
         $controller->showAllMembers();
+    } elseif ($action === 'login') {
+        $controller->showLogin();
+    } elseif ($action === 'logout') {
+        $controller->logout();
     }
 }

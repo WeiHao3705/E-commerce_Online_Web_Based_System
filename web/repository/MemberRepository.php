@@ -150,4 +150,38 @@ class MembershipRepository
             throw new Exception("Error counting members");
         }
     }
+
+    /**
+     * Fetch a single user record by username
+     * Returns associative array or null when not found
+     */
+    public function getMemberByUsername($username)
+    {
+        try {
+            $sql = "SELECT * FROM users WHERE username = ? LIMIT 1";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$username]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $result ? $result : null;
+        } catch (PDOException $e) {
+            error_log("Database error in getMemberByUsername: " . $e->getMessage());
+            throw new Exception("Error fetching member");
+        }
+    }
+
+    /**
+     * Update the stored password hash for a user by id
+     */
+    public function updatePasswordHash($userId, $newHashedPassword)
+    {
+        try {
+            $sql = "UPDATE users SET password = ? WHERE user_id = ?";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([$newHashedPassword, $userId]);
+        } catch (PDOException $e) {
+            error_log("Database error in updatePasswordHash: " . $e->getMessage());
+            return false;
+        }
+    }
 }
