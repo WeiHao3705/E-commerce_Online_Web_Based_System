@@ -1,4 +1,4 @@
-CREATE TABLE order (
+CREATE TABLE orders (
     order_id INT(20) AUTO_INCREMENT PRIMARY KEY,
     user_id INT(20) NOT NULL,
     voucher_id INT(20),

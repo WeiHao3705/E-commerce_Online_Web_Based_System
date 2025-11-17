@@ -7,6 +7,6 @@ CREATE TABLE order_item (
     quantity INT NOT NULL CHECK(quantity > 0),
     subtotal DECIMAL(10, 2) NOT NULL CHECK(subtotal >= 0),
 
-    FOREIGN KEY (order_id) REFERENCES order(order_id),
+    FOREIGN KEY (order_id) REFERENCES orders(order_id),
     FOREIGN KEY (product_id) REFERENCES product(product_id)
 );
