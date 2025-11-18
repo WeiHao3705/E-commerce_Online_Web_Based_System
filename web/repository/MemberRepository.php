@@ -14,8 +14,8 @@ class MembershipRepository
 
     public function createMember(MemberRegistrationDTO $memberDTO)
     {
-        $sql = "INSERT INTO users (username, password, full_name, gender, contact_no, email, security_question, security_answer, profile_photo) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO users (username, password, full_name, gender, contact_no, email, security_question, security_answer) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $this->db->prepare($sql);
 
@@ -27,8 +27,7 @@ class MembershipRepository
             $memberDTO->getContactNo(),
             $memberDTO->getEmail(),
             $memberDTO->getSecurityQuestion(),
-            $memberDTO->getSecurityAnswer(),
-            $memberDTO->getProfilePhoto()
+            $memberDTO->getSecurityAnswer()
         ]);
 
         return $result;
@@ -96,8 +95,7 @@ class MembershipRepository
                     email,
                     contact_no,
                     gender,
-                    created_at,
-                    profile_photo
+                    created_at
                 FROM users
                 WHERE role = 'member'";
 
@@ -203,7 +201,7 @@ class MembershipRepository
     {
         try {
             $sql = "UPDATE users 
-                    SET full_name = ?, email = ?, gender = ?, contact_no = ?, profile_photo = ? 
+                    SET full_name = ?, email = ?, gender = ?, contact_no = ? 
                     WHERE user_id = ?";
 
             $stmt = $this->db->prepare($sql);
@@ -213,7 +211,6 @@ class MembershipRepository
                 $memberDTO->getEmail(),
                 $memberDTO->getGender(),
                 $memberDTO->getContactNo(),
-                $memberDTO->getProfilePhoto(),
                 $memberDTO->getUserId()
             ]);
 

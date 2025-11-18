@@ -80,18 +80,10 @@ class MemberController
                     $_POST['contact_no'],
                     $_POST['email'],
                     $_POST['security_question'],
-                    $_POST['security_answer'],
-                    null
+                    $_POST['security_answer']
                 );
 
-                $profilePhotoFile = $_FILES['profile_photo'] ?? null;
-                $croppedPhotoData = isset($_POST['profile_photo_cropped']) ? trim($_POST['profile_photo_cropped']) : null;
-
-                if ($croppedPhotoData === '') {
-                    $croppedPhotoData = null;
-                }
-
-                $result = $this->membershipServices->registerMember($memberDTO, $profilePhotoFile, $croppedPhotoData);
+                $result = $this->membershipServices->registerMember($memberDTO);
 
                 if ($result) {
                     $_SESSION['success_message'] = "Member registered successfully!";
@@ -173,13 +165,10 @@ class MemberController
                     $_POST['full_name'],
                     $_POST['email'],
                     $_POST['gender'],
-                    $_POST['contact_no'],
-                    $_POST['current_profile_photo'] ?? null
+                    $_POST['contact_no']
                 );
 
-                $profilePhotoFile = $_FILES['profile_photo'] ?? null;
-
-                $result = $this->membershipServices->updateMember($memberDTO, $profilePhotoFile);
+                $result = $this->membershipServices->updateMember($memberDTO);
 
                 if ($result) {
                     $_SESSION['success_message'] = "Member updated successfully!";

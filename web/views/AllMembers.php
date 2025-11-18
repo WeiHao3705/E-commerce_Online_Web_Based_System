@@ -16,7 +16,6 @@ $prefix = '../';
 // }
 
 $pageTitle = 'All Members - Admin Dashboard';
-$defaultProfilePhoto = 'web/images/defaultUserImage.jpg';
 
 // Get current sort parameters
 $currentSortBy = isset($currentSort['sortBy']) ? $currentSort['sortBy'] : 'created_at';
@@ -48,23 +47,6 @@ function getSortUrl($column, $currentSortBy, $currentSortOrder) {
     return 'MemberController.php?' . http_build_query($params);
 }
 
-function getProfilePhotoUrl($photoPath, $prefix)
-{
-    if (empty($photoPath)) {
-        $photoPath = 'web/images/defaultUserImage.jpg';
-    }
-
-    if (strpos($photoPath, 'http') === 0) {
-        return $photoPath;
-    }
-
-    if (strpos($photoPath, 'web/') === 0) {
-        $photoPath = substr($photoPath, 4);
-    }
-
-    return $prefix . $photoPath;
-}
-
 // Helper function to get sort arrow icon
 function getSortArrow($column, $currentSortBy, $currentSortOrder) {
     if ($currentSortBy !== $column) {
@@ -89,42 +71,7 @@ function getSortArrow($column, $currentSortBy, $currentSortOrder) {
     <title><?php echo $pageTitle; ?> - REDSTORE</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-    <script>
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        primary: "#FF523B",
-                        "background-light": "#FFF",
-                        "background-dark": "#1a202c",
-                        "card-light": "#F8F9FA",
-                        "card-dark": "#2d3748",
-                        "text-light": "#555",
-                        "text-dark": "#cbd5e0",
-                        "border-light": "#d1d5db",
-                        "border-dark": "#4a5568",
-                    },
-                    fontFamily: {
-                        display: ["Poppins", "sans-serif"],
-                    },
-                    borderRadius: {
-                        DEFAULT: "0.5rem",
-                    },
-                },
-            },
-        };
-    </script>
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20
-        }
-    </style>
+    <link rel="stylesheet" href="<?php echo $prefix; ?>css/AllMembers.css">
 </head>
 
 <body class="bg-background-light dark:bg-background-dark font-display text-text-light dark:text-text-dark transition-colors duration-300">
@@ -215,7 +162,6 @@ function getSortArrow($column, $currentSortBy, $currentSortOrder) {
                     <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                         <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                             <tr>
-                                <th class="px-6 py-3" scope="col">Photo</th>
                                 <th class="px-6 py-3" scope="col">
                                     <a href="<?php echo getSortUrl('username', $currentSortBy, $currentSortOrder); ?>" class="flex items-center space-x-1 hover:text-primary">
                                         <span>Username</span>
@@ -261,13 +207,6 @@ function getSortArrow($column, $currentSortBy, $currentSortOrder) {
                             <?php if (!empty($members)): ?>
                                 <?php foreach ($members as $member): ?>
                                     <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                                        <td class="px-6 py-4">
-                                            <?php
-                                            $photoUrl = htmlspecialchars(getProfilePhotoUrl($member['profile_photo'] ?? '', $prefix));
-                                            ?>
-                                            <img src="<?php echo $photoUrl; ?>" alt="Profile photo"
-                                                class="h-12 w-12 rounded-full object-cover border border-gray-200 dark:border-gray-600">
-                                        </td>
                                         <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                             <?php echo htmlspecialchars($member['username']); ?>
                                         </td>
@@ -283,14 +222,14 @@ function getSortArrow($column, $currentSortBy, $currentSortOrder) {
                                         </td>
                                         <td class="px-6 py-4 text-right">
                                             <button
-                                                onclick="openEditModal(<?php echo $member['user_id']; ?>, '<?php echo htmlspecialchars($member['username'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['email'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['contact_no'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['gender'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['profile_photo'] ?? '', ENT_QUOTES); ?>')"
-                                                class="font-medium text-primary hover:underline">
+                                                onclick="openEditModal(<?php echo $member['user_id']; ?>, '<?php echo htmlspecialchars($member['username'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['email'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['contact_no'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['gender'], ENT_QUOTES); ?>')"
+                                                class="action-btn edit-btn">
                                                 Edit
                                             </button>
 
                                             <button
                                                 onclick="confirmDelete(<?php echo $member['user_id']; ?>, '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>')"
-                                                class="font-medium text-red-600 dark:text-red-500 hover:underline ml-4">
+                                                class="action-btn delete-btn">
                                                 Delete
                                             </button>
                                         </td>
@@ -298,7 +237,7 @@ function getSortArrow($column, $currentSortBy, $currentSortOrder) {
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr class="bg-white dark:bg-gray-800">
-                                    <td colspan="8" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                                    <td colspan="7" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
                                         No members found. <?php echo !empty($_GET['search']) ? 'Try a different search term.' : ''; ?>
                                     </td>
                                 </tr>
@@ -395,29 +334,13 @@ function getSortArrow($column, $currentSortBy, $currentSortOrder) {
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        const editDefaultPhoto = '<?php echo $prefix; ?>images/defaultUserImage.jpg';
-        const pathPrefix = '<?php echo $prefix; ?>';
-
-        function resolvePhotoPath(photoPath) {
-            if (!photoPath) return editDefaultPhoto;
-            if (photoPath.startsWith('http')) return photoPath;
-            if (photoPath.startsWith('web/')) {
-                photoPath = photoPath.substring(4);
-            }
-            return pathPrefix + photoPath;
-        }
-
-        function openEditModal(userId, username, fullName, email, contactNo, gender, profilePhoto) {
+        function openEditModal(userId, username, fullName, email, contactNo, gender) {
             $('#editUserId').val(userId);
             $('#editUsername').val(username);
             $('#editFullName').val(fullName);
             $('#editEmail').val(email);
             $('#editContactNo').val(contactNo);
             $('#editGender').val(gender);
-            const photoPath = resolvePhotoPath(profilePhoto);
-            $('#editProfilePhotoPreview').attr('src', photoPath);
-            $('#editProfilePhotoCurrent').val(profilePhoto);
-            $('#editProfilePhotoInput').val('');
 
             $('#editModal').removeClass('hidden');
         }
@@ -426,28 +349,13 @@ function getSortArrow($column, $currentSortBy, $currentSortOrder) {
             $('#editModal').addClass('hidden');
         }
 
+
         function confirmDelete(userId, userName) {
             if (confirm(`Are you sure you want to delete member: ${userName}?\n\nThis action cannot be undone.`)) {
                 document.getElementById('deleteUserId').value = userId;
                 document.getElementById('deleteForm').submit();
             }
         }
-
-        $(function() {
-            $('#editProfilePhotoInput').on('change', function() {
-                const file = this.files && this.files[0] ? this.files[0] : null;
-                if (!file) {
-                    const current = $('#editProfilePhotoCurrent').val();
-                    $('#editProfilePhotoPreview').attr('src', resolvePhotoPath(current));
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    $('#editProfilePhotoPreview').attr('src', e.target.result);
-                };
-                reader.readAsDataURL(file);
-            });
-        });
     </script>
 
     <!-- Edit Modal -->
@@ -456,10 +364,9 @@ function getSortArrow($column, $currentSortBy, $currentSortOrder) {
             <div class="mt-3">
                 <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">Edit Member</h3>
 
-                <form id="editForm" method="POST" action="MemberController.php" class="space-y-4" enctype="multipart/form-data">
+                <form id="editForm" method="POST" action="MemberController.php" class="space-y-4">
                     <input type="hidden" name="action" value="update">
                     <input type="hidden" name="user_id" id="editUserId">
-                    <input type="hidden" name="current_profile_photo" id="editProfilePhotoCurrent">
 
                     <div>
                         <label class="block text-sm font-medium">Username</label>
@@ -494,17 +401,6 @@ function getSortArrow($column, $currentSortBy, $currentSortOrder) {
                             <option value="Female">Female</option>
                             <option value="Other">Other</option>
                         </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium">Profile Photo</label>
-                        <div class="flex items-center space-x-4 mt-2">
-                            <img id="editProfilePhotoPreview" src="<?php echo $prefix; ?>images/defaultUserImage.jpg" alt="Profile preview"
-                                class="h-16 w-16 rounded-full object-cover border border-gray-200 dark:border-gray-600">
-                            <input type="file" name="profile_photo" id="editProfilePhotoInput" accept="image/png, image/jpeg, image/gif, image/webp"
-                                class="text-sm text-gray-600 dark:text-gray-300">
-                        </div>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Leave empty to keep the current photo.</p>
                     </div>
 
                     <div class="flex justify-end space-x-3 pt-4">
