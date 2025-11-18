@@ -6,13 +6,14 @@ class MembershipServices
 {
 
     private $membershipRepository;
+    private $defaultProfilePhoto = 'web/images/defaultUserImage.jpg';
 
     public function __construct(MembershipRepository $membershipRepository)
     {
         $this->membershipRepository = $membershipRepository;
     }
 
-    public function registerMember(MemberRegistrationDTO $memberDTO): bool
+    public function registerMember(MemberRegistrationDTO $memberDTO, ?array $profilePhoto = null, ?string $croppedPhotoData = null): bool
     {
 
         //Validate existing member
@@ -35,6 +36,22 @@ class MembershipServices
         $memberDTO->setPassword($hashedPassword);
 
         $memberDTO->setRepeatPassword(null);
+
+        $photoPath = null;
+
+        if ($croppedPhotoData) {
+            $profilePhoto = $this->createFileArrayFromBase64($croppedPhotoData);
+        }
+
+        if ($profilePhoto && isset($profilePhoto['error']) && $profilePhoto['error'] !== UPLOAD_ERR_NO_FILE) {
+            $photoPath = $this->handleProfilePhotoUpload($profilePhoto);
+        }
+
+        if (!$photoPath) {
+            $photoPath = $this->defaultProfilePhoto;
+        }
+
+        $memberDTO->setProfilePhoto($photoPath);
 
         return $this->membershipRepository->createMember($memberDTO);
     }
@@ -121,14 +138,15 @@ public function authenticate(string $username, string $password): MemberDTO
         $user['gender'] ?? null,
         $user['contact_no'] ?? null,
         $user['role'] ?? null,
-        $user['status'] ?? null
+        $user['status'] ?? null,
+        $user['profile_photo'] ?? $this->defaultProfilePhoto
     );
 }
 
 /**
  * Update member data
  */
-public function updateMember(MemberUpdateDTO $memberDTO): bool
+public function updateMember(MemberUpdateDTO $memberDTO, ?array $profilePhoto = null, ?string $croppedPhotoData = null): bool
 {
     $existingMember = $this->membershipRepository->checkExistingMemberForUpdate(
         $memberDTO->getUserId(),
@@ -141,6 +159,22 @@ public function updateMember(MemberUpdateDTO $memberDTO): bool
         throw new Exception($existingMember['message']);
     }
 
+    $photoPath = $memberDTO->getProfilePhoto();
+
+    if ($croppedPhotoData) {
+        $profilePhoto = $this->createFileArrayFromBase64($croppedPhotoData);
+    }
+
+    if ($profilePhoto && isset($profilePhoto['error']) && $profilePhoto['error'] !== UPLOAD_ERR_NO_FILE) {
+        $photoPath = $this->handleProfilePhotoUpload($profilePhoto);
+    }
+
+    if (!$photoPath) {
+        $photoPath = $this->defaultProfilePhoto;
+    }
+
+    $memberDTO->setProfilePhoto($photoPath);
+
     return $this->membershipRepository->updateMember($memberDTO);
 }
 
@@ -151,5 +185,109 @@ public function deleteMember($userId): bool
 {
     return $this->membershipRepository->deleteMember($userId);
 }
+
+    /**
+     * Handle profile photo upload logic
+     */
+    private function handleProfilePhotoUpload(array $file): ?string
+    {
+        $isBase64 = isset($file['is_base64']) && $file['is_base64'] === true;
+
+        if (!isset($file['tmp_name']) || (!$isBase64 && !is_uploaded_file($file['tmp_name']))) {
+            return null;
+        }
+
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception("Failed to upload profile photo. Error code: " . $file['error']);
+        }
+
+        $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+
+        if (!in_array($mimeType, $allowedMimeTypes)) {
+            throw new Exception("Invalid profile photo format. Allowed: JPG, PNG, GIF, WEBP.");
+        }
+
+        $maxSize = 2 * 1024 * 1024; // 2MB
+        if ($file['size'] > $maxSize) {
+            throw new Exception("Profile photo must be 2MB or smaller.");
+        }
+
+        $uploadDir = realpath(__DIR__ . '/../images');
+        if ($uploadDir === false) {
+            $uploadDir = __DIR__ . '/../images';
+        }
+        $profileDir = $uploadDir . '/profiles';
+
+        if (!is_dir($profileDir) && !mkdir($profileDir, 0775, true) && !is_dir($profileDir)) {
+            throw new Exception("Unable to create directory for profile photos.");
+        }
+
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $safeExtension = strtolower($extension);
+        if ($safeExtension === '') {
+            $safeExtension = $this->mapMimeToExtension($mimeType);
+        }
+
+        $fileName = uniqid('profile_', false) . '.' . $safeExtension;
+        $destination = $profileDir . '/' . $fileName;
+
+        $saveSucceeded = $isBase64
+            ? rename($file['tmp_name'], $destination)
+            : move_uploaded_file($file['tmp_name'], $destination);
+
+        if (!$saveSucceeded) {
+            throw new Exception("Failed to save profile photo.");
+        }
+
+        // Return web-accessible relative path
+        return 'web/images/profiles/' . $fileName;
+    }
+
+    private function mapMimeToExtension(string $mimeType): string
+    {
+        $map = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            'image/webp' => 'webp'
+        ];
+
+        return $map[$mimeType] ?? 'jpg';
+    }
+
+    private function createFileArrayFromBase64(string $dataUrl): array
+    {
+        if (!preg_match('/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/', $dataUrl, $matches)) {
+            throw new Exception("Invalid cropped photo data.");
+        }
+
+        $mimeType = $matches[1];
+        $data = base64_decode($matches[2]);
+
+        if ($data === false) {
+            throw new Exception("Failed to decode cropped photo data.");
+        }
+
+        $tmpFile = tempnam(sys_get_temp_dir(), 'profile_');
+        if ($tmpFile === false) {
+            throw new Exception("Unable to create temporary file for cropped photo.");
+        }
+
+        if (file_put_contents($tmpFile, $data) === false) {
+            throw new Exception("Unable to write cropped photo data.");
+        }
+
+        return [
+            'name' => 'cropped_profile.' . $this->mapMimeToExtension($mimeType),
+            'type' => $mimeType,
+            'tmp_name' => $tmpFile,
+            'error' => UPLOAD_ERR_OK,
+            'size' => strlen($data),
+            'is_base64' => true
+        ];
+    }
 
 }
