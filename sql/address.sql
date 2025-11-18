@@ -8,4 +8,4 @@ CREATE TABLE address (
     state VARCHAR(20) NOT NULL,
     
     FOREIGN KEY (user_id) REFERENCES users(user_id)
-)
+);

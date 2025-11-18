@@ -101,6 +101,13 @@ public function authenticate(string $username, string $password): MemberDTO
         error_log("Auth debug: user record found but no password column for username='{$username}'");
         throw new Exception('Invalid username or password');
     }
+    
+    // Check account status: block banned users early
+    $status = isset($user['status']) ? strtolower($user['status']) : '';
+    if ($status === 'banned') {
+        error_log("Auth debug: login attempt for banned user='{$username}'");
+        throw new Exception('Your account has been banned. Please contact support.');
+    }
 
     $verify = password_verify($password, $user['password']);
 
