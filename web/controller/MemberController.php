@@ -220,7 +220,7 @@ class MemberController
 $controller = new MemberController();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? 'register';
+    $action = $_POST['action'] ?? $_GET['action'] ?? 'register';
 
     if ($action === 'register') {
         $controller->registerMember();

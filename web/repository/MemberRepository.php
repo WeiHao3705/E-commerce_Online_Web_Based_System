@@ -270,4 +270,5 @@ class MembershipRepository
             throw new Exception("Error deleting member");
         }
     }
+    
 }

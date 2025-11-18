@@ -152,4 +152,28 @@ public function deleteMember($userId): bool
     return $this->membershipRepository->deleteMember($userId);
 }
 
+    public function updateMember(MemberUpdateDTO $memberDTO): bool
+    {
+        // Validate existing member (excluding current user) - username is not updated, so no need to check it
+        $existingMember = $this->membershipRepository->checkExistingMemberForUpdate(
+            $memberDTO->getUserId(),
+            $memberDTO->getUsername(), // Still pass username for the check, but it won't be updated
+            $memberDTO->getEmail(),
+            $memberDTO->getContactNo()
+        );
+
+        // Only check for email and contact_no conflicts (not username)
+        if ($existingMember['exists'] === true && $existingMember['field'] !== 'username') {
+            throw new Exception($existingMember['message']);
+        }
+
+        // Update member in repository (username is excluded from update)
+        return $this->membershipRepository->updateMember($memberDTO);
+    }
+
+    public function deleteMember($userId): bool
+    {
+        // Delete member from repository
+        return $this->membershipRepository->deleteMember($userId);
+    }
 }
