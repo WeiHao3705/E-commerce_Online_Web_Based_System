@@ -5,7 +5,7 @@ CREATE TABLE users (
     gender ENUM('Male','Female','Other') DEFAULT 'Other',
     contact_no VARCHAR(20),
     email VARCHAR(100) NOT NULL UNIQUE,
-    profile_photo VARCHAR(255) DEFAULT NULL,
+    profile_photo MEDIUMLOB,
     password VARCHAR(255) NOT NULL,
     security_question VARCHAR(255),
     security_answer VARCHAR(255),

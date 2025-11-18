@@ -83,7 +83,11 @@ class MemberController
                     $_POST['security_answer']
                 );
 
-                $result = $this->membershipServices->registerMember($memberDTO);
+                // Get profile photo data
+                $profilePhotoFile = $_FILES['profile_photo'] ?? null;
+                $croppedPhotoData = isset($_POST['profile_photo_cropped']) ? trim($_POST['profile_photo_cropped']) : null;
+
+                $result = $this->membershipServices->registerMember($memberDTO, $profilePhotoFile, $croppedPhotoData);
 
                 if ($result) {
                     $_SESSION['success_message'] = "Member registered successfully!";

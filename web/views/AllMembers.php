@@ -5,6 +5,17 @@ if (session_status() === PHP_SESSION_NONE) {
 
 $prefix = '../';
 
+// Calculate base path for images (absolute from document root)
+// Since this file is in web/views/, go up one level to get web root
+$currentFileDir = dirname(__FILE__); // Gets web/views/
+$webRootDir = dirname($currentFileDir); // Gets web/
+$projectRoot = dirname($webRootDir); // Gets project root
+
+// Get the relative path from document root
+$docRoot = $_SERVER['DOCUMENT_ROOT'];
+$relativePath = str_replace($docRoot, '', $webRootDir);
+$imageBasePath = str_replace('\\', '/', $relativePath) . '/'; // Normalize slashes
+
 // if (!isset($_SESSION['user'])) {
 //     header('Location: ../../views/LoginForm.php');
 //     exit;
@@ -60,6 +71,29 @@ function getSortArrow($column, $currentSortBy, $currentSortOrder) {
             return '<span class="material-symbols-outlined text-primary" style="font-size: 16px;">arrow_downward</span>';
         }
     }
+}
+
+// Helper function to get profile photo URL
+function getProfilePhotoUrl($photoPath, $imageBasePath) {
+    // Default image if no photo path
+    if (empty($photoPath) || $photoPath === null || trim($photoPath) === '') {
+        return $imageBasePath . 'images/defaultUserImage.jpg';
+    }
+
+    // If it's already a full URL, return as is
+    if (strpos($photoPath, 'http://') === 0 || strpos($photoPath, 'https://') === 0) {
+        return $photoPath;
+    }
+    
+    // Remove 'web/' prefix if present
+    if (strpos($photoPath, 'web/') === 0) {
+        $photoPath = substr($photoPath, 4);
+    }
+    
+    // Remove leading slash if present
+    $photoPath = ltrim($photoPath, '/');
+    
+    return $imageBasePath . $photoPath;
 }
 ?>
 <!DOCTYPE html>
@@ -163,6 +197,9 @@ function getSortArrow($column, $currentSortBy, $currentSortOrder) {
                         <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                             <tr>
                                 <th class="px-6 py-3" scope="col">
+                                    <span>Photo</span>
+                                </th>
+                                <th class="px-6 py-3" scope="col">
                                     <a href="<?php echo getSortUrl('username', $currentSortBy, $currentSortOrder); ?>" class="flex items-center space-x-1 hover:text-primary">
                                         <span>Username</span>
                                         <?php echo getSortArrow('username', $currentSortBy, $currentSortOrder); ?>
@@ -207,6 +244,16 @@ function getSortArrow($column, $currentSortBy, $currentSortOrder) {
                             <?php if (!empty($members)): ?>
                                 <?php foreach ($members as $member): ?>
                                     <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                        <td class="px-6 py-4">
+                                            <?php
+                                            $photoUrl = getProfilePhotoUrl($member['profile_photo'] ?? '', $imageBasePath);
+                                            $defaultPhotoUrl = $imageBasePath . 'images/defaultUserImage.jpg';
+                                            ?>
+                                            <img src="<?php echo htmlspecialchars($photoUrl); ?>" 
+                                                 alt="Profile photo"
+                                                 class="member-profile-photo"
+                                                 onerror="this.onerror=null; this.src='<?php echo htmlspecialchars($defaultPhotoUrl); ?>';">
+                                        </td>
                                         <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                             <?php echo htmlspecialchars($member['username']); ?>
                                         </td>
@@ -237,7 +284,7 @@ function getSortArrow($column, $currentSortBy, $currentSortOrder) {
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr class="bg-white dark:bg-gray-800">
-                                    <td colspan="7" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                                    <td colspan="8" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
                                         No members found. <?php echo !empty($_GET['search']) ? 'Try a different search term.' : ''; ?>
                                     </td>
                                 </tr>
