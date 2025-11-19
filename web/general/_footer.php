@@ -18,7 +18,7 @@
             <!-- Logo and Purpose -->
             <div class="footer-section footer-center">
                 <div class="footer-logo">
-                    <img src="images/logo.png" alt="REDSTORE">
+                    <img src="images/logo.png" alt="NGEAR">
                 </div>
                 <p class="footer-purpose">Our Purpose Is To Provide Affordable Sports Equipment to all.</p>
             </div>

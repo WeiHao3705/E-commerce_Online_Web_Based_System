@@ -8,6 +8,15 @@ include 'general/_header.php';
 include 'general/_navbar.php'; 
 ?>
 
-<!-- Your page content goes here -->
+<?php
+// Show guest/home content depending on session
+if (session_status() === PHP_SESSION_NONE) session_start();
+if (empty($_SESSION['user'])) {
+	// Guest view
+	require_once __DIR__ . '/views/GuestHome.php';
+} else {
+	// Authenticated user — show member home with carousel
+	require_once __DIR__ . '/views/MemberHome.php';
+}
 
-<?php include 'general/_footer.php'; ?>
+include 'general/_footer.php'; ?>

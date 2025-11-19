@@ -13,7 +13,7 @@ $prefix = $is_in_views ? '../' : '';
             <!-- Logo -->
             <div class="logo">
                 <a href="<?php echo $prefix; ?>index.php">
-                    <img src="<?php echo $prefix; ?>images/logo.png" alt="REDSTORE">
+                    <img src="<?php echo $prefix; ?>images/logo.png" alt="NGEAR">
                 </a>
             </div>
             
@@ -23,19 +23,27 @@ $prefix = $is_in_views ? '../' : '';
                 <li><a href="<?php echo $prefix; ?>products.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'products.php' ? 'active' : ''; ?>">Products</a></li>
                 <li><a href="<?php echo $prefix; ?>about.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'about.php' ? 'active' : ''; ?>">About</a></li>
                 <li><a href="<?php echo $prefix; ?>contact.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'contact.php' ? 'active' : ''; ?>">Contact</a></li>
-                <li class="dropdown">
-                    <a href="<?php echo $prefix; ?>account.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'account.php' ? 'active' : ''; ?>">
-                        Account <i class="fas fa-caret-down"></i>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li><a href="<?php echo $prefix; ?>profile.php"><i class="fas fa-user"></i> My Profile</a></li>
-                        <li><a href="<?php echo $prefix; ?>orders.php"><i class="fas fa-box"></i> My Orders</a></li>
-                        <li><a href="<?php echo $prefix; ?>wishlist.php"><i class="fas fa-heart"></i> Wishlist</a></li>
-                        <li><a href="<?php echo $prefix; ?>settings.php"><i class="fas fa-cog"></i> Settings</a></li>
-                        <li class="divider"></li>
-                        <li><a href="<?php echo $prefix; ?>logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-                    </ul>
-                </li>
+                    <?php
+                    if (session_status() === PHP_SESSION_NONE) session_start();
+                    $isGuest = empty($_SESSION['user']);
+                    if ($isGuest):
+                    ?>
+                        <li><a href="<?php echo $prefix; ?>account.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'account.php' ? 'active' : ''; ?>">Login</a></li>
+                    <?php else: ?>
+                        <li class="dropdown">
+                            <a href="<?php echo $prefix; ?>account.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'account.php' ? 'active' : ''; ?>">
+                                Account <i class="fas fa-caret-down"></i>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a href="<?php echo $prefix; ?>profile.php"><i class="fas fa-user"></i> My Profile</a></li>
+                                <li><a href="<?php echo $prefix; ?>orders.php"><i class="fas fa-box"></i> My Orders</a></li>
+                                <li><a href="<?php echo $prefix; ?>wishlist.php"><i class="fas fa-heart"></i> Wishlist</a></li>
+                                <li><a href="<?php echo $prefix; ?>settings.php"><i class="fas fa-cog"></i> Settings</a></li>
+                                <li class="divider"></li>
+                                <li><a href="<?php echo $prefix; ?>logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                            </ul>
+                        </li>
+                    <?php endif; ?>
             </ul>
             
             <!-- Cart Icon -->
