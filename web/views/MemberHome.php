@@ -16,7 +16,7 @@ if (is_dir($imgDir)) {
 
 ?>
 
-<link rel="stylesheet" href="<?php echo $prefix; ?>css/MemberHome.css">
+<link rel="stylesheet" href="<?php echo $prefix; ?>css/MemberHome.css?v=<?php echo filemtime(__DIR__ . '/../css/MemberHome.css'); ?>">
 
 <section class="member-hero">
         <div class="carousel fullwidth" id="homeCarousel">
@@ -60,7 +60,7 @@ if (is_dir($imgDir)) {
         var next = carousel.querySelector('.next');
         var current = 0;
         var interval = null;
-        var delay = 4000; // 4 seconds
+        var delay = 3000; // 3 seconds
 
         function show(n) {
             if (!slides.length) return;
@@ -74,7 +74,7 @@ if (is_dir($imgDir)) {
         function nextSlide(){ show(current + 1); }
         function prevSlide(){ show(current - 1); }
 
-        function start(){ interval = setInterval(nextSlide, delay); }
+        function start(){ if (interval) clearInterval(interval); interval = setInterval(nextSlide, delay); }
         function stop(){ if (interval) { clearInterval(interval); interval = null; } }
 
         if (next) next.addEventListener('click', function(e){ e.preventDefault(); nextSlide(); stop(); start(); });

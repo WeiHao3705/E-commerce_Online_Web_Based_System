@@ -21,9 +21,9 @@ switch ($page) {
     case 'home':
     default:
         if (empty($_SESSION['user'])) {
-            require __DIR__ . '/views/GuestHome.php';
+            require __DIR__ . '/views/guest/GuestHome.php';
         } else {
-            require __DIR__ . '/views/MemberHome.php';
+            require __DIR__ . '/views/member/MemberHome.php';
         }
         break;
 }

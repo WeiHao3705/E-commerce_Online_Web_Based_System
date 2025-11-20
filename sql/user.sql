@@ -10,7 +10,7 @@ CREATE TABLE users (
     password VARCHAR(255) NOT NULL,
     security_question VARCHAR(255),
     security_answer VARCHAR(255),
-    role ENUM('member','staff','admin') DEFAULT 'member',
+    role ENUM('member','admin') DEFAULT 'member',
     status ENUM('active','inactive','banned') DEFAULT 'active',
     last_login_at DATETIME NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
