@@ -102,6 +102,9 @@ body {
 
 .form-group {
     position: relative;
+    min-height: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 .form-group.full-width {
@@ -118,6 +121,8 @@ body {
 
 .input-wrapper {
     position: relative;
+    width: 100%;
+    flex-shrink: 0;
 }
 
 .input-icon {
@@ -127,16 +132,42 @@ body {
     transform: translateY(-50%);
     color: #999;
     pointer-events: none;
+    z-index: 1;
+    font-size: 18px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+}
+
+.input-icon.fas {
+    font-size: 16px;
+}
+
+/* Make calendar icon clickable for date input */
+#date-of-birth + .input-icon,
+.input-wrapper:has(#date-of-birth) .input-icon {
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.input-wrapper:has(#date-of-birth) .input-icon:hover {
+    color: #FF523B;
 }
 
 .form-control {
     width: 100%;
-    padding: 14px 15px 14px 45px;
+    padding: 14px 15px 14px 55px;
     border: 1px solid #ddd;
     border-radius: 8px;
     font-size: 14px;
     font-family: 'Poppins', sans-serif;
     transition: all 0.3s ease;
+    box-sizing: border-box;
+    min-height: 48px;
+    position: relative;
 }
 
 .form-control:focus {
@@ -151,6 +182,15 @@ select.form-control {
     background-repeat: no-repeat;
     background-position: right 15px center;
     cursor: pointer;
+}
+
+.input-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #999;
+    line-height: 1.4;
+    font-style: italic;
 }
 
 .checkbox-group {
@@ -296,6 +336,21 @@ select.form-control {
     display: none;
 }
 
+.input-error,
+.form-control.input-error {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1) !important;
+}
+
+.form-group.has-error label {
+    color: #dc3545;
+}
+
+.input-error:focus {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.2) !important;
+}
+
 .input-error {
     border-color: #dc3545 !important;
 }
@@ -305,7 +360,7 @@ select.form-control {
 }
 
 .file-input {
-    padding-left: 45px;
+    padding-left: 55px;
     cursor: pointer;
 }
 
@@ -378,6 +433,7 @@ select.form-control {
 .photo-drop-zone {
     flex: 1;
     min-width: 240px;
+    min-height: 200px;
     border: 2px dashed #ddd;
     border-radius: 12px;
     padding: 20px;
@@ -385,6 +441,10 @@ select.form-control {
     background-color: #fdfdfd;
     cursor: pointer;
     transition: border-color 0.2s ease, background-color 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .photo-drop-zone .drop-icon {

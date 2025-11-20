@@ -106,6 +106,26 @@ class MemberController
         } catch (Exception $e) {
             $_SESSION['error_message'] = $e->getMessage();
             
+            // Preserve POST data for form repopulation
+            $_SESSION['form_data'] = $_POST;
+            
+            // Detect which field caused the error from error message
+            $errorField = null;
+            $errorMessage = strtolower($e->getMessage());
+            
+            // Check error message for field indicators
+            if (stripos($errorMessage, 'username') !== false && stripos($errorMessage, 'already exists') !== false) {
+                $errorField = 'username';
+            } elseif (stripos($errorMessage, 'email') !== false && stripos($errorMessage, 'already exists') !== false) {
+                $errorField = 'email';
+            } elseif ((stripos($errorMessage, 'contact') !== false || stripos($errorMessage, 'phone') !== false) && stripos($errorMessage, 'already exists') !== false) {
+                $errorField = 'contact_no';
+            }
+            
+            if ($errorField) {
+                $_SESSION['error_field'] = $errorField;
+            }
+            
             // Check if registration is from admin panel
             $returnTo = isset($_POST['return_to']) ? $_POST['return_to'] : (isset($_GET['return_to']) ? $_GET['return_to'] : '');
             

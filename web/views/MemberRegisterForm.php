@@ -20,6 +20,24 @@ if (isset($_SESSION['validation_errors'])) {
     $errors = array_merge($errors, $_SESSION['validation_errors']);
     unset($_SESSION['validation_errors']);
 }
+
+// Preserve form data from session if available (for error repopulation)
+$formData = [];
+if (isset($_SESSION['form_data'])) {
+    $formData = $_SESSION['form_data'];
+    unset($_SESSION['form_data']);
+}
+
+// Get error field for scrolling and highlighting
+$errorField = isset($_SESSION['error_field']) ? $_SESSION['error_field'] : null;
+if ($errorField) {
+    unset($_SESSION['error_field']);
+}
+
+// Merge form data with POST data (POST takes priority for current submission)
+if (!empty($_POST)) {
+    $formData = array_merge($formData, $_POST);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -30,14 +48,12 @@ if (isset($_SESSION['validation_errors'])) {
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title><?php echo isset($pageTitle) ? $pageTitle . ' - REDSTORE' : 'REDSTORE - Sports & Fitness Store'; ?></title>
 
-    <!-- Font Awesome -->
+    <!-- Font Awesome for navbar icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
-
+    
+    <!-- Cropper.js CSS for photo adjustment -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    
     <link rel="stylesheet" href="<?php echo $prefix; ?>css/MemberRegister.css">
 
 </head>
@@ -95,23 +111,23 @@ if (isset($_SESSION['validation_errors'])) {
                     <div class="form-group">
                         <label for="username">Username</label>
                         <div class="input-wrapper">
-                            <span class="material-symbols-outlined input-icon">person</span>
-                            <input type="text" id="username" name="username" class="form-control" placeholder="Username" value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>" required>
+                            <i class="fas fa-user input-icon"></i>
+                            <input type="text" id="username" name="username" class="form-control" placeholder="Username" autocomplete="off" value="<?php echo isset($formData['username']) ? htmlspecialchars($formData['username']) : ''; ?>" required>
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label for="full-name">Full Name</label>
                         <div class="input-wrapper">
-                            <span class="material-symbols-outlined input-icon">badge</span>
-                            <input type="text" id="full-name" name="full_name" class="form-control" placeholder="Full Name" value="<?php echo isset($_POST['full-name']) ? htmlspecialchars($_POST['full-name']) : ''; ?>" required>
+                            <i class="fas fa-id-badge input-icon"></i>
+                            <input type="text" id="full-name" name="full_name" class="form-control" placeholder="Full Name" value="<?php echo isset($formData['full_name']) ? htmlspecialchars($formData['full_name']) : ''; ?>" required>
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label for="password">Password</label>
                         <div class="input-wrapper">
-                            <span class="material-symbols-outlined input-icon">lock</span>
+                            <i class="fas fa-lock input-icon"></i>
                             <input type="password" id="password" name="password" class="form-control" placeholder="Password" autocomplete="new-password" required>
                         </div>
                         <div id="passwordStrength" class="password-strength"></div>
@@ -130,7 +146,7 @@ if (isset($_SESSION['validation_errors'])) {
                     <div class="form-group">
                         <label for="repeat-password">Repeat Password</label>
                         <div class="input-wrapper">
-                            <span class="material-symbols-outlined input-icon">password</span>
+                            <i class="fas fa-key input-icon"></i>
                             <input type="password" id="repeat-password" name="repeat_password" class="form-control" placeholder="Repeat Password" autocomplete="new-password" required>
                         </div>
                         <div id="passwordMatchError" class="password-match-error">Passwords do not match!</div>
@@ -140,41 +156,51 @@ if (isset($_SESSION['validation_errors'])) {
                     <div class="form-group">
                         <label for="email-address">Email Address</label>
                         <div class="input-wrapper">
-                            <span class="material-symbols-outlined input-icon">email</span>
-                            <input type="email" id="email-address" name="email" class="form-control" placeholder="Email address" value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>" autocomplete="email" required>
+                            <i class="fas fa-envelope input-icon"></i>
+                            <input type="email" id="email-address" name="email" class="form-control" placeholder="Email address" value="<?php echo isset($formData['email']) ? htmlspecialchars($formData['email']) : ''; ?>" autocomplete="email" required>
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label for="contact-number">Contact Number</label>
                         <div class="input-wrapper">
-                            <span class="material-symbols-outlined input-icon">phone</span>
-                            <input type="tel" id="contact-number" name="contact_no" class="form-control" placeholder="Contact Number" value="<?php echo isset($_POST['contact-number']) ? htmlspecialchars($_POST['contact-number']) : ''; ?>" required>
+                            <i class="fas fa-phone input-icon"></i>
+                            <input type="tel" id="contact-number" name="contact_no" class="form-control" placeholder="Contact Number" value="<?php echo isset($formData['contact_no']) ? htmlspecialchars($formData['contact_no']) : ''; ?>" required>
                         </div>
                     </div>
 
                     <div class="form-group full-width">
                         <label for="gender">Gender</label>
                         <div class="input-wrapper">
-                            <span class="material-symbols-outlined input-icon">wc</span>
+                            <i class="fas fa-venus-mars input-icon"></i>
                             <select id="gender" name="gender" class="form-control" required>
                                 <option disabled selected>Select Gender</option>
-                                <option <?php echo (isset($_POST['gender']) && $_POST['gender'] == 'Male') ? 'selected' : ''; ?>>Male</option>
-                                <option <?php echo (isset($_POST['gender']) && $_POST['gender'] == 'Female') ? 'selected' : ''; ?>>Female</option>
-                                <option <?php echo (isset($_POST['gender']) && $_POST['gender'] == 'Prefer not to say') ? 'selected' : ''; ?>>Prefer not to say</option>
+                                <option <?php echo (isset($formData['gender']) && $formData['gender'] == 'Male') ? 'selected' : ''; ?>>Male</option>
+                                <option <?php echo (isset($formData['gender']) && $formData['gender'] == 'Female') ? 'selected' : ''; ?>>Female</option>
+                                <option <?php echo (isset($formData['gender']) && $formData['gender'] == 'Prefer not to say') ? 'selected' : ''; ?>>Prefer not to say</option>
                             </select>
                         </div>
                     </div>
 
                     <div class="form-group full-width">
+                        <label for="date-of-birth">Date of Birth</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-calendar input-icon"></i>
+                            <input type="text" id="date-of-birth" name="DateOfBirth" class="form-control" placeholder="DD/MM/YYYY (e.g., 15/05/1990)" value="<?php echo isset($formData['DateOfBirth']) ? htmlspecialchars($formData['DateOfBirth']) : ''; ?>" pattern="\d{2}/\d{2}/\d{4}" maxlength="10" required>
+                            <input type="date" id="date-of-birth-hidden" style="display: none;" name="DateOfBirth" value="<?php echo isset($formData['DateOfBirth']) ? htmlspecialchars($formData['DateOfBirth']) : ''; ?>">
+                        </div>
+                        <small class="input-hint">Enter your date of birth (DD/MM/YYYY) or click the calendar icon to select</small>
+                    </div>
+
+                    <div class="form-group full-width">
                         <label for="security-question">Security Question</label>
                         <div class="input-wrapper">
-                            <span class="material-symbols-outlined input-icon">quiz</span>
+                            <i class="fas fa-question-circle input-icon"></i>
                             <select id="security-question" name="security_question" class="form-control" required>
                                 <option disabled selected>Select a Security Question</option>
-                                <option <?php echo (isset($_POST['security-question']) && $_POST['security-question'] == "What was your first pet's name?") ? 'selected' : ''; ?>>What was your first pet's name?</option>
-                                <option <?php echo (isset($_POST['security-question']) && $_POST['security-question'] == 'What city were you born in?') ? 'selected' : ''; ?>>What city were you born in?</option>
-                                <option <?php echo (isset($_POST['security-question']) && $_POST['security-question'] == "What is your mother's maiden name?") ? 'selected' : ''; ?>>What is your mother's maiden name?</option>
+                                <option <?php echo (isset($formData['security_question']) && $formData['security_question'] == "What was your first pet's name?") ? 'selected' : ''; ?>>What was your first pet's name?</option>
+                                <option <?php echo (isset($formData['security_question']) && $formData['security_question'] == 'What city were you born in?') ? 'selected' : ''; ?>>What city were you born in?</option>
+                                <option <?php echo (isset($formData['security_question']) && $formData['security_question'] == "What is your mother's maiden name?") ? 'selected' : ''; ?>>What is your mother's maiden name?</option>
                             </select>
                         </div>
                     </div>
@@ -182,8 +208,8 @@ if (isset($_SESSION['validation_errors'])) {
                     <div class="form-group full-width">
                         <label for="security-answer">Security Answer</label>
                         <div class="input-wrapper">
-                            <span class="material-symbols-outlined input-icon">key</span>
-                            <input type="text" id="security-answer" name="security_answer" class="form-control" placeholder="Security Answer" value="<?php echo isset($_POST['security-answer']) ? htmlspecialchars($_POST['security-answer']) : ''; ?>" required>
+                            <i class="fas fa-key input-icon"></i>
+                            <input type="text" id="security-answer" name="security_answer" class="form-control" placeholder="Security Answer" value="<?php echo isset($formData['security_answer']) ? htmlspecialchars($formData['security_answer']) : ''; ?>" required>
                         </div>
                     </div>
 
@@ -191,7 +217,7 @@ if (isset($_SESSION['validation_errors'])) {
                         <label for="profile-photo">Profile Photo (optional)</label>
                         <div class="photo-upload-options">
                             <div class="photo-drop-zone" id="photoDropZone">
-                                <span class="material-symbols-outlined drop-icon">image</span>
+                                <i class="fas fa-image drop-icon"></i>
                                 <p>Drag & drop a photo here</p>
                                 <button type="button" class="drop-select-btn" id="triggerFileSelect">Browse Files</button>
                                 <small>Supported: JPG, PNG, GIF, WEBP. Max 2MB.</small>
@@ -202,19 +228,19 @@ if (isset($_SESSION['validation_errors'])) {
                                 </div>
                                 <div class="webcam-controls">
                                     <button type="button" class="webcam-btn" id="startWebcam">
-                                        <span class="material-symbols-outlined">videocam</span> Start Camera
+                                        <i class="fas fa-video"></i> Start Camera
                                     </button>
                                     <button type="button" class="webcam-btn" id="captureWebcamPhoto" disabled>
-                                        <span class="material-symbols-outlined">photo_camera</span> Capture
+                                        <i class="fas fa-camera"></i> Capture
                                     </button>
                                     <button type="button" class="webcam-btn" id="stopWebcam" disabled>
-                                        <span class="material-symbols-outlined">stop_circle</span> Stop
+                                        <i class="fas fa-stop-circle"></i> Stop
                                     </button>
                                 </div>
                             </div>
                         </div>
                         <div class="input-wrapper file-input-wrapper sr-only">
-                            <span class="material-symbols-outlined input-icon">image</span>
+                            <i class="fas fa-image input-icon"></i>
                             <input type="file" id="profile-photo" name="profile_photo" class="form-control file-input" accept="image/png, image/jpeg, image/gif, image/webp">
                         </div>
                         <small class="input-hint">You can drag & drop, browse, or take a photo using your webcam.</small>
@@ -227,25 +253,25 @@ if (isset($_SESSION['validation_errors'])) {
                                 </div>
                                 <div class="adjust-controls">
                                     <button type="button" class="adjust-btn" id="zoomOutPhoto" title="Zoom out">
-                                        <span class="material-symbols-outlined">remove</span>
+                                        <i class="fas fa-minus"></i>
                                     </button>
                                     <button type="button" class="adjust-btn" id="zoomInPhoto" title="Zoom in">
-                                        <span class="material-symbols-outlined">add</span>
+                                        <i class="fas fa-plus"></i>
                                     </button>
                                     <button type="button" class="adjust-btn" id="rotateLeftPhoto" title="Rotate left">
-                                        <span class="material-symbols-outlined">rotate_left</span>
+                                        <i class="fas fa-undo"></i>
                                     </button>
                                     <button type="button" class="adjust-btn" id="rotateRightPhoto" title="Rotate right">
-                                        <span class="material-symbols-outlined">rotate_right</span>
+                                        <i class="fas fa-redo"></i>
                                     </button>
                                     <button type="button" class="adjust-btn" id="flipHorizontalPhoto" title="Flip horizontal">
-                                        <span class="material-symbols-outlined">swap_horiz</span>
+                                        <i class="fas fa-arrows-alt-h"></i>
                                     </button>
                                     <button type="button" class="adjust-btn" id="flipVerticalPhoto" title="Flip vertical">
-                                        <span class="material-symbols-outlined">swap_vert</span>
+                                        <i class="fas fa-arrows-alt-v"></i>
                                     </button>
                                     <button type="button" class="adjust-btn" id="resetPhotoAdjust" title="Reset">
-                                        <span class="material-symbols-outlined">refresh</span>
+                                        <i class="fas fa-sync-alt"></i>
                                     </button>
                                 </div>
                             </div>
@@ -292,6 +318,42 @@ if (isset($_SESSION['validation_errors'])) {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script>
         $(document).ready(function() {
+            // Handle error field highlighting and scrolling
+            <?php if ($errorField): ?>
+                var errorField = '<?php echo htmlspecialchars($errorField, ENT_QUOTES); ?>';
+                var fieldMapping = {
+                    'username': '#username',
+                    'email': '#email-address',
+                    'contact_no': '#contact-number'
+                };
+                
+                var fieldSelector = fieldMapping[errorField];
+                if (fieldSelector) {
+                    var $errorField = $(fieldSelector);
+                    
+                    // Add error class to highlight
+                    $errorField.addClass('input-error');
+                    $errorField.closest('.form-group').addClass('has-error');
+                    
+                    // Scroll to error field with offset for navbar
+                    setTimeout(function() {
+                        var offset = $errorField.offset().top - 100;
+                        $('html, body').animate({
+                            scrollTop: offset
+                        }, 500);
+                        
+                        // Focus on the field after scroll
+                        setTimeout(function() {
+                            $errorField.focus();
+                            // Select text if field has value
+                            if ($errorField.val()) {
+                                $errorField.select();
+                            }
+                        }, 600);
+                    }, 100);
+                }
+            <?php endif; ?>
+            
             // Password strength checker
             function checkPasswordStrength(password) {
                 let strength = 0;
@@ -378,6 +440,91 @@ if (isset($_SESSION['validation_errors'])) {
             });
 
             $('#repeat-password').on('input', checkPasswordMatch);
+
+            // Date of Birth formatting and validation
+            const $dateOfBirth = $('#date-of-birth');
+            const $dateOfBirthHidden = $('#date-of-birth-hidden');
+            const $dateIcon = $dateOfBirth.siblings('.input-icon');
+
+            // Format date as DD/MM/YYYY while typing
+            $dateOfBirth.on('input', function(e) {
+                let value = $(this).val().replace(/\D/g, ''); // Remove non-digits
+                
+                if (value.length >= 2) {
+                    value = value.substring(0, 2) + '/' + value.substring(2);
+                }
+                if (value.length >= 5) {
+                    value = value.substring(0, 5) + '/' + value.substring(5, 9);
+                }
+                
+                $(this).val(value);
+                
+                // Convert to YYYY-MM-DD for hidden input
+                if (value.length === 10) {
+                    const parts = value.split('/');
+                    if (parts.length === 3) {
+                        const day = parts[0];
+                        const month = parts[1];
+                        const year = parts[2];
+                        
+                        // Validate date
+                        if (day && month && year && day.length === 2 && month.length === 2 && year.length === 4) {
+                            const date = new Date(year, month - 1, day);
+                            if (date.getDate() == day && date.getMonth() == month - 1 && date.getFullYear() == year) {
+                                const formattedDate = year + '-' + month.padStart(2, '0') + '-' + day.padStart(2, '0');
+                                $dateOfBirthHidden.val(formattedDate);
+                                $(this).removeClass('input-error').addClass('input-success');
+                            } else {
+                                $(this).removeClass('input-success').addClass('input-error');
+                                $dateOfBirthHidden.val('');
+                            }
+                        }
+                    }
+                } else {
+                    $dateOfBirthHidden.val('');
+                    $(this).removeClass('input-success input-error');
+                }
+            });
+
+            // Make calendar icon clickable to open date picker
+            $dateIcon.css('cursor', 'pointer');
+            $dateIcon.on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                // Try to show native date picker
+                if ($dateOfBirthHidden[0] && typeof $dateOfBirthHidden[0].showPicker === 'function') {
+                    $dateOfBirthHidden[0].showPicker().catch(function() {
+                        // Fallback: focus the hidden date input
+                        $dateOfBirthHidden[0].click();
+                    });
+                } else {
+                    // Fallback: click the hidden date input
+                    $dateOfBirthHidden[0].click();
+                }
+            });
+
+            // Sync date picker selection back to text input
+            $dateOfBirthHidden.on('change', function() {
+                const dateValue = $(this).val();
+                if (dateValue) {
+                    const date = new Date(dateValue);
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const year = date.getFullYear();
+                    $dateOfBirth.val(day + '/' + month + '/' + year);
+                    $dateOfBirth.removeClass('input-error').addClass('input-success');
+                }
+            });
+
+            // Allow clicking on the input to also open date picker
+            $dateOfBirth.on('focus', function() {
+                // If empty or invalid, show date picker
+                if (!$(this).val() || $(this).hasClass('input-error')) {
+                    setTimeout(function() {
+                        $dateOfBirthHidden[0].showPicker();
+                    }, 100);
+                }
+            });
 
             const allowedPhotoTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
             const maxPhotoSize = 2 * 1024 * 1024;
@@ -680,6 +827,45 @@ if (isset($_SESSION['validation_errors'])) {
                     alert('Password does not meet all requirements. Please create a stronger password.');
                     $('#password').focus();
                     return false;
+                }
+
+                // Validate and format date of birth
+                const dateValue = $dateOfBirth.val();
+                if (dateValue) {
+                    const parts = dateValue.split('/');
+                    if (parts.length === 3) {
+                        const day = parseInt(parts[0], 10);
+                        const month = parseInt(parts[1], 10);
+                        const year = parseInt(parts[2], 10);
+                        
+                        // Validate date
+                        if (isNaN(day) || isNaN(month) || isNaN(year) || 
+                            day < 1 || day > 31 || month < 1 || month > 12 || year < 1900 || year > new Date().getFullYear()) {
+                            e.preventDefault();
+                            alert('Please enter a valid date of birth (DD/MM/YYYY).');
+                            $dateOfBirth.focus();
+                            return false;
+                        }
+                        
+                        const date = new Date(year, month - 1, day);
+                        if (date.getDate() !== day || date.getMonth() !== month - 1 || date.getFullYear() !== year) {
+                            e.preventDefault();
+                            alert('Please enter a valid date of birth.');
+                            $dateOfBirth.focus();
+                            return false;
+                        }
+                        
+                        // Ensure hidden field has the correct value
+                        if (!$dateOfBirthHidden.val()) {
+                            const formattedDate = year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+                            $dateOfBirthHidden.val(formattedDate);
+                        }
+                    } else {
+                        e.preventDefault();
+                        alert('Please enter a valid date of birth in DD/MM/YYYY format.');
+                        $dateOfBirth.focus();
+                        return false;
+                    }
                 }
 
                 return true;

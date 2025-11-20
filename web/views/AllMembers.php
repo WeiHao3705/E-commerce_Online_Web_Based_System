@@ -62,13 +62,13 @@ function getSortUrl($column, $currentSortBy, $currentSortOrder) {
 function getSortArrow($column, $currentSortBy, $currentSortOrder) {
     if ($currentSortBy !== $column) {
         // No sort - show both arrows (neutral)
-        return '<span class="material-symbols-outlined text-gray-400" style="font-size: 16px;">unfold_more</span>';
+        return '<span class="material-symbols-outlined sort-icon-neutral">unfold_more</span>';
     } else {
         // Show active arrow
         if ($currentSortOrder === 'ASC') {
-            return '<span class="material-symbols-outlined text-primary" style="font-size: 16px;">arrow_upward</span>';
+            return '<span class="material-symbols-outlined sort-icon-active">arrow_upward</span>';
         } else {
-            return '<span class="material-symbols-outlined text-primary" style="font-size: 16px;">arrow_downward</span>';
+            return '<span class="material-symbols-outlined sort-icon-active">arrow_downward</span>';
         }
     }
 }
@@ -108,56 +108,56 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
     <link rel="stylesheet" href="<?php echo $prefix; ?>css/AllMembers.css">
 </head>
 
-<body class="bg-background-light dark:bg-background-dark font-display text-text-light dark:text-text-dark transition-colors duration-300">
+<body class="page-body">
 
     <?php include $prefix . 'general/_header.php'; ?>
     <?php include $prefix . 'general/_navbar.php'; ?>
 
-    <div class="min-h-screen bg-gray-100 dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
-        <div class="max-w-7xl mx-auto">
+    <div class="page-container">
+        <div class="page-content">
             <!-- Header -->
-            <header class="flex flex-col sm:flex-row justify-between items-center mb-8">
-                <div class="flex items-center mb-4 sm:mb-0">
-                    <svg class="h-10 w-auto" fill="none" viewBox="0 0 162 42" xmlns="http://www.w3.org/2000/svg">
+            <header class="page-header">
+                <div class="header-logo">
+                    <svg class="logo-svg" fill="none" viewBox="0 0 162 42" xmlns="http://www.w3.org/2000/svg">
                         <text fill="#FF523B" font-family="Poppins, sans-serif" font-size="28" font-weight="bold" letter-spacing="0em" style="white-space: pre" xml:space="preserve">
                             <tspan x="0" y="29.9219">REDSTORE</tspan>
                         </text>
-                        <text class="dark:fill-gray-300" fill="#555" font-family="Poppins, sans-serif" font-size="8" font-style="italic" letter-spacing="0.05em" style="white-space: pre" xml:space="preserve">
+                        <text class="logo-subtitle" fill="#555" font-family="Poppins, sans-serif" font-size="8" font-style="italic" letter-spacing="0.05em" style="white-space: pre" xml:space="preserve">
                             <tspan x="100" y="38">athlete's choice</tspan>
                         </text>
                         <rect height="42" rx="4" stroke="#FF523B" stroke-width="2" width="95" x="0" y="0"></rect>
                     </svg>
                 </div>
-                <div class="text-right">
-                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
-                    <p class="text-sm text-text-light dark:text-text-dark">Manage Members</p>
+                <div class="header-title">
+                    <h1 class="page-title">Admin Dashboard</h1>
+                    <p class="page-subtitle">Manage Members</p>
                 </div>
             </header>
 
             <!-- Success/Error Messages -->
             <?php if (isset($_SESSION['success_message'])): ?>
-                <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+                <div class="message message-success">
                     <?php echo htmlspecialchars($_SESSION['success_message']); ?>
                     <?php unset($_SESSION['success_message']); ?>
                 </div>
             <?php endif; ?>
 
             <?php if (isset($_SESSION['error_message'])): ?>
-                <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                <div class="message message-error">
                     <?php echo htmlspecialchars($_SESSION['error_message']); ?>
                     <?php unset($_SESSION['error_message']); ?>
                 </div>
             <?php endif; ?>
 
             <!-- Main Content Card -->
-            <div class="bg-card-light dark:bg-card-dark rounded-xl shadow-lg overflow-hidden">
-                <div class="p-6">
-                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">All Registered Members</h2>
+            <div class="content-card">
+                <div class="card-header">
+                    <h2 class="card-title">All Registered Members</h2>
 
                     <!-- Search and Actions Bar -->
-                    <div class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 mb-6">
-                        <div class="w-full md:w-1/2">
-                            <form method="GET" action="MemberController.php" class="flex items-center">
+                    <div class="toolbar">
+                        <div class="search-section">
+                            <form method="GET" action="MemberController.php" class="search-form">
                                 <input type="hidden" name="action" value="showAll">
                                 <?php if (!empty($_GET['sortBy'])): ?>
                                     <input type="hidden" name="sortBy" value="<?php echo htmlspecialchars($_GET['sortBy']); ?>">
@@ -166,76 +166,82 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                     <input type="hidden" name="sortOrder" value="<?php echo htmlspecialchars($_GET['sortOrder']); ?>">
                                 <?php endif; ?>
                                 <label class="sr-only" for="simple-search">Search</label>
-                                <div class="relative w-full">
-                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                        <span class="material-symbols-outlined text-gray-500 dark:text-gray-400">search</span>
+                                <div class="search-input-wrapper">
+                                    <div class="search-icon">
+                                        <span class="material-symbols-outlined">search</span>
                                     </div>
                                     <input
-                                        class="bg-gray-50 border border-border-light text-gray-900 text-sm rounded-lg focus:ring-primary focus:border-primary block w-full pl-10 p-2.5 dark:bg-gray-700 dark:border-border-dark dark:placeholder-gray-400 dark:text-white"
+                                        class="search-input"
                                         id="simple-search"
                                         name="search"
                                         placeholder="Search for members..."
                                         type="text"
                                         value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>" />
                                 </div>
-                                <button type="submit" class="ml-2 py-2.5 px-5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-red-600 focus:ring-4 focus:outline-none focus:ring-red-300">
+                                <button type="submit" class="btn btn-primary btn-search">
                                     Search
                                 </button>
                             </form>
                         </div>
-                        <div class="w-full md:w-auto flex flex-col md:flex-row space-y-2 md:space-y-0 items-stretch md:items-center justify-end md:space-x-3 flex-shrink-0">
-                            <a href="../views/MemberRegisterForm.php?return_to=admin" class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-white bg-primary rounded-lg hover:bg-red-600 focus:ring-4 focus:ring-primary focus:outline-none">
-                                <span class="material-symbols-outlined mr-2">add</span>
+                        <div class="actions-section">
+                            <a href="../views/MemberRegisterForm.php?return_to=admin" class="btn btn-primary btn-add">
+                                <span class="material-symbols-outlined">add</span>
                                 Add new member
                             </a>
                         </div>
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                        <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                <div class="table-wrapper">
+                    <table class="members-table">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3" scope="col">
+                                <th class="col-photo">
                                     <span>Photo</span>
                                 </th>
-                                <th class="px-6 py-3" scope="col">
-                                    <a href="<?php echo getSortUrl('username', $currentSortBy, $currentSortOrder); ?>" class="flex items-center space-x-1 hover:text-primary">
+                                <th class="col-sortable">
+                                    <a href="<?php echo getSortUrl('username', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
                                         <span>Username</span>
                                         <?php echo getSortArrow('username', $currentSortBy, $currentSortOrder); ?>
                                     </a>
                                 </th>
-                                <th class="px-6 py-3" scope="col">
-                                    <a href="<?php echo getSortUrl('full_name', $currentSortBy, $currentSortOrder); ?>" class="flex items-center space-x-1 hover:text-primary">
+                                <th class="col-sortable">
+                                    <a href="<?php echo getSortUrl('full_name', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
                                         <span>Full Name</span>
                                         <?php echo getSortArrow('full_name', $currentSortBy, $currentSortOrder); ?>
                                     </a>
                                 </th>
-                                <th class="px-6 py-3" scope="col">
-                                    <a href="<?php echo getSortUrl('email', $currentSortBy, $currentSortOrder); ?>" class="flex items-center space-x-1 hover:text-primary">
+                                <th class="col-sortable">
+                                    <a href="<?php echo getSortUrl('email', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
                                         <span>Email</span>
                                         <?php echo getSortArrow('email', $currentSortBy, $currentSortOrder); ?>
                                     </a>
                                 </th>
-                                <th class="px-6 py-3" scope="col">
-                                    <a href="<?php echo getSortUrl('contact_no', $currentSortBy, $currentSortOrder); ?>" class="flex items-center space-x-1 hover:text-primary">
+                                <th class="col-sortable">
+                                    <a href="<?php echo getSortUrl('contact_no', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
                                         <span>Contact Number</span>
                                         <?php echo getSortArrow('contact_no', $currentSortBy, $currentSortOrder); ?>
                                     </a>
                                 </th>
-                                <th class="px-6 py-3" scope="col">
-                                    <a href="<?php echo getSortUrl('gender', $currentSortBy, $currentSortOrder); ?>" class="flex items-center space-x-1 hover:text-primary">
+                                <th class="col-sortable">
+                                    <a href="<?php echo getSortUrl('gender', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
                                         <span>Gender</span>
                                         <?php echo getSortArrow('gender', $currentSortBy, $currentSortOrder); ?>
                                     </a>
                                 </th>
-                                <th class="px-6 py-3" scope="col">
-                                    <a href="<?php echo getSortUrl('created_at', $currentSortBy, $currentSortOrder); ?>" class="flex items-center space-x-1 hover:text-primary">
+                                <th class="col-sortable">
+                                    <a href="<?php echo getSortUrl('DateOfBirth', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
+                                        <span>Date of Birth</span>
+                                        <?php echo getSortArrow('DateOfBirth', $currentSortBy, $currentSortOrder); ?>
+                                    </a>
+                                </th>
+                                <th class="col-sortable">
+                                    <a href="<?php echo getSortUrl('created_at', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
                                         <span>Joined Date</span>
                                         <?php echo getSortArrow('created_at', $currentSortBy, $currentSortOrder); ?>
                                     </a>
                                 </th>
-                                <th class="px-6 py-3" scope="col">
+                                <th class="col-actions">
                                     <span class="sr-only">Actions</span>
                                 </th>
                             </tr>
@@ -243,48 +249,63 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                         <tbody>
                             <?php if (!empty($members)): ?>
                                 <?php foreach ($members as $member): ?>
-                                    <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                                        <td class="px-6 py-4">
+                                    <tr class="table-row">
+                                        <td class="col-photo">
                                             <?php
                                             $photoUrl = getProfilePhotoUrl($member['profile_photo'] ?? '', $imageBasePath);
                                             $defaultPhotoUrl = $imageBasePath . 'images/defaultUserImage.jpg';
                                             ?>
                                             <img src="<?php echo htmlspecialchars($photoUrl); ?>" 
                                                  alt="Profile photo"
-                                                 class="member-profile-photo"
-                                                 onerror="this.onerror=null; this.src='<?php echo htmlspecialchars($defaultPhotoUrl); ?>';">
+                                                 class="member-profile-photo clickable-image"
+                                                 onclick="viewMemberImage('<?php echo htmlspecialchars($photoUrl, ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>')"
+                                                 onerror="this.onerror=null; this.src='<?php echo htmlspecialchars($defaultPhotoUrl); ?>';"
+                                                 style="cursor: pointer;"
+                                                 title="Click to view full size">
                                         </td>
-                                        <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                        <td class="col-username">
                                             <?php echo htmlspecialchars($member['username']); ?>
                                         </td>
-                                        <td class="px-6 py-4"><?php echo htmlspecialchars($member['full_name']); ?></td>
-                                        <td class="px-6 py-4"><?php echo htmlspecialchars($member['email']); ?></td>
-                                        <td class="px-6 py-4"><?php echo htmlspecialchars($member['contact_no']); ?></td>
-                                        <td class="px-6 py-4"><?php echo htmlspecialchars($member['gender']); ?></td>
-                                        <td class="px-6 py-4">
+                                        <td class="col-name"><?php echo htmlspecialchars($member['full_name']); ?></td>
+                                        <td class="col-email"><?php echo htmlspecialchars($member['email']); ?></td>
+                                        <td class="col-contact"><?php echo htmlspecialchars($member['contact_no']); ?></td>
+                                        <td class="col-gender"><?php echo htmlspecialchars($member['gender']); ?></td>
+                                        <td class="col-dob">
+                                            <?php
+                                            if (!empty($member['DateOfBirth'])) {
+                                                $dob = new DateTime($member['DateOfBirth']);
+                                                echo $dob->format('Y-m-d');
+                                            } else {
+                                                echo '-';
+                                            }
+                                            ?>
+                                        </td>
+                                        <td class="col-date">
                                             <?php
                                             $date = new DateTime($member['created_at']);
                                             echo $date->format('Y-m-d');
                                             ?>
                                         </td>
-                                        <td class="px-6 py-4 text-right">
+                                        <td class="col-actions">
                                             <button
-                                                onclick="openEditModal(<?php echo $member['user_id']; ?>, '<?php echo htmlspecialchars($member['username'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['email'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['contact_no'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['gender'], ENT_QUOTES); ?>')"
-                                                class="action-btn edit-btn">
-                                                Edit
+                                                onclick="openEditModal(<?php echo $member['user_id']; ?>, '<?php echo htmlspecialchars($member['username'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['email'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['contact_no'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['gender'], ENT_QUOTES); ?>', '<?php echo !empty($member['DateOfBirth']) ? htmlspecialchars($member['DateOfBirth'], ENT_QUOTES) : ''; ?>')"
+                                                class="action-btn edit-btn"
+                                                title="Edit member">
+                                                <span class="material-symbols-outlined">edit</span>
                                             </button>
 
                                             <button
                                                 onclick="confirmDelete(<?php echo $member['user_id']; ?>, '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>')"
-                                                class="action-btn delete-btn">
-                                                Delete
+                                                class="action-btn delete-btn"
+                                                title="Delete member">
+                                                <span class="material-symbols-outlined">delete</span>
                                             </button>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php else: ?>
-                                <tr class="bg-white dark:bg-gray-800">
-                                    <td colspan="8" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                                <tr class="table-row table-row-empty">
+                                    <td colspan="9" class="col-empty">
                                         No members found. <?php echo !empty($_GET['search']) ? 'Try a different search term.' : ''; ?>
                                     </td>
                                 </tr>
@@ -295,14 +316,14 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
 
                 <!-- Pagination -->
                 <?php if (!empty($members)): ?>
-                    <nav aria-label="Table navigation" class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-3 md:space-y-0 p-4">
-                        <span class="text-sm font-normal text-gray-500 dark:text-gray-400">
+                    <nav class="pagination" aria-label="Table navigation">
+                        <span class="pagination-info">
                             Showing
-                            <span class="font-semibold text-gray-900 dark:text-white"><?php echo $pagination['showing_from']; ?>-<?php echo $pagination['showing_to']; ?></span>
+                            <span class="pagination-number"><?php echo $pagination['showing_from']; ?>-<?php echo $pagination['showing_to']; ?></span>
                             of
-                            <span class="font-semibold text-gray-900 dark:text-white"><?php echo $pagination['total_members']; ?></span>
+                            <span class="pagination-number"><?php echo $pagination['total_members']; ?></span>
                         </span>
-                        <ul class="inline-flex items-stretch -space-x-px">
+                        <ul class="pagination-list">
                             <!-- Previous Button -->
                             <li>
                                 <?php 
@@ -313,13 +334,12 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                 $prevUrl = 'MemberController.php?' . http_build_query($prevParams);
                                 ?>
                                 <?php if ($pagination['current_page'] > 1): ?>
-                                    <a href="<?php echo $prevUrl; ?>"
-                                        class="flex items-center justify-center h-full py-1.5 px-3 ml-0 text-gray-500 bg-white rounded-l-lg border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
-                                        <span class="material-symbols-outlined text-lg">chevron_left</span>
+                                    <a href="<?php echo $prevUrl; ?>" class="pagination-link pagination-prev">
+                                        <span class="material-symbols-outlined">chevron_left</span>
                                     </a>
                                 <?php else: ?>
-                                    <span class="flex items-center justify-center h-full py-1.5 px-3 ml-0 text-gray-300 bg-white rounded-l-lg border border-gray-300 cursor-not-allowed dark:bg-gray-800 dark:border-gray-700 dark:text-gray-600">
-                                        <span class="material-symbols-outlined text-lg">chevron_left</span>
+                                    <span class="pagination-link pagination-prev pagination-disabled">
+                                        <span class="material-symbols-outlined">chevron_left</span>
                                     </span>
                                 <?php endif; ?>
                             </li>
@@ -337,8 +357,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                 $pageUrl = 'MemberController.php?' . http_build_query($pageParams);
                             ?>
                                 <li>
-                                    <a href="<?php echo $pageUrl; ?>"
-                                        class="flex items-center justify-center text-sm py-2 px-3 leading-tight <?php echo $i == $pagination['current_page'] ? 'z-10 text-primary bg-red-50 border border-primary hover:bg-red-100' : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700'; ?> dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+                                    <a href="<?php echo $pageUrl; ?>" class="pagination-link <?php echo $i == $pagination['current_page'] ? 'pagination-active' : ''; ?>">
                                         <?php echo $i; ?>
                                     </a>
                                 </li>
@@ -354,13 +373,12 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                 $nextUrl = 'MemberController.php?' . http_build_query($nextParams);
                                 ?>
                                 <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
-                                    <a href="<?php echo $nextUrl; ?>"
-                                        class="flex items-center justify-center h-full py-1.5 px-3 leading-tight text-gray-500 bg-white rounded-r-lg border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
-                                        <span class="material-symbols-outlined text-lg">chevron_right</span>
+                                    <a href="<?php echo $nextUrl; ?>" class="pagination-link pagination-next">
+                                        <span class="material-symbols-outlined">chevron_right</span>
                                     </a>
                                 <?php else: ?>
-                                    <span class="flex items-center justify-center h-full py-1.5 px-3 leading-tight text-gray-300 bg-white rounded-r-lg border border-gray-300 cursor-not-allowed dark:bg-gray-800 dark:border-gray-700 dark:text-gray-600">
-                                        <span class="material-symbols-outlined text-lg">chevron_right</span>
+                                    <span class="pagination-link pagination-next pagination-disabled">
+                                        <span class="material-symbols-outlined">chevron_right</span>
                                     </span>
                                 <?php endif; ?>
                             </li>
@@ -381,13 +399,14 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        function openEditModal(userId, username, fullName, email, contactNo, gender) {
+        function openEditModal(userId, username, fullName, email, contactNo, gender, dateOfBirth) {
             $('#editUserId').val(userId);
             $('#editUsername').val(username);
             $('#editFullName').val(fullName);
             $('#editEmail').val(email);
             $('#editContactNo').val(contactNo);
             $('#editGender').val(gender);
+            $('#editDateOfBirth').val(dateOfBirth || '');
 
             $('#editModal').removeClass('hidden');
         }
@@ -396,65 +415,93 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
             $('#editModal').addClass('hidden');
         }
 
-
         function confirmDelete(userId, userName) {
-            if (confirm(`Are you sure you want to delete member: ${userName}?\n\nThis action cannot be undone.`)) {
-                document.getElementById('deleteUserId').value = userId;
-                document.getElementById('deleteForm').submit();
+            if (confirm('Are you sure you want to delete member: ' + userName + '?\n\nThis action cannot be undone.')) {
+                $('#deleteUserId').val(userId);
+                $('#deleteForm').submit();
             }
         }
+
+        function viewMemberImage(imageUrl, memberName) {
+            $('#viewImageSrc').attr('src', imageUrl);
+            $('#viewImageTitle').text(memberName + ' - Profile Photo');
+            $('#viewImageModal').removeClass('hidden');
+            // Prevent body scroll when modal is open
+            $('body').css('overflow', 'hidden');
+        }
+
+        function closeImageViewModal() {
+            $('#viewImageModal').addClass('hidden');
+            // Restore body scroll
+            $('body').css('overflow', 'auto');
+        }
+
+        // Close modal when clicking outside the image
+        $(document).on('click', '#viewImageModal .image-modal-overlay', function(e) {
+            if (e.target === this) {
+                closeImageViewModal();
+            }
+        });
+
+        // Close modal with Escape key
+        $(document).keydown(function(e) {
+            if (e.key === 'Escape' && !$('#viewImageModal').hasClass('hidden')) {
+                closeImageViewModal();
+            }
+        });
     </script>
 
     <!-- Edit Modal -->
-    <div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
-            <div class="mt-3">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">Edit Member</h3>
+    <div id="editModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-body">
+                <h3 class="modal-title">Edit Member</h3>
 
-                <form id="editForm" method="POST" action="MemberController.php" class="space-y-4">
+                <form id="editForm" method="POST" action="MemberController.php" class="modal-form">
                     <input type="hidden" name="action" value="update">
                     <input type="hidden" name="user_id" id="editUserId">
 
-                    <div>
-                        <label class="block text-sm font-medium">Username</label>
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
                         <input type="text" name="username" id="editUsername" readonly
-                            class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white bg-gray-100 dark:bg-gray-600 cursor-not-allowed"
+                            class="form-input form-input-readonly"
                             title="Username cannot be changed">
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium">Full Name</label>
-                        <input type="text" name="full_name" id="editFullName"
-                            class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="full_name" id="editFullName" class="form-input">
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium">Email</label>
-                        <input type="email" name="email" id="editEmail"
-                            class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" id="editEmail" class="form-input">
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium">Contact Number</label>
-                        <input type="text" name="contact_no" id="editContactNo"
-                            class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <div class="form-group">
+                        <label class="form-label">Contact Number</label>
+                        <input type="text" name="contact_no" id="editContactNo" class="form-input">
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium">Gender</label>
-                        <select name="gender" id="editGender"
-                            class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <div class="form-group">
+                        <label class="form-label">Gender</label>
+                        <select name="gender" id="editGender" class="form-input">
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
                             <option value="Other">Other</option>
                         </select>
                     </div>
 
-                    <div class="flex justify-end space-x-3 pt-4">
-                        <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-300 rounded-md">
+                    <div class="form-group">
+                        <label class="form-label">Date of Birth</label>
+                        <input type="date" name="DateOfBirth" id="editDateOfBirth" class="form-input">
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" onclick="closeEditModal()" class="btn btn-secondary">
                             Cancel
                         </button>
-                        <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md">
+                        <button type="submit" class="btn btn-primary">
                             Save Changes
                         </button>
                     </div>
@@ -463,6 +510,20 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
         </div>
     </div>
 
+    <!-- Image Viewer Modal -->
+    <div id="viewImageModal" class="image-modal-overlay hidden">
+        <div class="image-modal-container">
+            <div class="image-modal-header">
+                <h3 id="viewImageTitle" class="image-modal-title">Profile Photo</h3>
+                <button class="image-modal-close" onclick="closeImageViewModal()" title="Close">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="image-modal-body">
+                <img id="viewImageSrc" src="" alt="Member profile photo" class="image-modal-image">
+            </div>
+        </div>
+    </div>
 
 </body>
 
