@@ -35,7 +35,7 @@ CREATE TABLE voucher (
     description VARCHAR(255),
     code VARCHAR(50) NOT NULL UNIQUE,
     type ENUM('percent', 'fixed', 'freeshipping') NOT NULL,
-    diacount_value DECIMAL(10,2) NOT NULL,
+    discount_value DECIMAL(10,2) NOT NULL,
     min_spend DECIMAL(10,2) NOT NULL DEFAULT 0,
     max_discount DECIMAL(10,2),
     start_date DATE NOT NULL,
@@ -82,7 +82,6 @@ CREATE TABLE voucher_usage (
     user_id INT NOT NULL,
     voucher_id INT NOT NULL,
     used_at DATETIME NOT NULL,
-    status ENUM('used', 'cancelled') NOT NULL DEFAULT 'used',
     
     PRIMARY KEY (user_id, voucher_id), 
     FOREIGN KEY (user_id) REFERENCES users(user_id),
