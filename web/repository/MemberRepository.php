@@ -97,6 +97,8 @@ class MembershipRepository
                     contact_no,
                     gender,
                     profile_photo,
+                    status,
+                    DateOfBirth,
                     created_at
                 FROM users
                 WHERE role = 'member'";
@@ -256,6 +258,26 @@ class MembershipRepository
         }
 
         return ['exists' => false];
+    }
+
+    public function updateMemberStatus($userId, $status): bool
+    {
+        try {
+            // Validate status
+            $allowedStatuses = ['active', 'inactive', 'banned'];
+            if (!in_array($status, $allowedStatuses)) {
+                throw new Exception("Invalid status value");
+            }
+
+            $sql = "UPDATE users SET status = ? WHERE user_id = ? AND role = 'member'";
+            $stmt = $this->db->prepare($sql);
+            $result = $stmt->execute([$status, $userId]);
+
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log("Database error in updateMemberStatus: " . $e->getMessage());
+            throw new Exception("Error updating member status");
+        }
     }
 
     public function deleteMember($userId): bool

@@ -163,6 +163,14 @@ class MembershipServices
     }
 
     /**
+     * Update member status
+     */
+    public function updateMemberStatus($userId, $status): bool
+    {
+        return $this->membershipRepository->updateMemberStatus($userId, $status);
+    }
+
+    /**
      * Delete member
      */
     public function deleteMember($userId): bool

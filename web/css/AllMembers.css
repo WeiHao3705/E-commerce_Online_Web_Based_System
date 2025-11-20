@@ -75,8 +75,11 @@ body.dark {
 }
 
 .page-content {
-    max-width: 80rem;
+    max-width: 1650px;
     margin: 0 auto;
+    padding: 0;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 /* Page Header */
@@ -175,6 +178,10 @@ body.dark {
     border-radius: 0.75rem;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     overflow: hidden;
+    width: 100%;
+    max-width: 1650px;
+    margin: 0 auto;
+    box-sizing: border-box;
 }
 
 .dark .content-card {
@@ -362,15 +369,20 @@ body.dark {
 
 /* Table */
 .table-wrapper {
-    overflow-x: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    width: 100%;
+    max-width: 100%;
 }
 
 .members-table {
     width: 100%;
+    max-width: 100%;
     font-size: 0.875rem;
     text-align: left;
     color: var(--gray-500);
     border-collapse: collapse;
+    table-layout: fixed;
 }
 
 .dark .members-table {
@@ -390,12 +402,17 @@ body.dark {
 }
 
 .members-table th {
-    padding: 0.75rem 1.5rem;
+    padding: 0.75rem 0.75rem;
     font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .members-table td {
-    padding: 1rem 1.5rem;
+    padding: 1rem 0.75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-wrap: break-word;
 }
 
 .members-table tbody tr {
@@ -437,14 +454,71 @@ body.dark {
 .col-username {
     font-weight: 500;
     color: var(--gray-900);
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.dark .col-username {
-    color: white;
+.col-photo {
+    width: 70px;
+    min-width: 70px;
+    max-width: 70px;
+}
+
+.col-username {
+    width: 12%;
+    min-width: 100px;
+}
+
+.col-name {
+    width: 12%;
+    min-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.col-email {
+    width: 15%;
+    min-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.col-contact {
+    width: 10%;
+    min-width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.col-gender {
+    width: 8%;
+    min-width: 80px;
+}
+
+.col-dob {
+    width: 10%;
+    min-width: 100px;
+}
+
+.col-date {
+    width: 10%;
+    min-width: 100px;
+}
+
+.col-status {
+    width: 8%;
+    min-width: 90px;
+    text-align: center;
 }
 
 .col-actions {
+    width: 15%;
+    min-width: 180px;
     text-align: right;
     display: flex;
     justify-content: flex-end;
@@ -452,6 +526,11 @@ body.dark {
     gap: 0.5rem;
     white-space: nowrap;
 }
+
+.dark .col-username {
+    color: white;
+}
+
 
 /* Sort Links */
 .sort-link {
@@ -494,7 +573,8 @@ body.dark {
     flex-shrink: 0;
 }
 
-.action-btn .material-symbols-outlined {
+.action-btn .material-symbols-outlined,
+.action-btn i {
     font-size: 18px;
     line-height: 1;
 }
@@ -515,6 +595,63 @@ body.dark {
 .delete-btn:hover {
     background-color: var(--red-700);
     transform: scale(1.05);
+}
+
+.ban-btn {
+    background-color: #dc2626;
+}
+
+.ban-btn:hover {
+    background-color: #b91c1c;
+    transform: scale(1.05);
+}
+
+.inactive-btn {
+    background-color: #f59e0b;
+}
+
+.inactive-btn:hover {
+    background-color: #d97706;
+    transform: scale(1.05);
+}
+
+.activate-btn {
+    background-color: #10b981;
+}
+
+.activate-btn:hover {
+    background-color: #059669;
+    transform: scale(1.05);
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-active {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.status-inactive {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.status-banned {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.col-status {
+    text-align: center;
 }
 
 /* Profile Photo */

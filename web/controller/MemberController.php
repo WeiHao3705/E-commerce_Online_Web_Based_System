@@ -209,6 +209,51 @@ class MemberController
         }
     }
 
+    public function updateMemberStatus()
+    {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                // Validate required fields
+                if (!isset($_POST['user_id']) || empty($_POST['user_id'])) {
+                    throw new Exception("User ID is required");
+                }
+
+                if (!isset($_POST['status']) || empty($_POST['status'])) {
+                    throw new Exception("Status is required");
+                }
+
+                $userId = (int)$_POST['user_id'];
+                $status = $_POST['status'];
+
+                // Validate status
+                $allowedStatuses = ['active', 'inactive', 'banned'];
+                if (!in_array($status, $allowedStatuses)) {
+                    throw new Exception("Invalid status value");
+                }
+
+                $result = $this->membershipServices->updateMemberStatus($userId, $status);
+
+                if ($result) {
+                    $statusLabels = [
+                        'active' => 'activated',
+                        'inactive' => 'set to inactive',
+                        'banned' => 'banned'
+                    ];
+                    $_SESSION['success_message'] = "Member " . $statusLabels[$status] . " successfully!";
+                } else {
+                    throw new Exception("Failed to update member status. Member may not exist or may not be a regular member.");
+                }
+
+                header('Location: ../controller/MemberController.php?action=showAll');
+                exit;
+            }
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
+            header('Location: ../controller/MemberController.php?action=showAll');
+            exit;
+        }
+    }
+
     public function deleteMember()
     {
         try {
@@ -250,6 +295,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $controller->registerMember();
     } elseif ($action === 'update') {
         $controller->updateMember();
+    } elseif ($action === 'updateStatus') {
+        $controller->updateMemberStatus();
     } elseif ($action === 'delete') {
         $controller->deleteMember();
     }elseif ($action === 'login') {

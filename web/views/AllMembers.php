@@ -241,6 +241,12 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                         <?php echo getSortArrow('created_at', $currentSortBy, $currentSortOrder); ?>
                                     </a>
                                 </th>
+                                <th class="col-sortable">
+                                    <a href="<?php echo getSortUrl('status', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
+                                        <span>Status</span>
+                                        <?php echo getSortArrow('status', $currentSortBy, $currentSortOrder); ?>
+                                    </a>
+                                </th>
                                 <th class="col-actions">
                                     <span class="sr-only">Actions</span>
                                 </th>
@@ -286,6 +292,28 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                             echo $date->format('Y-m-d');
                                             ?>
                                         </td>
+                                        <td class="col-status">
+                                            <?php
+                                            $status = $member['status'] ?? 'active';
+                                            $statusClass = '';
+                                            $statusText = ucfirst($status);
+                                            
+                                            switch($status) {
+                                                case 'active':
+                                                    $statusClass = 'status-badge status-active';
+                                                    break;
+                                                case 'inactive':
+                                                    $statusClass = 'status-badge status-inactive';
+                                                    break;
+                                                case 'banned':
+                                                    $statusClass = 'status-badge status-banned';
+                                                    break;
+                                                default:
+                                                    $statusClass = 'status-badge status-active';
+                                            }
+                                            ?>
+                                            <span class="<?php echo $statusClass; ?>"><?php echo htmlspecialchars($statusText); ?></span>
+                                        </td>
                                         <td class="col-actions">
                                             <button
                                                 onclick="openEditModal(<?php echo $member['user_id']; ?>, '<?php echo htmlspecialchars($member['username'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['email'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['contact_no'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['gender'], ENT_QUOTES); ?>', '<?php echo !empty($member['DateOfBirth']) ? htmlspecialchars($member['DateOfBirth'], ENT_QUOTES) : ''; ?>')"
@@ -293,6 +321,36 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                                 title="Edit member">
                                                 <span class="material-symbols-outlined">edit</span>
                                             </button>
+
+                                            <?php
+                                            $currentStatus = $member['status'] ?? 'active';
+                                            ?>
+                                            <?php if ($currentStatus !== 'banned'): ?>
+                                                <button
+                                                    onclick="confirmStatusChange(<?php echo $member['user_id']; ?>, '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>', 'banned')"
+                                                    class="action-btn ban-btn"
+                                                    title="Ban member">
+                                                    <i class="fas fa-ban"></i>
+                                                </button>
+                                            <?php endif; ?>
+                                            
+                                            <?php if ($currentStatus !== 'inactive'): ?>
+                                                <button
+                                                    onclick="confirmStatusChange(<?php echo $member['user_id']; ?>, '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>', 'inactive')"
+                                                    class="action-btn inactive-btn"
+                                                    title="Set to inactive">
+                                                    <i class="fas fa-pause-circle"></i>
+                                                </button>
+                                            <?php endif; ?>
+                                            
+                                            <?php if ($currentStatus !== 'active'): ?>
+                                                <button
+                                                    onclick="confirmStatusChange(<?php echo $member['user_id']; ?>, '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>', 'active')"
+                                                    class="action-btn activate-btn"
+                                                    title="Activate member">
+                                                    <i class="fas fa-check-circle"></i>
+                                                </button>
+                                            <?php endif; ?>
 
                                             <button
                                                 onclick="confirmDelete(<?php echo $member['user_id']; ?>, '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>')"
@@ -305,7 +363,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr class="table-row table-row-empty">
-                                    <td colspan="9" class="col-empty">
+                                    <td colspan="10" class="col-empty">
                                         No members found. <?php echo !empty($_GET['search']) ? 'Try a different search term.' : ''; ?>
                                     </td>
                                 </tr>
@@ -389,6 +447,13 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
         </div>
     </div>
 
+    <!-- Status Change Form (Hidden) -->
+    <form id="statusForm" method="POST" action="MemberController.php" style="display: none;">
+        <input type="hidden" name="action" value="updateStatus">
+        <input type="hidden" name="user_id" id="statusUserId">
+        <input type="hidden" name="status" id="statusValue">
+    </form>
+
     <!-- Delete Confirmation Modal (Hidden Form) -->
     <form id="deleteForm" method="POST" action="MemberController.php" style="display: none;">
         <input type="hidden" name="action" value="delete">
@@ -413,6 +478,21 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
 
         function closeEditModal() {
             $('#editModal').addClass('hidden');
+        }
+
+        function confirmStatusChange(userId, userName, newStatus) {
+            var statusLabels = {
+                'active': 'activate',
+                'inactive': 'set to inactive',
+                'banned': 'ban'
+            };
+            var action = statusLabels[newStatus] || newStatus;
+            
+            if (confirm('Are you sure you want to ' + action + ' member: ' + userName + '?')) {
+                $('#statusUserId').val(userId);
+                $('#statusValue').val(newStatus);
+                $('#statusForm').submit();
+            }
         }
 
         function confirmDelete(userId, userName) {

@@ -17,8 +17,10 @@ $prefix = $is_in_views ? '../' : '';
                 </a>
             </div>
             
-            <!-- Navigation Menu -->
-            <ul class="nav-menu" id="navMenu">
+            <!-- Right Side: Navigation Menu and Cart -->
+            <div class="nav-right">
+                <!-- Navigation Menu -->
+                <ul class="nav-menu" id="navMenu">
                 <li><a href="<?php echo $prefix; ?>index.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>">Home</a></li>
                 <li><a href="<?php echo $prefix; ?>products.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'products.php' ? 'active' : ''; ?>">Products</a></li>
                 <li><a href="<?php echo $prefix; ?>about.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'about.php' ? 'active' : ''; ?>">About</a></li>
@@ -26,10 +28,22 @@ $prefix = $is_in_views ? '../' : '';
                     <?php
                     if (session_status() === PHP_SESSION_NONE) session_start();
                     $isGuest = empty($_SESSION['user']);
+                    $isAdmin = !$isGuest && isset($_SESSION['user']['role']) && $_SESSION['user']['role'] === 'admin';
                     if ($isGuest):
                     ?>
                         <li><a href="<?php echo $prefix; ?>account.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'account.php' ? 'active' : ''; ?>">Login</a></li>
                     <?php else: ?>
+                        <?php if ($isAdmin): ?>
+                        <li class="dropdown">
+                            <a href="#" class="<?php echo (basename($_SERVER['PHP_SELF']) == 'AllMembers.php' || basename($_SERVER['PHP_SELF']) == 'VoucherManagement.php') ? 'active' : ''; ?>">
+                                Admin <i class="fas fa-caret-down"></i>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a href="<?php echo $prefix; ?>controller/MemberController.php?action=showAll"><i class="fas fa-users"></i> All Members</a></li>
+                                <li><a href="<?php echo $prefix; ?>controller/VoucherController.php?action=showAll"><i class="fas fa-ticket-alt"></i> Voucher Management</a></li>
+                            </ul>
+                        </li>
+                        <?php endif; ?>
                         <li class="dropdown">
                             <a href="<?php echo $prefix; ?>account.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'account.php' ? 'active' : ''; ?>">
                                 Account <i class="fas fa-caret-down"></i>
@@ -44,16 +58,17 @@ $prefix = $is_in_views ? '../' : '';
                             </ul>
                         </li>
                     <?php endif; ?>
-            </ul>
-            
-            <!-- Cart Icon -->
-            <div class="nav-icons">
-                <a href="<?php echo $prefix; ?>cart.php" class="cart-icon">
-                    <i class="fas fa-shopping-bag"></i>
-                    <span class="cart-count" id="cartCount">0</span>
-                </a>
-                <div class="menu-toggle" id="menuToggle">
-                    <i class="fas fa-bars"></i>
+                </ul>
+                
+                <!-- Cart Icon -->
+                <div class="nav-icons">
+                    <a href="<?php echo $prefix; ?>cart.php" class="cart-icon">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span class="cart-count" id="cartCount">0</span>
+                    </a>
+                    <div class="menu-toggle" id="menuToggle">
+                        <i class="fas fa-bars"></i>
+                    </div>
                 </div>
             </div>
         </div>
@@ -74,11 +89,19 @@ $prefix = $is_in_views ? '../' : '';
         display: flex;
         justify-content: space-between;
         align-items: center;
+        width: 100%;
+        gap: 20px;
+    }
+    
+    .logo {
+        flex-shrink: 0;
+        margin-right: auto;
     }
     
     .logo img {
         height: 40px;
         width: auto;
+        display: block;
     }
     
     .logo a {
@@ -89,12 +112,24 @@ $prefix = $is_in_views ? '../' : '';
         text-decoration: none;
     }
     
+    .nav-right {
+        display: flex;
+        align-items: center;
+        gap: 30px;
+        margin-left: auto;
+    }
+    
     .nav-menu {
         display: flex;
         list-style: none;
         gap: 35px;
         margin: 0;
         padding: 0;
+        align-items: center;
+    }
+    
+    .nav-menu li {
+        position: relative;
     }
     
     .nav-menu li a {
@@ -104,6 +139,8 @@ $prefix = $is_in_views ? '../' : '';
         font-weight: 500;
         transition: color 0.3s ease;
         position: relative;
+        display: inline-block;
+        padding: 5px 0;
     }
     
     .nav-menu li a:hover,
@@ -114,7 +151,7 @@ $prefix = $is_in_views ? '../' : '';
     .nav-menu li a.active::after {
         content: '';
         position: absolute;
-        bottom: -5px;
+        bottom: 0;
         left: 0;
         width: 100%;
         height: 2px;
@@ -132,6 +169,7 @@ $prefix = $is_in_views ? '../' : '';
         color: #333;
         font-size: 20px;
         transition: color 0.3s ease;
+        text-decoration: none;
     }
     
     .cart-icon:hover {
@@ -150,6 +188,7 @@ $prefix = $is_in_views ? '../' : '';
         border-radius: 50%;
         min-width: 18px;
         text-align: center;
+        line-height: 1.2;
     }
     
     .menu-toggle {
@@ -245,7 +284,7 @@ $prefix = $is_in_views ? '../' : '';
             background-color: #fff;
             width: 100%;
             text-align: center;
-            transition: 0.3s;
+            transition: left 0.3s ease;
             box-shadow: 0 10px 27px rgba(0,0,0,0.05);
             padding: 20px 0;
             gap: 0;
@@ -253,6 +292,7 @@ $prefix = $is_in_views ? '../' : '';
         
         .nav-menu li {
             padding: 15px 0;
+            width: 100%;
         }
         
         .nav-menu.active {
@@ -288,6 +328,10 @@ $prefix = $is_in_views ? '../' : '';
         .dropdown.active > a i {
             transform: rotate(180deg);
         }
+        
+        .nav-right {
+            gap: 15px;
+        }
     }
 </style>
 
@@ -295,15 +339,22 @@ $prefix = $is_in_views ? '../' : '';
 <script>
     $(document).ready(function() {
         // Mobile menu toggle
-        $('#menuToggle').click(function() {
+        $('#menuToggle').on('click', function() {
             $('#navMenu').toggleClass('active');
         });
         
         // Mobile dropdown toggle
-        $('.dropdown > a').click(function(e) {
+        $('.dropdown > a').on('click', function(e) {
             if ($(window).width() <= 768) {
                 e.preventDefault();
                 $(this).parent().toggleClass('active');
+            }
+        });
+        
+        // Close mobile menu when clicking outside
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.nav-wrapper').length) {
+                $('#navMenu').removeClass('active');
             }
         });
         
