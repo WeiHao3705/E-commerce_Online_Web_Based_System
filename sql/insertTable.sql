@@ -40,7 +40,6 @@ CREATE TABLE voucher (
     max_discount DECIMAL(10,2),
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
-    membership_required BOOLEAN NOT NULL,
     status ENUM('active', 'inactive', 'expired') DEFAULT 'active'
 );
 
