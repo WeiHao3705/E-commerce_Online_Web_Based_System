@@ -3,6 +3,20 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// // Check if user is logged in
+// if (!isset($_SESSION['user'])) {
+//     // Not logged in, redirect to login page
+//     header('Location: ../views/LoginForm.php');
+//     exit;
+// }
+
+// // Check if user role is admin
+// if ($_SESSION['user']['role'] !== 'admin') {
+//     // Logged in but not admin, redirect to 403 Forbidden page or homepage
+//     header('Location: ../views/403.php');
+//     exit;
+// }
+
 $prefix = '../';
 
 // Calculate base path for images (absolute from document root)
@@ -16,16 +30,6 @@ $docRoot = $_SERVER['DOCUMENT_ROOT'];
 $relativePath = str_replace($docRoot, '', $webRootDir);
 $imageBasePath = str_replace('\\', '/', $relativePath) . '/'; // Normalize slashes
 
-// if (!isset($_SESSION['user'])) {
-//     header('Location: ../../views/LoginForm.php');
-//     exit;
-// }
-
-// if ($_SESSION['user']['role'] !== 'admin') {
-//     header('Location: ../../views/403.php'); // or redirect to home
-//     exit;
-// }
-
 $pageTitle = 'All Members - Admin Dashboard';
 
 // Get current sort parameters
@@ -33,19 +37,20 @@ $currentSortBy = isset($currentSort['sortBy']) ? $currentSort['sortBy'] : 'creat
 $currentSortOrder = isset($currentSort['sortOrder']) ? $currentSort['sortOrder'] : 'DESC';
 
 // Helper function to generate sort URL
-function getSortUrl($column, $currentSortBy, $currentSortOrder) {
+function getSortUrl($column, $currentSortBy, $currentSortOrder)
+{
     $params = ['action' => 'showAll'];
-    
+
     // Preserve search parameter
     if (!empty($_GET['search'])) {
         $params['search'] = $_GET['search'];
     }
-    
+
     // Preserve page parameter
     if (!empty($_GET['page'])) {
         $params['page'] = $_GET['page'];
     }
-    
+
     // Determine sort order
     if ($currentSortBy === $column && $currentSortOrder === 'ASC') {
         $params['sortBy'] = $column;
@@ -54,12 +59,13 @@ function getSortUrl($column, $currentSortBy, $currentSortOrder) {
         $params['sortBy'] = $column;
         $params['sortOrder'] = 'ASC';
     }
-    
+
     return 'MemberController.php?' . http_build_query($params);
 }
 
 // Helper function to get sort arrow icon
-function getSortArrow($column, $currentSortBy, $currentSortOrder) {
+function getSortArrow($column, $currentSortBy, $currentSortOrder)
+{
     if ($currentSortBy !== $column) {
         // No sort - show both arrows (neutral)
         return '<span class="material-symbols-outlined sort-icon-neutral">unfold_more</span>';
@@ -74,7 +80,8 @@ function getSortArrow($column, $currentSortBy, $currentSortOrder) {
 }
 
 // Helper function to get profile photo URL
-function getProfilePhotoUrl($photoPath, $imageBasePath) {
+function getProfilePhotoUrl($photoPath, $imageBasePath)
+{
     // Default image if no photo path
     if (empty($photoPath) || $photoPath === null || trim($photoPath) === '') {
         return $imageBasePath . 'images/defaultUserImage.jpg';
@@ -84,15 +91,15 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
     if (strpos($photoPath, 'http://') === 0 || strpos($photoPath, 'https://') === 0) {
         return $photoPath;
     }
-    
+
     // Remove 'web/' prefix if present
     if (strpos($photoPath, 'web/') === 0) {
         $photoPath = substr($photoPath, 4);
     }
-    
+
     // Remove leading slash if present
     $photoPath = ltrim($photoPath, '/');
-    
+
     return $imageBasePath . $photoPath;
 }
 ?>
@@ -261,13 +268,13 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                             $photoUrl = getProfilePhotoUrl($member['profile_photo'] ?? '', $imageBasePath);
                                             $defaultPhotoUrl = $imageBasePath . 'images/defaultUserImage.jpg';
                                             ?>
-                                            <img src="<?php echo htmlspecialchars($photoUrl); ?>" 
-                                                 alt="Profile photo"
-                                                 class="member-profile-photo clickable-image"
-                                                 onclick="viewMemberImage('<?php echo htmlspecialchars($photoUrl, ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>')"
-                                                 onerror="this.onerror=null; this.src='<?php echo htmlspecialchars($defaultPhotoUrl); ?>';"
-                                                 style="cursor: pointer;"
-                                                 title="Click to view full size">
+                                            <img src="<?php echo htmlspecialchars($photoUrl); ?>"
+                                                alt="Profile photo"
+                                                class="member-profile-photo clickable-image"
+                                                onclick="viewMemberImage('<?php echo htmlspecialchars($photoUrl, ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>')"
+                                                onerror="this.onerror=null; this.src='<?php echo htmlspecialchars($defaultPhotoUrl); ?>';"
+                                                style="cursor: pointer;"
+                                                title="Click to view full size">
                                         </td>
                                         <td class="col-username">
                                             <?php echo htmlspecialchars($member['username']); ?>
@@ -297,8 +304,8 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                             $status = $member['status'] ?? 'active';
                                             $statusClass = '';
                                             $statusText = ucfirst($status);
-                                            
-                                            switch($status) {
+
+                                            switch ($status) {
                                                 case 'active':
                                                     $statusClass = 'status-badge status-active';
                                                     break;
@@ -333,7 +340,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                                     <i class="fas fa-ban"></i>
                                                 </button>
                                             <?php endif; ?>
-                                            
+
                                             <?php if ($currentStatus !== 'inactive'): ?>
                                                 <button
                                                     onclick="confirmStatusChange(<?php echo $member['user_id']; ?>, '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>', 'inactive')"
@@ -342,7 +349,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                                     <i class="fas fa-pause-circle"></i>
                                                 </button>
                                             <?php endif; ?>
-                                            
+
                                             <?php if ($currentStatus !== 'active'): ?>
                                                 <button
                                                     onclick="confirmStatusChange(<?php echo $member['user_id']; ?>, '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>', 'active')"
@@ -384,7 +391,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                         <ul class="pagination-list">
                             <!-- Previous Button -->
                             <li>
-                                <?php 
+                                <?php
                                 $prevParams = ['action' => 'showAll', 'page' => $pagination['current_page'] - 1];
                                 if (!empty($_GET['search'])) $prevParams['search'] = $_GET['search'];
                                 if (!empty($_GET['sortBy'])) $prevParams['sortBy'] = $_GET['sortBy'];
@@ -423,7 +430,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
 
                             <!-- Next Button -->
                             <li>
-                                <?php 
+                                <?php
                                 $nextParams = ['action' => 'showAll', 'page' => $pagination['current_page'] + 1];
                                 if (!empty($_GET['search'])) $nextParams['search'] = $_GET['search'];
                                 if (!empty($_GET['sortBy'])) $nextParams['sortBy'] = $_GET['sortBy'];
@@ -487,7 +494,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                 'banned': 'ban'
             };
             var action = statusLabels[newStatus] || newStatus;
-            
+
             if (confirm('Are you sure you want to ' + action + ' member: ' + userName + '?')) {
                 $('#statusUserId').val(userId);
                 $('#statusValue').val(newStatus);
