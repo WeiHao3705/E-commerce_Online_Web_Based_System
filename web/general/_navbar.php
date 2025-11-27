@@ -60,6 +60,18 @@ $prefix = $is_in_views ? '../' : '';
                     <?php endif; ?>
                 </ul>
 
+                <!-- Search Bar -->
+                <div class="search-container">
+                    <form class="search-form" action="<?php echo $prefix; ?>search.php" method="GET">
+                        <div class="search-input-group">
+                            <input type="text" name="q" class="search-input" placeholder="Search products..." autocomplete="off" value="<?php echo isset($_GET['q']) ? htmlspecialchars($_GET['q']) : ''; ?>">
+                            <button type="submit" class="search-btn">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
                 <!-- Cart Icon -->
                 <div class="nav-icons">
                     <a href="<?php echo $prefix; ?>views/Cart_Order.php/cart.php" class="cart-icon">
@@ -172,6 +184,67 @@ $prefix = $is_in_views ? '../' : '';
         width: 100%;
         height: 2px;
         background-color: #FF5252;
+    }
+
+    /* Search Bar Styles */
+    .search-container {
+        display: flex;
+        align-items: center;
+        margin: 0 20px;
+    }
+
+    .search-form {
+        width: 100%;
+    }
+
+    .search-input-group {
+        display: flex;
+        align-items: center;
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 25px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        max-width: 300px;
+    }
+
+    .search-input-group:focus-within {
+        border-color: #FF5252;
+        box-shadow: 0 0 0 3px rgba(255, 82, 82, 0.1);
+    }
+
+    .search-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        padding: 10px 15px;
+        font-size: 14px;
+        background: transparent;
+        color: #333;
+    }
+
+    .search-input::placeholder {
+        color: #999;
+    }
+
+    .search-btn {
+        background: #FF5252;
+        border: none;
+        color: white;
+        padding: 10px 15px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .search-btn:hover {
+        background: #e04848;
+    }
+
+    .search-btn i {
+        font-size: 14px;
     }
 
     .nav-icons {
@@ -535,6 +608,40 @@ $prefix = $is_in_views ? '../' : '';
         .nav-right {
             flex: 1;
             justify-content: flex-end;
+        }
+    }
+    
+    /* Show compact search on medium screens */
+    @media (max-width: 1200px) {
+        .search-input-group {
+            max-width: 250px;
+        }
+    }
+    
+    @media (max-width: 950px) {
+        .search-container {
+            order: -1;
+            margin: 0 10px 0 0;
+        }
+        
+        .search-input-group {
+            max-width: 180px;
+        }
+        
+        .search-input {
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+        
+        .search-btn {
+            padding: 8px 12px;
+        }
+    }
+    
+    /* Hide search on very small screens only */
+    @media (max-width: 480px) {
+        .search-container {
+            display: none;
         }
     }
     

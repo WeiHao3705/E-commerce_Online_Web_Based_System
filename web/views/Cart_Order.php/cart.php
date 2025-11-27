@@ -34,18 +34,27 @@ include '../../general/_navbar.php';
         ]
     ];
     
+    // calculate initial values from the cart items
+    // array_column() gets the 'quantity' values from each item
+    // array_sum() adds them all together
     $cartItemCount = array_sum(array_column($cartItems, 'quantity'));
+    
+    // calculate subtotal by looping through each item
     $subtotal = 0;
     foreach ($cartItems as $item) {
         $subtotal += $item['price'] * $item['quantity'];
     }
+    
+    // set fixed values for shipping and tax
     $shippingFee = 15.00;
     $tax = $subtotal * 0.06; // 6% tax
     $grandTotal = $subtotal + $shippingFee + $tax;
     ?>
 
-    <p class="cart-count-message">
-        You have <strong><?= $cartItemCount ?></strong> item<?= $cartItemCount !== 1 ? 's' : '' ?> in your shopping cart.
+    <!-- create dynamic cart message with IDs for JavaScript control -->
+    <!-- The span elements allow JavaScript to update specific parts -->
+    <p class="cart-count-message" id="cart-message">
+        You have <strong><span id="cart-item-count"><?= $cartItemCount ?></span></strong> item<span id="item-plural"><?= $cartItemCount !== 1 ? 's' : '' ?></span> in your shopping cart.
     </p>
 
     <div class="cart-layout">
@@ -153,77 +162,6 @@ include '../../general/_navbar.php';
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-<script>
-    $(document).ready(function() {
-        // Select all checkbox functionality
-        $('#select-all').change(function() {
-            $('.item-checkbox').prop('checked', this.checked);
-        });
-        
-        // Individual checkbox functionality
-        $('.item-checkbox').change(function() {
-            if (!this.checked) {
-                $('#select-all').prop('checked', false);
-            } else if ($('.item-checkbox:checked').length === $('.item-checkbox').length) {
-                $('#select-all').prop('checked', true);
-            }
-        });
-        
-        // Quantity controls
-        $('.plus-btn').click(function() {
-            var display = $(this).siblings('.qty-display');
-            var currentVal = parseInt(display.text());
-            if (currentVal < 99) {
-                display.text(currentVal + 1);
-                updateItemTotal($(this).closest('tr'));
-            }
-        });
-        
-        $('.minus-btn').click(function() {
-            var display = $(this).siblings('.qty-display');
-            var currentVal = parseInt(display.text());
-            if (currentVal > 1) {
-                display.text(currentVal - 1);
-                updateItemTotal($(this).closest('tr'));
-            } else if (currentVal === 2) {
-                // Ask user whether they wanna remove the item when quantity hit the min value "1"
-                if(confirm("Are you sure want to remove the item from your cart?")) {
-                    $(this).closest('tr').remove();
-                    updateOrderSummary();
-                }
-            }
-        });
-        
-        // Remove item
-        $('.remove-btn').click(function() {
-            if (confirm('Are you sure you want to remove this item?')) {
-                $(this).closest('tr').remove();
-                updateOrderSummary();
-            }
-        });
-        
-        // Apply promo code
-        $('.apply-btn').click(function() {
-            var promoCode = $('#promo-code').val();
-            if (promoCode) {
-                alert('Promo code functionality would be implemented here');
-            }
-        });
-    });
-    
-    function updateItemTotal(row) {
-        var price = parseFloat(row.find('.item-price').text().replace('RM ', '').replace(',', ''));
-        var quantity = parseInt(row.find('.qty-display').text());
-        var total = price * quantity;
-        row.find('.item-total').text('RM ' + total.toFixed(2));
-        updateOrderSummary();
-    }
-    
-    function updateOrderSummary() {
-        // This would calculate and update the order summary
-        // Implementation depends on your specific requirements
-        console.log('Order summary update would be implemented here');
-    }
-</script>
+<script src="../../js/cart.js"></script>
 
 <?php include '../../general/_footer.php'; ?>
