@@ -56,17 +56,6 @@ CREATE TABLE address (
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
--- Membership table (depends on users)
-CREATE TABLE membership (
-    membership_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    status ENUM('active', 'inactive') DEFAULT 'active',
-    
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
-);
-
 -- Shopping cart table (depends on users)
 CREATE TABLE shopping_cart (
     cart_id INT(20) AUTO_INCREMENT PRIMARY KEY,

@@ -3,12 +3,12 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$prefix = '../';
+$prefix = '../../';
 
 // Calculate base path for images (absolute from document root)
-// Since this file is in web/views/, go up one level to get web root
-$currentFileDir = dirname(__FILE__); // Gets web/views/
-$webRootDir = dirname($currentFileDir); // Gets web/
+// Since this file is in web/views/member_management/, go up two levels to get web root
+$currentFileDir = dirname(__FILE__); // Gets web/views/member_management/
+$webRootDir = dirname(dirname($currentFileDir)); // Gets web/
 $projectRoot = dirname($webRootDir); // Gets project root
 
 // Get the relative path from document root
@@ -185,7 +185,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                             </form>
                         </div>
                         <div class="actions-section">
-                            <a href="../views/MemberRegisterForm.php?return_to=admin" class="btn btn-primary btn-add">
+                            <a href="MemberRegisterForm.php?return_to=admin" class="btn btn-primary btn-add">
                                 <span class="material-symbols-outlined">add</span>
                                 Add new member
                             </a>

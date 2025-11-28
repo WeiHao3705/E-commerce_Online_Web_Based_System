@@ -8,7 +8,7 @@ $base_path = '/E-commerce_Online_Web_Based_System/web/';
 
 $current_dir = dirname($_SERVER['PHP_SELF']);
 $is_in_views = (strpos($current_dir, '/views') !== false);
-$prefix = $is_in_views ? '../' : '';
+$prefix = $is_in_views ? '../../' : '';
 
 $pageTitle = 'Member Registration';
 

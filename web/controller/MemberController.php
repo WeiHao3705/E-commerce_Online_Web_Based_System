@@ -98,7 +98,7 @@ class MemberController
                     if ($returnTo === 'admin') {
                         header('Location: ../controller/MemberController.php?action=showAll');
                     } else {
-                        header('Location: ../views/MemberRegisterForm.php');
+                        header('Location: ../views/member_management/MemberRegisterForm.php');
                     }
                     exit;
                 }
@@ -130,9 +130,9 @@ class MemberController
             $returnTo = isset($_POST['return_to']) ? $_POST['return_to'] : (isset($_GET['return_to']) ? $_GET['return_to'] : '');
             
             if ($returnTo === 'admin') {
-                header('Location: ../views/MemberRegisterForm.php?return_to=admin');
+                header('Location: ../views/member_management/MemberRegisterForm.php?return_to=admin');
             } else {
-                header('Location: ../views/MemberRegisterForm.php');
+                header('Location: ../views/member_management/MemberRegisterForm.php');
             }
             exit;
         }
@@ -166,11 +166,11 @@ class MemberController
             $currentSort = ['sortBy' => $sortBy, 'sortOrder' => $sortOrder];
 
             // Include the view
-            require_once __DIR__ . '/../views/AllMembers.php';
+            require_once __DIR__ . '/../views/member_management/AllMembers.php';
         } catch (Exception $e) {
             $_SESSION['error_message'] = $e->getMessage();
             // Redirect to error page or show error
-            require_once __DIR__ . '/../views/AllMembers.php';
+            require_once __DIR__ . '/../views/member_management/AllMembers.php';
         }
     }
 

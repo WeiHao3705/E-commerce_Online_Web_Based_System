@@ -72,7 +72,7 @@ $pageTitle = 'Member Login';
                 <button type="submit" class="submit-btn">Log In</button>
 
                 <div class="form-footer">
-                    <p>Don't have an account? <a href="<?php echo $prefix; ?>views/MemberRegisterForm.php">Sign up</a></p>
+                    <p>Don't have an account? <a href="<?php echo $prefix; ?>views/member_management/MemberRegisterForm.php">Sign up</a></p>
                 </div>
             </form>
         </div>
