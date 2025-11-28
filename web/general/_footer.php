@@ -27,7 +27,15 @@
             <div class="footer-section">
                 <h3>Useful Links</h3>
                 <ul class="footer-links">
-                    <li><a href="coupons.php">Coupons</a></li>
+                    <?php
+                    // Check user role for voucher link
+                    if (session_status() === PHP_SESSION_NONE) {
+                        session_start();
+                    }
+                    $isAdmin = !empty($_SESSION['user']) && isset($_SESSION['user']['role']) && $_SESSION['user']['role'] === 'admin';
+                    $voucherLink = $isAdmin ? '../controller/VoucherController.php?action=showAll' : 'vouchers.php';
+                    ?>
+                    <li><a href="<?php echo $voucherLink; ?>">Vouchers</a></li>
                     <li><a href="blog.php">Blog Post</a></li>
                     <li><a href="return-policy.php">Return Policy</a></li>
                     <li><a href="affiliate.php">Join Affiliate</a></li>
@@ -54,10 +62,11 @@
 </footer>
 
 <style>
-    .container {
-        max-width: 1200px;
+    .footer .container {
+        width: 100%;
+        max-width: 1920px;
         margin: 0 auto;
-        padding: 0 20px;
+        padding: 0 clamp(10px, 2vw, 40px);
     }
 
     .footer {
@@ -65,6 +74,7 @@
         color: #8a8a8a;
         padding: 60px 0 20px;
         margin-top: 80px;
+        width: 100%;
     }
 
     .footer-content {
@@ -72,6 +82,16 @@
         grid-template-columns: repeat(4, 1fr);
         gap: 40px;
         margin-bottom: 50px;
+        width: 100%;
+        justify-items: center;
+    }
+
+    .footer-section {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        text-align: center;
+        align-items: center;
     }
 
     .footer-section h3 {
@@ -133,6 +153,9 @@
         list-style: none;
         padding: 0;
         margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
 
     .footer-links li {

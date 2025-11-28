@@ -422,5 +422,21 @@ class VoucherService
             ];
         }
     }
+
+    /**
+     * Get count of active vouchers
+     */
+    public function getActiveVouchersCount(): int
+    {
+        return $this->voucherRepository->getActiveVouchersCount();
+    }
+
+    /**
+     * Get count of active vouchers that started recently
+     */
+    public function getRecentActiveVouchersCount($days = 7): int
+    {
+        return $this->voucherRepository->getRecentActiveVouchersCount($days);
+    }
 }
 

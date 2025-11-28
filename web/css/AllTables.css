@@ -220,24 +220,22 @@ body.dark {
 }
 
 .search-section {
-    width: 100%;
-}
-
-@media (min-width: 768px) {
-    .search-section {
-        width: 50%;
-    }
+    width: 500px;
+    max-width: 500px;
+    min-width: 300px;
 }
 
 .search-form {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    width: 100%;
 }
 
 .search-input-wrapper {
     position: relative;
-    width: 100%;
+    flex: 1;
+    min-width: 0;
 }
 
 .search-input {

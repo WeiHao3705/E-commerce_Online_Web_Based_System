@@ -15,6 +15,7 @@ $projectRoot = dirname($webRootDir); // Gets project root
 $docRoot = $_SERVER['DOCUMENT_ROOT'];
 $relativePath = str_replace($docRoot, '', $webRootDir);
 $imageBasePath = str_replace('\\', '/', $relativePath) . '/'; // Normalize slashes
+$cssBasePath = $imageBasePath . 'css/'; // CSS files are in web/css/
 
 // if (!isset($_SESSION['user'])) {
 //     header('Location: ../../views/LoginForm.php');
@@ -102,31 +103,31 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $pageTitle; ?> - REDSTORE</title>
+    <title><?php echo $pageTitle; ?> - NGear</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
-    <link rel="stylesheet" href="<?php echo $prefix; ?>css/AllTables.css">
-    <link rel="stylesheet" href="<?php echo $prefix; ?>css/AllMembers.css">
+    <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AllTables.css">
+    <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AllMembers.css">
 </head>
 
 <body class="page-body">
 
-    <?php include $prefix . 'general/_header.php'; ?>
-    <?php include $prefix . 'general/_navbar.php'; ?>
+    <?php include __DIR__ . '/../../general/_header.php'; ?>
+    <?php include __DIR__ . '/../../general/_navbar.php'; ?>
 
     <div class="page-container">
         <div class="page-content">
             <!-- Header -->
             <header class="page-header">
                 <div class="header-logo">
-                    <svg class="logo-svg" fill="none" viewBox="0 0 162 42" xmlns="http://www.w3.org/2000/svg">
+                    <svg class="logo-svg" fill="none" viewBox="0 0 140 42" xmlns="http://www.w3.org/2000/svg">
                         <text fill="#FF523B" font-family="Poppins, sans-serif" font-size="28" font-weight="bold" letter-spacing="0em" style="white-space: pre" xml:space="preserve">
-                            <tspan x="0" y="29.9219">REDSTORE</tspan>
+                            <tspan x="0" y="29.9219">NGear</tspan>
                         </text>
                         <text class="logo-subtitle" fill="#555" font-family="Poppins, sans-serif" font-size="8" font-style="italic" letter-spacing="0.05em" style="white-space: pre" xml:space="preserve">
-                            <tspan x="100" y="38">athlete's choice</tspan>
+                            <tspan x="60" y="38">athlete's choice</tspan>
                         </text>
-                        <rect height="42" rx="4" stroke="#FF523B" stroke-width="2" width="95" x="0" y="0"></rect>
+                        <rect height="42" rx="4" stroke="#FF523B" stroke-width="2" width="115" x="0" y="0"></rect>
                     </svg>
                 </div>
                 <div class="header-title">
@@ -168,9 +169,6 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                 <?php endif; ?>
                                 <label class="sr-only" for="simple-search">Search</label>
                                 <div class="search-input-wrapper">
-                                    <div class="search-icon">
-                                        <span class="material-symbols-outlined">search</span>
-                                    </div>
                                     <input
                                         class="search-input"
                                         id="simple-search"
@@ -185,7 +183,15 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                             </form>
                         </div>
                         <div class="actions-section">
-                            <a href="MemberRegisterForm.php?return_to=admin" class="btn btn-primary btn-add">
+                            <?php
+                            // Calculate the path to MemberRegisterForm.php
+                            // Since AllMembers.php is in web/views/member_management/ and accessed via controller
+                            // We need to go from controller location to views location
+                            $currentScript = $_SERVER['SCRIPT_NAME']; // e.g., /E-commerce_Online_Web_Based_System/web/controller/MemberController.php
+                            $basePath = dirname(dirname($currentScript)); // Gets to /E-commerce_Online_Web_Based_System/web/
+                            $memberFormUrl = $basePath . '/views/member_management/MemberRegisterForm.php?return_to=admin';
+                            ?>
+                            <a href="<?php echo $memberFormUrl; ?>" class="btn btn-primary btn-add">
                                 <span class="material-symbols-outlined">add</span>
                                 Add new member
                             </a>
@@ -461,7 +467,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
         <input type="hidden" name="user_id" id="deleteUserId">
     </form>
 
-    <?php include __DIR__ . '/../general/_footer.php'; ?>
+    <?php include __DIR__ . '/../../general/_footer.php'; ?>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>

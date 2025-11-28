@@ -10,6 +10,19 @@ $current_dir = dirname($_SERVER['PHP_SELF']);
 $is_in_views = (strpos($current_dir, '/views') !== false);
 $prefix = $is_in_views ? '../../' : '';
 
+// Calculate base path for images (absolute from document root)
+// Since this file is in web/views/member_management/, go up two levels to get web root
+$currentFileDir = dirname(__FILE__); // Gets web/views/member_management/
+$webRootDir = dirname(dirname($currentFileDir)); // Gets web/
+$projectRoot = dirname($webRootDir); // Gets project root
+
+// Get the relative path from document root
+$docRoot = $_SERVER['DOCUMENT_ROOT'];
+$relativePath = str_replace($docRoot, '', $webRootDir);
+$webBasePath = str_replace('\\', '/', $relativePath) . '/'; // Normalize slashes
+$imageBasePath = $webBasePath . 'images/'; // Images are in web/images/
+$controllerBasePath = $webBasePath . 'controller/'; // Controller files are in web/controller/
+
 $pageTitle = 'Member Registration';
 
 // Initialize errors array
@@ -103,7 +116,7 @@ if (!empty($_POST)) {
                 </div>
             <?php endif; ?>
 
-            <form id="registrationForm" action="<?php echo $prefix; ?>controller/MemberController.php" method="POST" enctype="multipart/form-data">
+            <form id="registrationForm" action="<?php echo $controllerBasePath; ?>MemberController.php" method="POST" enctype="multipart/form-data">
                 <?php if (isset($_GET['return_to'])): ?>
                     <input type="hidden" name="return_to" value="<?php echo htmlspecialchars($_GET['return_to']); ?>">
                 <?php endif; ?>
@@ -303,7 +316,7 @@ if (!empty($_POST)) {
                 <button type="submit" class="submit-btn">Sign Up</button>
 
                 <div class="form-footer">
-                    <p>Already have an account? <a href="<?php echo $prefix; ?>account.php">Sign in</a></p>
+                    <p>Already have an account? <a href="<?php echo $webBasePath; ?>account.php">Sign in</a></p>
                 </div>
             </form>
         </div>
@@ -548,7 +561,7 @@ if (!empty($_POST)) {
             const $captureWebcamPhoto = $('#captureWebcamPhoto');
             const $stopWebcam = $('#stopWebcam');
             const videoElement = document.getElementById('profilePhotoVideo');
-            const defaultPhotoPath = '<?php echo $prefix; ?>images/defaultUserImage.jpg';
+            const defaultPhotoPath = '<?php echo $imageBasePath; ?>defaultUserImage.jpg';
             let cropper = null;
             let currentScaleX = 1;
             let currentScaleY = 1;

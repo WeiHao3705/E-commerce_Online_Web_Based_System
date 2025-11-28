@@ -10,7 +10,8 @@ body {
     background-color: #f8f9fa;
 }
 
-.container {
+/* Scoped container - only for registration form content, not navbar */
+.registration-wrapper .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;

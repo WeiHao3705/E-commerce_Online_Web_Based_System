@@ -47,7 +47,13 @@ class MemberController
                 ];
 
                 $_SESSION['success_message'] = 'Login successful';
-                header('Location: ../index.php');
+                
+                // Redirect based on user role
+                if ($userDTO->getRole() === 'admin') {
+                    header('Location: ../views/admin/AdminDashboard.php');
+                } else {
+                    header('Location: ../index.php');
+                }
                 exit;
             }
         } catch (Exception $e) {

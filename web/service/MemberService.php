@@ -179,6 +179,22 @@ class MembershipServices
     }
 
     /**
+     * Get count of active members
+     */
+    public function getActiveMembersCount(): int
+    {
+        return $this->membershipRepository->getActiveMembersCount();
+    }
+
+    /**
+     * Get count of active members that were created recently
+     */
+    public function getRecentActiveMembersCount($days = 7): int
+    {
+        return $this->membershipRepository->getRecentActiveMembersCount($days);
+    }
+
+    /**
      * Handle profile photo upload logic
      */
     private function handleProfilePhotoUpload(array $file): ?string

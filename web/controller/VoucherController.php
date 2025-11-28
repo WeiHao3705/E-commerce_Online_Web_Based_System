@@ -50,11 +50,11 @@ class VoucherController
             $currentSort = ['sortBy' => $sortBy, 'sortOrder' => $sortOrder];
 
             // Include the view
-            require_once __DIR__ . '/../views/AllVoucher.php';
+            require_once __DIR__ . '/../views/voucher_management/AllVoucher.php';
         } catch (Exception $e) {
             $_SESSION['error_message'] = $e->getMessage();
             // Redirect to error page or show error
-            require_once __DIR__ . '/../views/AllVoucher.php';
+            require_once __DIR__ . '/../views/voucher_management/AllVoucher.php';
         }
     }
 
@@ -127,7 +127,7 @@ class VoucherController
                     if ($returnTo === 'admin') {
                         header('Location: ../controller/VoucherController.php?action=showAll');
                     } else {
-                        header('Location: ../views/VoucherRegisterForm.php');
+                        header('Location: ../views/voucher_management/VoucherRegisterForm.php');
                     }
                     exit;
                 }
@@ -142,9 +142,9 @@ class VoucherController
             $returnTo = isset($_POST['return_to']) ? $_POST['return_to'] : (isset($_GET['return_to']) ? $_GET['return_to'] : '');
             
             if ($returnTo === 'admin') {
-                header('Location: ../views/VoucherRegisterForm.php?return_to=admin');
+                header('Location: ../views/voucher_management/VoucherRegisterForm.php?return_to=admin');
             } else {
-                header('Location: ../views/VoucherRegisterForm.php');
+                header('Location: ../views/voucher_management/VoucherRegisterForm.php');
             }
             exit;
         }
@@ -385,7 +385,7 @@ class VoucherController
             exit;
         } catch (Exception $e) {
             $_SESSION['error_message'] = $e->getMessage();
-            header('Location: ../views/VoucherRegisterForm.php');
+            header('Location: ../views/voucher_management/VoucherRegisterForm.php');
             exit;
         }
     }
@@ -418,7 +418,7 @@ class VoucherController
                 
                 // Redirect to preview page
                 $returnTo = isset($_POST['return_to']) ? $_POST['return_to'] : '';
-                $redirectUrl = '../views/VoucherBulkImportPreview.php';
+                $redirectUrl = '../views/voucher_management/VoucherBulkImportPreview.php';
                 if ($returnTo) {
                     $redirectUrl .= '?return_to=' . urlencode($returnTo);
                 }
@@ -428,7 +428,7 @@ class VoucherController
         } catch (Exception $e) {
             $_SESSION['error_message'] = $e->getMessage();
             $returnTo = isset($_POST['return_to']) ? $_POST['return_to'] : '';
-            $redirectUrl = '../views/VoucherRegisterForm.php';
+            $redirectUrl = '../views/voucher_management/VoucherRegisterForm.php';
             if ($returnTo) {
                 $redirectUrl .= '?return_to=' . urlencode($returnTo);
             }
@@ -463,7 +463,7 @@ class VoucherController
                 if ($returnTo === 'admin') {
                     header('Location: ../controller/VoucherController.php?action=showAll');
                 } else {
-                    header('Location: ../views/VoucherRegisterForm.php');
+                    header('Location: ../views/voucher_management/VoucherRegisterForm.php');
                 }
                 exit;
             }
@@ -473,7 +473,7 @@ class VoucherController
             if ($returnTo === 'admin') {
                 header('Location: ../controller/VoucherController.php?action=showAll');
             } else {
-                header('Location: ../views/VoucherRegisterForm.php');
+                header('Location: ../views/voucher_management/VoucherRegisterForm.php');
             }
             exit;
         }

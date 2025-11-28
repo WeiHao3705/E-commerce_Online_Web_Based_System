@@ -1,10 +1,14 @@
 <?php
-// Define base path
-$base_path = '/E-commerce_Online_Web_Based_System/web/';
+// Calculate base path (absolute from document root)
+// This works regardless of whether accessed from views, controllers, or root
+$currentFileDir = dirname(__FILE__); // Gets web/general/
+$webRootDir = dirname($currentFileDir); // Gets web/
+$docRoot = $_SERVER['DOCUMENT_ROOT'];
+$relativePath = str_replace($docRoot, '', $webRootDir);
+$webBasePath = str_replace('\\', '/', $relativePath) . '/'; // Normalize slashes
 
-$current_dir = dirname($_SERVER['PHP_SELF']);
-$is_in_views = (strpos($current_dir, '/views') !== false);
-$prefix = $is_in_views ? '../' : '';
+// For backward compatibility with existing code
+$prefix = $webBasePath;
 ?>
 
 <nav class="navbar">
@@ -28,22 +32,10 @@ $prefix = $is_in_views ? '../' : '';
                     <?php
                     if (session_status() === PHP_SESSION_NONE) session_start();
                     $isGuest = empty($_SESSION['user']);
-                    $isAdmin = !$isGuest && isset($_SESSION['user']['role']) && $_SESSION['user']['role'] === 'admin';
                     if ($isGuest):
                     ?>
                         <li><a href="<?php echo $prefix; ?>account.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'account.php' ? 'active' : ''; ?>">Login</a></li>
                     <?php else: ?>
-                        <?php if ($isAdmin): ?>
-                            <li class="dropdown">
-                                <a href="#" class="<?php echo (basename($_SERVER['PHP_SELF']) == 'AllMembers.php' || basename($_SERVER['PHP_SELF']) == 'VoucherManagement.php') ? 'active' : ''; ?>">
-                                    Admin <i class="fas fa-caret-down"></i>
-                                </a>
-                                <ul class="dropdown-menu">
-                                    <li><a href="<?php echo $prefix; ?>controller/MemberController.php?action=showAll"><i class="fas fa-users"></i> All Members</a></li>
-                                    <li><a href="<?php echo $prefix; ?>controller/VoucherController.php?action=showAll"><i class="fas fa-ticket-alt"></i> Voucher Management</a></li>
-                                </ul>
-                            </li>
-                        <?php endif; ?>
                         <li class="dropdown">
                             <a href="<?php echo $prefix; ?>account.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'account.php' ? 'active' : ''; ?>">
                                 Account <i class="fas fa-caret-down"></i>

@@ -17,18 +17,19 @@ if (session_status() === PHP_SESSION_NONE) {
 //     exit;
 // }
 
-$prefix = '../';
+$prefix = '../../';
 
 // Calculate base path for images (absolute from document root)
-// Since this file is in web/views/, go up one level to get web root
-$currentFileDir = dirname(__FILE__); // Gets web/views/
-$webRootDir = dirname($currentFileDir); // Gets web/
+// Since this file is in web/views/voucher_management/, go up two levels to get web root
+$currentFileDir = dirname(__FILE__); // Gets web/views/voucher_management/
+$webRootDir = dirname(dirname($currentFileDir)); // Gets web/
 $projectRoot = dirname($webRootDir); // Gets project root
 
 // Get the relative path from document root
 $docRoot = $_SERVER['DOCUMENT_ROOT'];
 $relativePath = str_replace($docRoot, '', $webRootDir);
 $imageBasePath = str_replace('\\', '/', $relativePath) . '/'; // Normalize slashes
+$cssBasePath = $imageBasePath . 'css/'; // CSS files are in web/css/
 
 $pageTitle = 'All Vouchers - Admin Dashboard';
 
@@ -104,31 +105,31 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $pageTitle; ?> - REDSTORE</title>
+    <title><?php echo $pageTitle; ?> - NGear</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
-    <link rel="stylesheet" href="<?php echo $prefix; ?>css/AllTables.css">
-    <link rel="stylesheet" href="<?php echo $prefix; ?>css/AllVouchers.css">
+    <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AllTables.css">
+    <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AllVouchers.css">
 </head>
 
 <body class="page-body">
 
-    <?php include $prefix . 'general/_header.php'; ?>
-    <?php include $prefix . 'general/_navbar.php'; ?>
+    <?php include __DIR__ . '/../../general/_header.php'; ?>
+    <?php include __DIR__ . '/../../general/_navbar.php'; ?>
 
     <div class="page-container">
         <div class="page-content">
             <!-- Header -->
             <header class="page-header">
                 <div class="header-logo">
-                    <svg class="logo-svg" fill="none" viewBox="0 0 162 42" xmlns="http://www.w3.org/2000/svg">
+                    <svg class="logo-svg" fill="none" viewBox="0 0 140 42" xmlns="http://www.w3.org/2000/svg">
                         <text fill="#FF523B" font-family="Poppins, sans-serif" font-size="28" font-weight="bold" letter-spacing="0em" style="white-space: pre" xml:space="preserve">
-                            <tspan x="0" y="29.9219">REDSTORE</tspan>
+                            <tspan x="0" y="29.9219">NGear</tspan>
                         </text>
                         <text class="logo-subtitle" fill="#555" font-family="Poppins, sans-serif" font-size="8" font-style="italic" letter-spacing="0.05em" style="white-space: pre" xml:space="preserve">
-                            <tspan x="100" y="38">athlete's choice</tspan>
+                            <tspan x="60" y="38">athlete's choice</tspan>
                         </text>
-                        <rect height="42" rx="4" stroke="#FF523B" stroke-width="2" width="95" x="0" y="0"></rect>
+                        <rect height="42" rx="4" stroke="#FF523B" stroke-width="2" width="115" x="0" y="0"></rect>
                     </svg>
                 </div>
                 <div class="header-title">
@@ -186,11 +187,11 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                         <div class="actions-section">
                             <?php
                             // Calculate the path to VoucherRegisterForm.php
-                            // Since AllVoucher.php is in web/views/ and accessed via controller
+                            // Since AllVoucher.php is in web/views/voucher_management/ and accessed via controller
                             // We need to go from controller location to views location
                             $currentScript = $_SERVER['SCRIPT_NAME']; // e.g., /E-commerce_Online_Web_Based_System/web/controller/VoucherController.php
                             $basePath = dirname(dirname($currentScript)); // Gets to /E-commerce_Online_Web_Based_System/web/
-                            $voucherFormUrl = $basePath . '/views/VoucherRegisterForm.php?return_to=admin';
+                            $voucherFormUrl = $basePath . '/views/voucher_management/VoucherRegisterForm.php?return_to=admin';
                             ?>
                             <a href="<?php echo $voucherFormUrl; ?>" class="btn btn-primary btn-add">
                                 <span class="material-symbols-outlined">add</span>
@@ -336,8 +337,17 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                                         </td>
                                         <td class="col-actions">
                                             <button
-                                                onclick="openEditModal(<?php echo $voucher['voucher_id']; ?>, '<?php echo htmlspecialchars($voucher['code'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($voucher['description'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($voucher['type'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($voucher['discount_value'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($voucher['min_spend'] ?? '0', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($voucher['max_discount'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($voucher['start_date'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($voucher['end_date'], ENT_QUOTES); ?>')"
                                                 class="action-btn edit-btn"
+                                                data-action="edit"
+                                                data-voucher-id="<?php echo $voucher['voucher_id']; ?>"
+                                                data-code="<?php echo htmlspecialchars($voucher['code'], ENT_QUOTES); ?>"
+                                                data-description="<?php echo htmlspecialchars($voucher['description'] ?? '', ENT_QUOTES); ?>"
+                                                data-type="<?php echo htmlspecialchars($voucher['type'], ENT_QUOTES); ?>"
+                                                data-discount-value="<?php echo htmlspecialchars($voucher['discount_value'], ENT_QUOTES); ?>"
+                                                data-min-spend="<?php echo htmlspecialchars($voucher['min_spend'] ?? '0', ENT_QUOTES); ?>"
+                                                data-max-discount="<?php echo htmlspecialchars($voucher['max_discount'] ?? '', ENT_QUOTES); ?>"
+                                                data-start-date="<?php echo htmlspecialchars($voucher['start_date'], ENT_QUOTES); ?>"
+                                                data-end-date="<?php echo htmlspecialchars($voucher['end_date'], ENT_QUOTES); ?>"
                                                 title="Edit voucher">
                                                 <span class="material-symbols-outlined">edit</span>
                                             </button>
@@ -347,8 +357,11 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                                             ?>
                                             <?php if ($currentStatus !== 'inactive'): ?>
                                                 <button
-                                                    onclick="confirmStatusChange(<?php echo $voucher['voucher_id']; ?>, '<?php echo htmlspecialchars($voucher['code'], ENT_QUOTES); ?>', 'inactive')"
                                                     class="action-btn inactive-btn"
+                                                    data-action="status"
+                                                    data-voucher-id="<?php echo $voucher['voucher_id']; ?>"
+                                                    data-code="<?php echo htmlspecialchars($voucher['code'], ENT_QUOTES); ?>"
+                                                    data-status="inactive"
                                                     title="Set to inactive">
                                                     <i class="fas fa-pause-circle"></i>
                                                 </button>
@@ -356,23 +369,30 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
 
                                             <?php if ($currentStatus !== 'active'): ?>
                                                 <button
-                                                    onclick="confirmStatusChange(<?php echo $voucher['voucher_id']; ?>, '<?php echo htmlspecialchars($voucher['code'], ENT_QUOTES); ?>', 'active')"
                                                     class="action-btn activate-btn"
+                                                    data-action="status"
+                                                    data-voucher-id="<?php echo $voucher['voucher_id']; ?>"
+                                                    data-code="<?php echo htmlspecialchars($voucher['code'], ENT_QUOTES); ?>"
+                                                    data-status="active"
                                                     title="Activate voucher">
                                                     <i class="fas fa-check-circle"></i>
                                                 </button>
                                             <?php endif; ?>
 
                                             <button
-                                                onclick="confirmDelete(<?php echo $voucher['voucher_id']; ?>, '<?php echo htmlspecialchars($voucher['code'], ENT_QUOTES); ?>')"
                                                 class="action-btn delete-btn"
+                                                data-action="delete"
+                                                data-voucher-id="<?php echo $voucher['voucher_id']; ?>"
+                                                data-code="<?php echo htmlspecialchars($voucher['code'], ENT_QUOTES); ?>"
                                                 title="Delete voucher">
                                                 <span class="material-symbols-outlined">delete</span>
                                             </button>
                                             
                                             <button
-                                                onclick="openAssignModal(<?php echo $voucher['voucher_id']; ?>, '<?php echo htmlspecialchars($voucher['code'], ENT_QUOTES); ?>')"
                                                 class="action-btn assign-btn"
+                                                data-action="assign"
+                                                data-voucher-id="<?php echo $voucher['voucher_id']; ?>"
+                                                data-code="<?php echo htmlspecialchars($voucher['code'], ENT_QUOTES); ?>"
                                                 title="Assign voucher">
                                                 <span class="material-symbols-outlined">send</span>
                                             </button>
@@ -486,7 +506,7 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
         <!-- Member IDs will be added dynamically -->
     </form>
 
-    <?php include __DIR__ . '/../general/_footer.php'; ?>
+    <?php include __DIR__ . '/../../general/_footer.php'; ?>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
@@ -602,10 +622,10 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
             // Build status buttons
             let statusButtons = '';
             if (status !== 'inactive') {
-                statusButtons += '<button onclick="confirmStatusChange(' + voucher.voucher_id + ', \'' + escapeHtml(voucher.code) + '\', \'inactive\')" class="action-btn inactive-btn" title="Set to inactive"><i class="fas fa-pause-circle"></i></button>';
+                statusButtons += '<button class="action-btn inactive-btn" data-action="status" data-voucher-id="' + voucher.voucher_id + '" data-code="' + escapeHtml(voucher.code) + '" data-status="inactive" title="Set to inactive"><i class="fas fa-pause-circle"></i></button>';
             }
             if (status !== 'active') {
-                statusButtons += '<button onclick="confirmStatusChange(' + voucher.voucher_id + ', \'' + escapeHtml(voucher.code) + '\', \'active\')" class="action-btn activate-btn" title="Activate voucher"><i class="fas fa-check-circle"></i></button>';
+                statusButtons += '<button class="action-btn activate-btn" data-action="status" data-voucher-id="' + voucher.voucher_id + '" data-code="' + escapeHtml(voucher.code) + '" data-status="active" title="Activate voucher"><i class="fas fa-check-circle"></i></button>';
             }
             
             const row = `
@@ -621,14 +641,14 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                         <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
                     </td>
                     <td class="col-actions">
-                        <button onclick="openEditModal(${voucher.voucher_id}, '${escapeHtml(voucher.code)}', '${escapeHtml(voucher.description || '')}', '${escapeHtml(voucher.type)}', '${escapeHtml(voucher.discount_value)}', '${escapeHtml(voucher.min_spend || '0')}', '${escapeHtml(voucher.max_discount || '')}', '${escapeHtml(voucher.start_date)}', '${escapeHtml(voucher.end_date)}')" class="action-btn edit-btn" title="Edit voucher">
+                        <button class="action-btn edit-btn" data-action="edit" data-voucher-id="${voucher.voucher_id}" data-code="${escapeHtml(voucher.code)}" data-description="${escapeHtml(voucher.description || '')}" data-type="${escapeHtml(voucher.type)}" data-discount-value="${escapeHtml(voucher.discount_value)}" data-min-spend="${escapeHtml(voucher.min_spend || '0')}" data-max-discount="${escapeHtml(voucher.max_discount || '')}" data-start-date="${escapeHtml(voucher.start_date)}" data-end-date="${escapeHtml(voucher.end_date)}" title="Edit voucher">
                             <span class="material-symbols-outlined">edit</span>
                         </button>
                         ${statusButtons}
-                        <button onclick="confirmDelete(${voucher.voucher_id}, '${escapeHtml(voucher.code)}')" class="action-btn delete-btn" title="Delete voucher">
+                        <button class="action-btn delete-btn" data-action="delete" data-voucher-id="${voucher.voucher_id}" data-code="${escapeHtml(voucher.code)}" title="Delete voucher">
                             <span class="material-symbols-outlined">delete</span>
                         </button>
-                        <button onclick="openAssignModal(${voucher.voucher_id}, '${escapeHtml(voucher.code)}')" class="action-btn assign-btn" title="Assign voucher">
+                        <button class="action-btn assign-btn" data-action="assign" data-voucher-id="${voucher.voucher_id}" data-code="${escapeHtml(voucher.code)}" title="Assign voucher">
                             <span class="material-symbols-outlined">send</span>
                         </button>
                     </td>
@@ -706,6 +726,98 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
             return String(text).replace(/[&<>"']/g, m => map[m]);
         }
 
+        // jQuery event handlers - following conventions (no inline JavaScript)
+        $(document).ready(function() {
+            // Edit button handler
+            $(document).on('click', '.edit-btn[data-action="edit"]', function() {
+                var $btn = $(this);
+                var voucherId = $btn.data('voucher-id');
+                var code = $btn.data('code');
+                var description = $btn.data('description');
+                var type = $btn.data('type');
+                var discountValue = $btn.data('discount-value');
+                var minSpend = $btn.data('min-spend');
+                var maxDiscount = $btn.data('max-discount');
+                var startDate = $btn.data('start-date');
+                var endDate = $btn.data('end-date');
+                
+                $('#editVoucherId').val(voucherId);
+                $('#editCode').val(code);
+                $('#editDescription').val(description || '');
+                $('#editType').val(type);
+                $('#editDiscountValue').val(discountValue);
+                $('#editMinSpend').val(minSpend || '0');
+                $('#editMaxDiscount').val(maxDiscount || '');
+                $('#editStartDate').val(startDate);
+                $('#editEndDate').val(endDate);
+                $('#editModal').removeClass('hidden');
+            });
+            
+            // Status change button handler
+            $(document).on('click', '.action-btn[data-action="status"]', function() {
+                var $btn = $(this);
+                var voucherId = $btn.data('voucher-id');
+                var voucherCode = $btn.data('code');
+                var newStatus = $btn.data('status');
+                
+                var statusLabels = {
+                    'active': 'activate',
+                    'inactive': 'set to inactive',
+                    'expired': 'expire'
+                };
+                var action = statusLabels[newStatus] || newStatus;
+                
+                if (confirm('Are you sure you want to ' + action + ' voucher: ' + voucherCode + '?')) {
+                    $('#statusVoucherId').val(voucherId);
+                    $('#statusValue').val(newStatus);
+                    $('#statusForm').submit();
+                }
+            });
+            
+            // Delete button handler
+            $(document).on('click', '.delete-btn[data-action="delete"]', function() {
+                var $btn = $(this);
+                var voucherId = $btn.data('voucher-id');
+                var voucherCode = $btn.data('code');
+                
+                if (confirm('Are you sure you want to delete voucher: ' + voucherCode + '?\n\nThis action cannot be undone.')) {
+                    $('#deleteVoucherId').val(voucherId);
+                    $('#deleteForm').submit();
+                }
+            });
+            
+            // Assign button handler
+            $(document).on('click', '.assign-btn[data-action="assign"]', function() {
+                var $btn = $(this);
+                var voucherId = $btn.data('voucher-id');
+                var voucherCode = $btn.data('code');
+                
+                $('#assignVoucherId').val(voucherId);
+                $('#assignVoucherCode').text(voucherCode);
+                $('#assignType').val('');
+                $('#assignMemberIds').val('');
+                $('#assignModal').removeClass('hidden');
+                
+                // Reset form
+                $('#assignmentTypeAll').prop('checked', false);
+                $('#assignmentTypeSpecific').prop('checked', false);
+                $('#memberSelectionDiv').hide();
+                $('#membersList').html('<p style="padding: 1rem; color: #6b7280; text-align: center;">Select "Assign to Specific Members" to load available members...</p>');
+                $('#membersList').data('loaded', false);
+            });
+            
+            // Close edit modal handler
+            $(document).on('click', '.btn-close-edit-modal', function() {
+                $('#editModal').addClass('hidden');
+            });
+            
+            // Close assign modal handler
+            $(document).on('click', '.btn-close-assign-modal', function() {
+                $('#assignModal').addClass('hidden');
+            });
+        });
+        
+        // Legacy function names for backward compatibility (if needed)
         function openEditModal(voucherId, code, description, type, discountValue, minSpend, maxDiscount, startDate, endDate) {
             $('#editVoucherId').val(voucherId);
             $('#editCode').val(code);
@@ -716,7 +828,6 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
             $('#editMaxDiscount').val(maxDiscount || '');
             $('#editStartDate').val(startDate);
             $('#editEndDate').val(endDate);
-
             $('#editModal').removeClass('hidden');
         }
 
@@ -926,7 +1037,7 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                     </div>
 
                     <div class="form-actions">
-                        <button type="button" onclick="closeAssignModal()" class="btn btn-secondary">
+                        <button type="button" class="btn btn-secondary btn-close-assign-modal">
                             Cancel
                         </button>
                         <button type="button" id="assignFormSubmit" class="btn btn-primary">
@@ -993,7 +1104,7 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                     </div>
 
                     <div class="form-actions">
-                        <button type="button" onclick="closeEditModal()" class="btn btn-secondary">
+                        <button type="button" class="btn btn-secondary btn-close-edit-modal">
                             Cancel
                         </button>
                         <button type="submit" class="btn btn-primary">

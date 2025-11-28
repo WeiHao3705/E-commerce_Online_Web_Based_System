@@ -10,9 +10,9 @@
 }
 
 .col-photo {
-    width: 90px;
-    min-width: 90px;
-    max-width: 90px;
+    width: 140px;
+    min-width: 140px;
+    max-width: 140px;
 }
 
 .col-username {
@@ -60,9 +60,7 @@
 }
 
 .col-status {
-    width: 6%;
-    min-width: 80px;
-    text-align: center;
+    text-align: left;
 }
 
 /* Members table actions - positioned to the left */
@@ -72,7 +70,7 @@
     box-sizing: border-box;
     max-width: 100%;
     overflow: hidden;
-    margin-left: -0.5rem;
+    margin-left: -1.5rem;
 }
 
 /* Profile Photo */

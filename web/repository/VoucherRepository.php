@@ -155,6 +155,59 @@ class VoucherRepository
         }
     }
 
+    /**
+     * Get count of active vouchers
+     * Active vouchers are those with status = 'active' and current date between start_date and end_date
+     */
+    public function getActiveVouchersCount(): int
+    {
+        try {
+            $currentDate = date('Y-m-d');
+            $sql = "SELECT COUNT(*) as total 
+                    FROM voucher 
+                    WHERE status = 'active' 
+                    AND start_date <= ? 
+                    AND end_date >= ?";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$currentDate, $currentDate]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return (int) $result['total'];
+        } catch (PDOException $e) {
+            error_log("Database error in getActiveVouchersCount: " . $e->getMessage());
+            throw new Exception("Error counting active vouchers");
+        }
+    }
+
+    /**
+     * Get count of active vouchers that started recently (in the last 7 days)
+     * This represents new active vouchers added recently
+     */
+    public function getRecentActiveVouchersCount($days = 7): int
+    {
+        try {
+            $currentDate = date('Y-m-d');
+            $pastDate = date('Y-m-d', strtotime("-{$days} days"));
+            
+            $sql = "SELECT COUNT(*) as total 
+                    FROM voucher 
+                    WHERE status = 'active' 
+                    AND start_date <= ? 
+                    AND end_date >= ? 
+                    AND start_date >= ?";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$currentDate, $currentDate, $pastDate]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return (int) $result['total'];
+        } catch (PDOException $e) {
+            error_log("Database error in getRecentActiveVouchersCount: " . $e->getMessage());
+            throw new Exception("Error counting recent active vouchers");
+        }
+    }
+
     public function getVoucherById($voucherId)
     {
         try {

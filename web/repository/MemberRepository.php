@@ -168,6 +168,55 @@ class MembershipRepository
     }
 
     /**
+     * Get count of active members
+     * Active members are those with role = 'member' and status = 'active'
+     */
+    public function getActiveMembersCount(): int
+    {
+        try {
+            $sql = "SELECT COUNT(*) as total 
+                    FROM users 
+                    WHERE role = 'member' 
+                    AND status = 'active'";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return (int) $result['total'];
+        } catch (PDOException $e) {
+            error_log("Database error in getActiveMembersCount: " . $e->getMessage());
+            throw new Exception("Error counting active members");
+        }
+    }
+
+    /**
+     * Get count of active members that were created recently (in the last 7 days)
+     * This represents new active members registered recently
+     */
+    public function getRecentActiveMembersCount($days = 7): int
+    {
+        try {
+            $pastDate = date('Y-m-d H:i:s', strtotime("-{$days} days"));
+            
+            $sql = "SELECT COUNT(*) as total 
+                    FROM users 
+                    WHERE role = 'member' 
+                    AND status = 'active' 
+                    AND created_at >= ?";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$pastDate]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return (int) $result['total'];
+        } catch (PDOException $e) {
+            error_log("Database error in getRecentActiveMembersCount: " . $e->getMessage());
+            throw new Exception("Error counting recent active members");
+        }
+    }
+
+    /**
      * Fetch a single user record by username
      * Returns associative array or null when not found
      */
