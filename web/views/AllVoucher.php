@@ -170,9 +170,6 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                                 <?php endif; ?>
                                 <label class="sr-only" for="simple-search">Search</label>
                                 <div class="search-input-wrapper">
-                                    <div class="search-icon">
-                                        <span class="material-symbols-outlined">search</span>
-                                    </div>
                                     <input
                                         class="search-input"
                                         id="simple-search"

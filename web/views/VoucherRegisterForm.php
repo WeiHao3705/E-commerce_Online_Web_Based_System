@@ -285,18 +285,99 @@ if (!empty($_POST)) {
                             </div>
                         </div>
 
-                        <div class="p-6 flex justify-end items-center gap-4 bg-background-light/50 dark:bg-background-dark/50 rounded-b-xl">
-                            <a href="<?php echo isset($_GET['return_to']) && $_GET['return_to'] === 'admin' ? $prefix . 'controller/VoucherController.php?action=showAll' : $prefix . 'index.php'; ?>" class="px-4 py-2 text-sm font-semibold text-text-light dark:text-text-dark bg-transparent rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors">Cancel</a>
-                            <button class="px-5 py-2.5 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-4 focus:ring-primary/30 transition-colors" type="submit">Create Voucher</button>
+                        <div class="p-6 flex justify-between items-center gap-4 bg-background-light/50 dark:bg-background-dark/50 rounded-b-xl">
+                            <div>
+                                <button type="button" id="bulk-import-btn" class="px-4 py-2 text-sm font-semibold text-primary bg-transparent border border-primary rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors">
+                                    <span class="material-symbols-outlined text-lg align-middle mr-1">upload_file</span>
+                                    Bulk Import
+                                </button>
+                            </div>
+                            <div class="flex gap-4">
+                                <a href="<?php echo isset($_GET['return_to']) && $_GET['return_to'] === 'admin' ? $prefix . 'controller/VoucherController.php?action=showAll' : $prefix . 'index.php'; ?>" class="px-4 py-2 text-sm font-semibold text-text-light dark:text-text-dark bg-transparent rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors">Cancel</a>
+                                <button class="px-5 py-2.5 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-4 focus:ring-primary/30 transition-colors" type="submit">Create Voucher</button>
+                            </div>
                         </div>
                     </form>
                 </div>
             </div>
         </main>
 
+    <!-- Bulk Import Modal -->
+    <div id="bulk-import-modal" class="fixed inset-0 bg-black/50 dark:bg-black/70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-card-light dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-border-light dark:border-border-dark">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-text-light dark:text-text-dark text-xl font-bold">Bulk Import Vouchers</h2>
+                    <button type="button" id="close-modal" class="text-subtle-light dark:text-subtle-dark hover:text-text-light dark:hover:text-text-dark">
+                        <span class="material-symbols-outlined text-2xl">close</span>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="mb-6">
+                    <p class="text-text-light dark:text-text-dark text-sm mb-4">Import multiple vouchers at once using a CSV file. Download the template to see the required format.</p>
+                    <div class="flex gap-3">
+                        <a href="<?php echo $prefix; ?>controller/VoucherController.php?action=downloadTemplate<?php echo isset($_GET['return_to']) ? '&return_to=' . htmlspecialchars($_GET['return_to']) : ''; ?>" class="px-4 py-2 text-sm font-semibold text-primary bg-transparent border border-primary rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors inline-flex items-center gap-2">
+                            <span class="material-symbols-outlined text-lg">download</span>
+                            Download CSV Template
+                        </a>
+                    </div>
+                </div>
+                <form id="bulk-import-form" action="<?php echo $prefix; ?>controller/VoucherController.php" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="action" value="previewBulkImport">
+                    <?php if (isset($_GET['return_to'])): ?>
+                        <input type="hidden" name="return_to" value="<?php echo htmlspecialchars($_GET['return_to']); ?>">
+                    <?php endif; ?>
+                    <div class="mb-4">
+                        <label class="flex flex-col">
+                            <p class="text-text-light dark:text-text-dark text-sm font-medium leading-normal pb-2">Select CSV File <span class="text-red-500">*</span></p>
+                            <input 
+                                type="file" 
+                                name="csv_file" 
+                                id="csv-file"
+                                accept=".csv"
+                                required
+                                class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:border-primary h-11 p-2.5 text-sm"
+                            />
+                        </label>
+                    </div>
+                    <div class="flex justify-end gap-3">
+                        <button type="button" id="cancel-import" class="px-4 py-2 text-sm font-semibold text-text-light dark:text-text-dark bg-transparent rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors">Cancel</button>
+                        <button type="submit" class="px-5 py-2.5 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-4 focus:ring-primary/30 transition-colors">Preview Import</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Include Footer -->
     <?php include $prefix . 'general/_footer.php'; ?>
 
+    <script>
+        // Bulk Import Modal
+        const bulkImportBtn = document.getElementById('bulk-import-btn');
+        const bulkImportModal = document.getElementById('bulk-import-modal');
+        const closeModal = document.getElementById('close-modal');
+        const cancelImport = document.getElementById('cancel-import');
+
+        bulkImportBtn.addEventListener('click', function() {
+            bulkImportModal.classList.remove('hidden');
+        });
+
+        closeModal.addEventListener('click', function() {
+            bulkImportModal.classList.add('hidden');
+        });
+
+        cancelImport.addEventListener('click', function() {
+            bulkImportModal.classList.add('hidden');
+        });
+
+        bulkImportModal.addEventListener('click', function(e) {
+            if (e.target === bulkImportModal) {
+                bulkImportModal.classList.add('hidden');
+            }
+        });
+    </script>
     <script>
         // Generate random voucher code
         document.getElementById('generate-code').addEventListener('click', function() {

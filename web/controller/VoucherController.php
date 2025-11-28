@@ -346,6 +346,138 @@ class VoucherController
             exit;
         }
     }
+
+    public function downloadTemplate()
+    {
+        try {
+            // Set headers for CSV download
+            header('Content-Type: text/csv');
+            header('Content-Disposition: attachment; filename="voucher_import_template.csv"');
+            
+            // Create output stream
+            $output = fopen('php://output', 'w');
+            
+            // Write CSV headers
+            fputcsv($output, [
+                'code',
+                'description',
+                'type',
+                'discount_value',
+                'min_spend',
+                'max_discount',
+                'start_date',
+                'end_date'
+            ]);
+            
+            // Write example row
+            fputcsv($output, [
+                'SUMMER25',
+                'Summer sale voucher',
+                'percent',
+                '25',
+                '100',
+                '50',
+                '2024-06-01',
+                '2024-08-31'
+            ]);
+            
+            fclose($output);
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
+            header('Location: ../views/VoucherRegisterForm.php');
+            exit;
+        }
+    }
+
+    public function previewBulkImport()
+    {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
+                $file = $_FILES['csv_file'];
+                
+                // Validate file
+                if ($file['error'] !== UPLOAD_ERR_OK) {
+                    throw new Exception("File upload error: " . $file['error']);
+                }
+                
+                if ($file['type'] !== 'text/csv' && pathinfo($file['name'], PATHINFO_EXTENSION) !== 'csv') {
+                    throw new Exception("Please upload a valid CSV file");
+                }
+                
+                // Parse CSV
+                $result = $this->voucherService->parseCSVFile($file['tmp_name']);
+                
+                if (!$result['success']) {
+                    throw new Exception($result['error']);
+                }
+                
+                // Store parsed vouchers in session for preview
+                $_SESSION['bulk_import_vouchers'] = $result['vouchers'];
+                $_SESSION['bulk_import_errors'] = $result['errors'];
+                
+                // Redirect to preview page
+                $returnTo = isset($_POST['return_to']) ? $_POST['return_to'] : '';
+                $redirectUrl = '../views/VoucherBulkImportPreview.php';
+                if ($returnTo) {
+                    $redirectUrl .= '?return_to=' . urlencode($returnTo);
+                }
+                header('Location: ' . $redirectUrl);
+                exit;
+            }
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
+            $returnTo = isset($_POST['return_to']) ? $_POST['return_to'] : '';
+            $redirectUrl = '../views/VoucherRegisterForm.php';
+            if ($returnTo) {
+                $redirectUrl .= '?return_to=' . urlencode($returnTo);
+            }
+            header('Location: ' . $redirectUrl);
+            exit;
+        }
+    }
+
+    public function executeBulkImport()
+    {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                if (!isset($_SESSION['bulk_import_vouchers'])) {
+                    throw new Exception("No vouchers to import. Please upload a CSV file first.");
+                }
+                
+                $vouchers = $_SESSION['bulk_import_vouchers'];
+                $result = $this->voucherService->bulkImportVouchers($vouchers);
+                
+                // Clear session data
+                unset($_SESSION['bulk_import_vouchers']);
+                unset($_SESSION['bulk_import_errors']);
+                
+                if ($result['success']) {
+                    $_SESSION['success_message'] = $result['message'];
+                } else {
+                    $_SESSION['error_message'] = $result['message'];
+                }
+                
+                // Redirect based on return_to
+                $returnTo = isset($_POST['return_to']) ? $_POST['return_to'] : '';
+                if ($returnTo === 'admin') {
+                    header('Location: ../controller/VoucherController.php?action=showAll');
+                } else {
+                    header('Location: ../views/VoucherRegisterForm.php');
+                }
+                exit;
+            }
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
+            $returnTo = isset($_POST['return_to']) ? $_POST['return_to'] : '';
+            if ($returnTo === 'admin') {
+                header('Location: ../controller/VoucherController.php?action=showAll');
+            } else {
+                header('Location: ../views/VoucherRegisterForm.php');
+            }
+            exit;
+        }
+    }
 }
 
 // Handle the request
@@ -364,6 +496,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $controller->deleteVoucher();
     } elseif ($action === 'assign') {
         $controller->assignVoucher();
+    } elseif ($action === 'previewBulkImport') {
+        $controller->previewBulkImport();
+    } elseif ($action === 'executeBulkImport') {
+        $controller->executeBulkImport();
     }
 } else {
     // Handle GET requests
@@ -373,6 +509,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $controller->showAllVouchers();
     } elseif ($action === 'getMembers') {
         $controller->getMembersForAssignment();
+    } elseif ($action === 'downloadTemplate') {
+        $controller->downloadTemplate();
     }
 }
 
