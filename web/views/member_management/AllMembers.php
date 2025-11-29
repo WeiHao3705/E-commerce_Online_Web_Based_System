@@ -271,7 +271,8 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                             <img src="<?php echo htmlspecialchars($photoUrl); ?>" 
                                                  alt="Profile photo"
                                                  class="member-profile-photo clickable-image"
-                                                 onclick="viewMemberImage('<?php echo htmlspecialchars($photoUrl, ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>')"
+                                                 data-image-url="<?php echo htmlspecialchars($photoUrl, ENT_QUOTES); ?>"
+                                                 data-member-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>"
                                                  onerror="this.onerror=null; this.src='<?php echo htmlspecialchars($defaultPhotoUrl); ?>';"
                                                  style="cursor: pointer;"
                                                  title="Click to view full size">
@@ -323,8 +324,14 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                         </td>
                                         <td class="col-actions">
                                             <button
-                                                onclick="openEditModal(<?php echo $member['user_id']; ?>, '<?php echo htmlspecialchars($member['username'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['email'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['contact_no'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($member['gender'], ENT_QUOTES); ?>', '<?php echo !empty($member['DateOfBirth']) ? htmlspecialchars($member['DateOfBirth'], ENT_QUOTES) : ''; ?>')"
                                                 class="action-btn edit-btn"
+                                                data-user-id="<?php echo $member['user_id']; ?>"
+                                                data-username="<?php echo htmlspecialchars($member['username'], ENT_QUOTES); ?>"
+                                                data-full-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>"
+                                                data-email="<?php echo htmlspecialchars($member['email'], ENT_QUOTES); ?>"
+                                                data-contact-no="<?php echo htmlspecialchars($member['contact_no'], ENT_QUOTES); ?>"
+                                                data-gender="<?php echo htmlspecialchars($member['gender'], ENT_QUOTES); ?>"
+                                                data-date-of-birth="<?php echo !empty($member['DateOfBirth']) ? htmlspecialchars($member['DateOfBirth'], ENT_QUOTES) : ''; ?>"
                                                 title="Edit member">
                                                 <span class="material-symbols-outlined">edit</span>
                                             </button>
@@ -334,8 +341,11 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                             ?>
                                             <?php if ($currentStatus !== 'banned'): ?>
                                                 <button
-                                                    onclick="confirmStatusChange(<?php echo $member['user_id']; ?>, '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>', 'banned')"
                                                     class="action-btn ban-btn"
+                                                    data-action="status"
+                                                    data-user-id="<?php echo $member['user_id']; ?>"
+                                                    data-user-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>"
+                                                    data-status="banned"
                                                     title="Ban member">
                                                     <i class="fas fa-ban"></i>
                                                 </button>
@@ -343,8 +353,11 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                             
                                             <?php if ($currentStatus !== 'inactive'): ?>
                                                 <button
-                                                    onclick="confirmStatusChange(<?php echo $member['user_id']; ?>, '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>', 'inactive')"
                                                     class="action-btn inactive-btn"
+                                                    data-action="status"
+                                                    data-user-id="<?php echo $member['user_id']; ?>"
+                                                    data-user-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>"
+                                                    data-status="inactive"
                                                     title="Set to inactive">
                                                     <i class="fas fa-pause-circle"></i>
                                                 </button>
@@ -352,16 +365,21 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                             
                                             <?php if ($currentStatus !== 'active'): ?>
                                                 <button
-                                                    onclick="confirmStatusChange(<?php echo $member['user_id']; ?>, '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>', 'active')"
                                                     class="action-btn activate-btn"
+                                                    data-action="status"
+                                                    data-user-id="<?php echo $member['user_id']; ?>"
+                                                    data-user-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>"
+                                                    data-status="active"
                                                     title="Activate member">
                                                     <i class="fas fa-check-circle"></i>
                                                 </button>
                                             <?php endif; ?>
 
                                             <button
-                                                onclick="confirmDelete(<?php echo $member['user_id']; ?>, '<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>')"
                                                 class="action-btn delete-btn"
+                                                data-action="delete"
+                                                data-user-id="<?php echo $member['user_id']; ?>"
+                                                data-user-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>"
                                                 title="Delete member">
                                                 <span class="material-symbols-outlined">delete</span>
                                             </button>
@@ -531,10 +549,62 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
         });
 
         // Close modal with Escape key
-        $(document).keydown(function(e) {
+        $(document).on('keydown', function(e) {
             if (e.key === 'Escape' && !$('#viewImageModal').hasClass('hidden')) {
                 closeImageViewModal();
             }
+        });
+
+        // Close edit modal button handler
+        $(document).on('click', '.btn-close-edit-modal', function() {
+            closeEditModal();
+        });
+
+        // Close image modal button handler
+        $(document).on('click', '.btn-close-image-modal', function() {
+            closeImageViewModal();
+        });
+
+        // Edit button handler using data attributes
+        $(document).on('click', '.edit-btn', function() {
+            const $btn = $(this);
+            openEditModal(
+                $btn.data('user-id'),
+                $btn.data('username'),
+                $btn.data('full-name'),
+                $btn.data('email'),
+                $btn.data('contact-no'),
+                $btn.data('gender'),
+                $btn.data('date-of-birth')
+            );
+        });
+
+        // Status change button handler using data attributes
+        $(document).on('click', '.action-btn[data-action="status"]', function() {
+            const $btn = $(this);
+            confirmStatusChange(
+                $btn.data('user-id'),
+                $btn.data('user-name'),
+                $btn.data('status')
+            );
+        });
+
+        // Delete button handler using data attributes
+        $(document).on('click', '.action-btn[data-action="delete"]', function() {
+            const $btn = $(this);
+            confirmDelete(
+                $btn.data('user-id'),
+                $btn.data('user-name')
+            );
+        });
+
+        // View member image handler using data attributes
+        $(document).on('click', '.clickable-image', function() {
+            const $img = $(this);
+            viewMemberImage(
+                $img.data('image-url'),
+                $img.data('member-name')
+            );
         });
     </script>
 
@@ -585,7 +655,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                     </div>
 
                     <div class="form-actions">
-                        <button type="button" onclick="closeEditModal()" class="btn btn-secondary">
+                        <button type="button" class="btn btn-secondary btn-close-edit-modal">
                             Cancel
                         </button>
                         <button type="submit" class="btn btn-primary">
@@ -602,7 +672,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
         <div class="image-modal-container">
             <div class="image-modal-header">
                 <h3 id="viewImageTitle" class="image-modal-title">Profile Photo</h3>
-                <button class="image-modal-close" onclick="closeImageViewModal()" title="Close">
+                <button class="image-modal-close btn-close-image-modal" title="Close">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>

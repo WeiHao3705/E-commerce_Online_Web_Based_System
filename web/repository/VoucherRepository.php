@@ -435,5 +435,83 @@ class VoucherRepository
             throw new Exception("Error assigning voucher to members: " . $e->getMessage());
         }
     }
+
+    /**
+     * Get all vouchers assigned to a specific member
+     * Returns vouchers with their status (active, used, expired)
+     */
+    public function getMemberVouchers($userId, $filter = 'all', $sortBy = 'end_date', $sortOrder = 'ASC'): array
+    {
+        try {
+            $currentDate = date('Y-m-d');
+            
+            $allowedSortColumns = ['end_date', 'start_date', 'assigned_at', 'discount_value', 'code'];
+            if (!in_array($sortBy, $allowedSortColumns)){
+                $sortBy = 'end_date';
+            }
+            
+            // Validate sort order
+            $sortOrder = strtoupper($sortOrder);
+            if ($sortOrder !== 'ASC' && $sortOrder !== 'DESC') {
+                $sortOrder = 'ASC';
+            }
+
+            $sql = "SELECT 
+                        v.voucher_id,
+                        v.code,
+                        v.description,
+                        v.type,
+                        v.discount_value,
+                        v.min_spend,
+                        v.max_discount,
+                        v.start_date,
+                        v.end_date,
+                        v.status,
+                        va.assigned_at,
+                        CASE 
+                            WHEN vu.user_id IS NOT NULL THEN 'used'
+                            WHEN v.end_date < :current_date THEN 'expired'
+                            WHEN v.start_date > :current_date THEN 'pending'
+                            WHEN v.status = 'inactive' THEN 'inactive'
+                            ELSE 'active'
+                        END as voucher_status,
+                        vu.used_at
+                    FROM voucher_assignment va
+                    INNER JOIN voucher v ON va.voucher_id = v.voucher_id
+                    LEFT JOIN voucher_usage vu ON va.voucher_id = vu.voucher_id AND va.user_id = vu.user_id
+                    WHERE va.user_id = :user_id";
+            
+            $params = [':current_date' => $currentDate, ':user_id' => $userId];
+            
+            // Apply filter
+            if ($filter === 'active') {
+                $sql .= " AND v.end_date >= :current_date AND v.start_date <= :current_date2 AND v.status = 'active' AND vu.user_id IS NULL";
+                $params[':current_date2'] = $currentDate;
+            } elseif ($filter === 'used') {
+                $sql .= " AND vu.user_id IS NOT NULL";
+            } elseif ($filter === 'expired') {
+                $sql .= " AND v.end_date < :expired_date AND vu.user_id IS NULL";
+                $params[':expired_date'] = $currentDate;
+            }
+            
+            if ($sortBy === 'end_date' || $sortBy === 'start_date'){
+                $sql .= " ORDER BY v.$sortBy $sortOrder, va.assigned_at DESC";
+            } elseif($sortBy === 'assigned_at'){
+                $sql .= " ORDER BY va.$sortBy $sortOrder, v.end_date ASC";
+            } elseif($sortBy === 'discount_value' || $sortBy === 'code'){
+                $sql .= " ORDER BY v.$sortBy $sortOrder, v.end_date ASC";
+            } else{
+                $sql .= " ORDER BY v.end_date ASC, va.assigned_at DESC";
+            }
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Database error in getMemberVouchers: " . $e->getMessage());
+            throw new Exception("Error retrieving member vouchers");
+        }
+    }
 }
 

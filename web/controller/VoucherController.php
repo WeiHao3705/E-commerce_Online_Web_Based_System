@@ -478,6 +478,51 @@ class VoucherController
             exit;
         }
     }
+
+    public function showMemberVouchers()
+    {
+        try {
+            $vouchers = [];
+            $isLoggedIn = isset($_SESSION['user']) && !empty($_SESSION['user']);
+            $isMember = $isLoggedIn && $_SESSION['user']['role'] === 'member';
+            $userId = null;
+            $filter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
+            
+            // Validate filter
+            $allowedFilters = ['all', 'active', 'used', 'expired'];
+            if (!in_array($filter, $allowedFilters)) {
+                $filter = 'all';
+            }
+
+            // Get sort parameters
+            $sortBy = isset($_GET['sortBy']) ? $_GET['sortBy'] : 'end_date';
+            $sortOrder = isset($_GET['sortOrder']) ? strtoupper($_GET['sortOrder']) : 'ASC';
+            
+            // Validate sort column
+            $allowedSortColumns = ['end_date', 'start_date', 'assigned_at', 'discount_value', 'code'];
+            if (!in_array($sortBy, $allowedSortColumns)) {
+                $sortBy = 'end_date';
+            }
+            
+            // Validate sort order
+            if ($sortOrder !== 'ASC' && $sortOrder !== 'DESC') {
+                $sortOrder = 'ASC';
+            }
+
+            // Only fetch vouchers if user is logged in and is a member
+            if ($isMember) {
+                $userId = $_SESSION['user']['user_id'];
+                $vouchers = $this->voucherService->getMemberVouchers($userId, $filter, $sortBy, $sortOrder);
+            }
+
+            // Include the view (will show empty state if not logged in)
+            require_once __DIR__ . '/../views/member/MemberVoucherList.php';
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
+            header('Location: ../index.php');
+            exit;
+        }
+    }
 }
 
 // Handle the request
@@ -511,6 +556,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $controller->getMembersForAssignment();
     } elseif ($action === 'downloadTemplate') {
         $controller->downloadTemplate();
+    } elseif ($action === 'showMemberVouchers') {
+        $controller->showMemberVouchers();
     }
 }
 

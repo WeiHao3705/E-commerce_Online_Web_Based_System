@@ -560,7 +560,8 @@ if (!empty($_POST)) {
             const $startWebcam = $('#startWebcam');
             const $captureWebcamPhoto = $('#captureWebcamPhoto');
             const $stopWebcam = $('#stopWebcam');
-            const videoElement = document.getElementById('profilePhotoVideo');
+            const $videoElement = $('#profilePhotoVideo');
+            const videoElement = $videoElement[0];
             const defaultPhotoPath = '<?php echo $imageBasePath; ?>defaultUserImage.jpg';
             let cropper = null;
             let currentScaleX = 1;
@@ -758,7 +759,9 @@ if (!empty($_POST)) {
                     }
 
                     webcamStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                    videoElement.srcObject = webcamStream;
+                    if (videoElement) {
+                        videoElement.srcObject = webcamStream;
+                    }
                     $('#webcamVideoContainer').addClass('active');
                     $startWebcam.prop('disabled', true);
                     $captureWebcamPhoto.prop('disabled', false);
@@ -773,7 +776,9 @@ if (!empty($_POST)) {
                     webcamStream.getTracks().forEach(track => track.stop());
                     webcamStream = null;
                 }
-                videoElement.srcObject = null;
+                if (videoElement) {
+                    videoElement.srcObject = null;
+                }
                 $('#webcamVideoContainer').removeClass('active');
                 $startWebcam.prop('disabled', false);
                 $captureWebcamPhoto.prop('disabled', true);
@@ -781,12 +786,13 @@ if (!empty($_POST)) {
             }
 
             function captureWebcamPhoto() {
-                if (!webcamStream || !videoElement.videoWidth) {
+                if (!webcamStream || !videoElement || !videoElement.videoWidth) {
                     alert('Webcam is not ready yet.');
                     return;
                 }
 
-                const canvas = document.createElement('canvas');
+                const $canvas = $('<canvas>');
+                const canvas = $canvas[0];
                 canvas.width = videoElement.videoWidth;
                 canvas.height = videoElement.videoHeight;
                 const ctx = canvas.getContext('2d');
@@ -810,7 +816,7 @@ if (!empty($_POST)) {
                 stopWebcam();
             }
 
-            window.addEventListener('beforeunload', handleBeforeUnload);
+            $(window).on('beforeunload', handleBeforeUnload);
 
             // Form submission validation
             $('#registrationForm').on('submit', function(e) {

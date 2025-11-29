@@ -56,7 +56,7 @@
 
         <!-- Copyright -->
         <div class="footer-bottom">
-            <p>&copy; <?php echo date('Y'); ?> - <?php echo isset($_SESSION['developer_name']) ? $_SESSION['developer_name'] : 'Sports equipment'; ?></p>
+            <p>&copy; <?php echo date('Y'); ?> - <?php echo isset($_SESSION['developer_name']) ? $_SESSION['developer_name'] : 'NGear Sports equipment'; ?></p>
         </div>
     </div>
 </footer>

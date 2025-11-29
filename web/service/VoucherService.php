@@ -438,5 +438,13 @@ class VoucherService
     {
         return $this->voucherRepository->getRecentActiveVouchersCount($days);
     }
+
+    /**
+     * Get all vouchers assigned to a specific member
+     */
+    public function getMemberVouchers($userId, $filter = 'all', $sortBy = 'end_date', $sortOrder = 'ASC'): array
+    {
+        return $this->voucherRepository->getMemberVouchers($userId, $filter, $sortBy, $sortOrder);
+    }
 }
 

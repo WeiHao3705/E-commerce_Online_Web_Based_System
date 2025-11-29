@@ -29,7 +29,7 @@ $pageTitle = 'Member Login';
 
 <body>
 
-    <?php include $prefix . 'general/_navbar.php'; ?>
+    <?php include __DIR__ . '/../general/_navbar.php'; ?>
 
     <?php
     if (isset($_SESSION['success_message'])) {
@@ -78,7 +78,7 @@ $pageTitle = 'Member Login';
         </div>
     </div>
 
-    <?php include $prefix . 'general/_footer.php'; ?>
+    <?php include __DIR__ . '/../general/_footer.php'; ?>
 
     <script>
         (function(){
