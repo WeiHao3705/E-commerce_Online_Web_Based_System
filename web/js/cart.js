@@ -59,10 +59,37 @@ $(document).ready(function() {
             updateOrderSummary(); // Recalculate all totals
         }
     });
+
+    // modal for voucher selection
+    var voucherModal = $('#voucherModal');
+    var openModalBtn = $('#selectVoucherBtn');
+    var closeModalSpan = $('.close');
+    var selectedVoucher = $('#selectedVoucher');
+
+    // popup a window after click the select button
+    // WHY: When user clicks "Select Voucher", we need to show the modal window
+    // so they can browse available vouchers
+    openModalBtn.click(function() {
+        voucherModal.fadeIn(300); // Show the modal with smooth fade animation
+    });
+
+    // close the modal when user clicks the "x" button or outside the modal content
+    closeModalSpan.click(function() {
+        voucherModal.fadeOut(300);
+    });
+
+    $(window).click(function(event) {
+        if(event.target.id === 'voucherModal' || !$(event.target).closest('.modal-content').length) {
+            voucherModal.fadeOut(300);
+        }
+    })
+
+
+
     
     // handle promo code application
     // when user enters a promo code and clicks Apply
-    $('.apply-btn').click(function() {
+    $('.applyBtn').click(function() {
         var promoCode = $('#promo-code').val(); // Get the entered promo code
         if (promoCode) {
             // TODO: Add actual promo code validation logic here

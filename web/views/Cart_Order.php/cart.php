@@ -6,6 +6,12 @@ $conn = $db->getConnection();
 $pageTitle = "Shopping Cart";
 include '../../general/_header.php'; 
 include '../../general/_navbar.php'; 
+
+// fetch the vouchers from db
+$voucherQuery = "SELECT * FROM voucher WHERE status = 'active' AND start_date <= CURDATE() AND end_date >= CURDATE() ORDER BY type, min_spend";
+$voucherStmt = $conn->prepare($voucherQuery);
+$voucherStmt->execute();
+$vouchers = $voucherStmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <link rel="stylesheet" href="../../css/cart.css">
@@ -144,10 +150,22 @@ include '../../general/_navbar.php';
                 </div>
                 
                 <div class="promo-section">
-                    <h4>Promo Code</h4>
+                    <h4>Promo Code / Voucher</h4>
+                    <!--Select the voucher-->
+                    <button type="button" class="select-voucher-btn" id="selectVoucherBtn">
+                        <i class="fas fa-ticket-alt"></i> Select Available Voucher
+                    </button>
                     <div class="promo-input">
-                        <input type="text" id="promo-code" placeholder="Enter promo code" class="form-input">
-                        <button class="apply-btn">Apply</button>
+                        <input type="text" id="promo-code" placeholder="Or enter promo code manually" class="form-input" readonly>
+                        <button class="apply-btn" id="applyBtn">Apply</button>
+                    </div>
+                    
+                    <!-- Applied Voucher Display -->
+                    <div id="appliedVoucher" class="applied-voucher" style="display: none;">
+                        <div class="voucher-info">
+                            <span class="voucher-label"></span>
+                            <button class="remove-voucher-btn" id="removeVoucherBtn">&times;</button>
+                        </div>
                     </div>
                 </div>
                 
@@ -157,6 +175,59 @@ include '../../general/_navbar.php';
                     </a>
                 </button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- This section shows what is inside the modal after users click the select voucher button -->
+<!-- Voucher Selection Modal -->
+<div id="voucherModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Select Voucher</h3>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <?php if (empty($vouchers)): ?>
+                <p class="no-vouchers">No vouchers available at the moment.</p>
+            <?php else: ?>
+                <div class="voucher-list">
+                    <?php foreach ($vouchers as $voucher): ?>
+                        <div class="voucher-card" 
+                             data-code="<?= htmlspecialchars($voucher['code']) ?>"
+                             data-type="<?= htmlspecialchars($voucher['type']) ?>"
+                             data-value="<?= htmlspecialchars($voucher['discount_value']) ?>"
+                             data-min="<?= htmlspecialchars($voucher['min_spend']) ?>"
+                             data-max="<?= htmlspecialchars($voucher['max_discount'] ?? '') ?>">
+                            <div class="voucher-icon">
+                                <i class="fas fa-ticket-alt"></i>
+                            </div>
+                            <div class="voucher-details">
+                                <h4><?= htmlspecialchars($voucher['code']) ?></h4>
+                                <p class="voucher-desc"><?= htmlspecialchars($voucher['description']) ?></p>
+                                <div class="voucher-info-row">
+                                    <span class="voucher-discount">
+                                        <?php 
+                                        if ($voucher['type'] == 'percent') {
+                                            echo number_format($voucher['discount_value'], 0) . '% OFF';
+                                        } elseif ($voucher['type'] == 'fixed') {
+                                            echo 'RM ' . number_format($voucher['discount_value'], 2) . ' OFF';
+                                        } else {
+                                            echo 'FREE SHIPPING';
+                                        }
+                                        ?>
+                                    </span>
+                                    <?php if ($voucher['min_spend'] > 0): ?>
+                                        <span class="voucher-min">Min: RM <?= number_format($voucher['min_spend'], 2) ?></span>
+                                    <?php endif; ?>
+                                </div>
+                                <p class="voucher-validity">Valid until: <?= date('d M Y', strtotime($voucher['end_date'])) ?></p>
+                            </div>
+                            <button class="use-voucher-btn">Use</button>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>
