@@ -14,42 +14,58 @@ $sql = "
     LEFT JOIN product_price pr ON p.product_id = pr.product_id
     LEFT JOIN product_variant pv ON p.product_id = pv.product_id
     GROUP BY p.product_id
+    ORDER BY p.category, p.product_name
 ";
+
 
 
 $stmt = $conn->prepare($sql);
 $stmt->execute();
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$grouped = [];
+
+// Group by category
+foreach ($rows as $product) {
+    $grouped[$product['category']][] = $product;
+}
+
 ?>
 
 <h2 style="margin-top: 20px;">Products</h2>
 
-<?php
-if (!$rows) {
-    echo "<p>No products found.</p>";
-    return;
-}
+<?php foreach ($grouped as $category => $products): ?>
 
-foreach ($rows as $row): ?>
-    <div style='border:1px solid #ccc; padding:10px; margin:10px; width:300px;'>
-        
-        <strong>ID:</strong> <?= $row['product_id'] ?><br>
-        <strong>Name:</strong> <?= $row['product_name'] ?><br>
-        <strong>Category:</strong> <?= $row['category'] ?><br>
-        <strong>Description:</strong> <?= $row['description'] ?><br>
+    <h3 style="margin-top: 30px;"><?= htmlspecialchars($category) ?></h3>
 
-        <strong>Original Price:</strong> 
-        <?= $row['original_price'] ? "RM " . $row['original_price'] : "N/A" ?><br>
+    <div style="display: flex; flex-wrap: wrap; gap: 20px;">
 
-        <strong>Colors:</strong> 
-        <?= $row['colors'] ? $row['colors'] : "No variants" ?><br><br>
+        <?php foreach ($products as $row): ?>
+            <div style="
+                border:1px solid #ccc; 
+                padding:10px; 
+                width:23%; 
+                box-sizing:border-box;
+            ">
+                <strong><?= htmlspecialchars($row['product_name']) ?></strong><br>
 
-        <?php if ($row['image_path']): ?>
-            <img src="/<?= $row['image_path'] ?>" width="150">
-        <?php else: ?>
-            (No image)
-        <?php endif; ?>
+                <strong>Price:</strong>
+                <?= $row['original_price'] ? "RM " . $row['original_price'] : "N/A" ?><br>
+
+                <strong>Colors:</strong>
+                <?= $row['colors'] ? htmlspecialchars($row['colors']) : "No variants" ?><br><br>
+
+                <?php if ($row['image_path']): ?>
+                    <img src="/<?= htmlspecialchars($row['image_path']) ?>" width="100%" style="border-radius: 5px;">
+                <?php else: ?>
+                    (No image)
+                <?php endif; ?>
+
+            </div>
+        <?php endforeach; ?>
 
     </div>
+
 <?php endforeach; ?>
+
 
