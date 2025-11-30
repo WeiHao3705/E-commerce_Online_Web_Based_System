@@ -1,3 +1,6 @@
+// GLOBAL VARIABLE: Store applied voucher data (needs to be accessible everywhere)
+var appliedVoucher = null;
+
 $(document).ready(function() {
     // run initial calculation to set up the totals
     updateOrderSummary();
@@ -64,7 +67,7 @@ $(document).ready(function() {
     var voucherModal = $('#voucherModal');
     var openModalBtn = $('#selectVoucherBtn');
     var closeModalSpan = $('.close');
-    var selectedVoucher = $('#selectedVoucher');
+    var selectedVoucher = $('.use-voucher-btn');
 
     // popup a window after click the select button
     // WHY: When user clicks "Select Voucher", we need to show the modal window
@@ -79,13 +82,41 @@ $(document).ready(function() {
     });
 
     $(window).click(function(event) {
-        if(event.target.id === 'voucherModal' || !$(event.target).closest('.modal-content').length) {
+        if(event.target.id === 'voucherModal') {
             voucherModal.fadeOut(300);
         }
-    })
+    });
 
+    // once the users select the a voucher, update the order summary
+    $('.voucher-option').click(function() {
+        // get the voucher code from the attribute
+        var voucherCode = $(this).data('voucher-code');
+        // update the selected voucher display
+        selectedVoucher.text(voucherCode); 
+        // recalculate totals after voucher selection
+        updateOrderSummary(); 
+    });
 
+    // Use event delegation because voucher buttons are loaded dynamically
+    // Attach to modal-body which exists when page loads
+    $(document).on('click', '.use-voucher-btn', function() {
+        var voucherCard = $(this).closest('.voucher-card');
 
+        appliedVoucher = {
+            code: voucherCard.data('code'),
+            type: voucherCard.data('type'),
+            value: parseFloat(voucherCard.data('value')),
+            minSpend: parseFloat(voucherCard.data('min'))
+        };
+        
+        console.log('Voucher applied:', appliedVoucher); // Debug: check if this runs
+        
+        //close the modal
+        voucherModal.fadeOut(300);
+
+        // update order summary
+        updateOrderSummary();
+    });
     
     // handle promo code application
     // when user enters a promo code and clicks Apply
@@ -141,7 +172,29 @@ function updateOrderSummary() {
     
     // calculate tax and grand total
     var tax = subtotal * taxRate; // Tax = subtotal × 6%
-    var grandTotal = subtotal + shippingFee + tax; // Grand total = subtotal + shipping + tax
+    
+    var voucherDiscount = 0;
+
+    if(appliedVoucher && subtotal >= appliedVoucher.minSpend) {
+        if(appliedVoucher.type === 'percent') { // Fixed: was 'percentage'
+            voucherDiscount = subtotal * (appliedVoucher.value / 100);
+        } else if(appliedVoucher.type === 'fixed') {
+            voucherDiscount = appliedVoucher.value; // Fixed: just use the value directly
+        } else if(appliedVoucher.type === 'freeshipping') { // Fixed: was 'shipping'
+            voucherDiscount = shippingFee;
+            shippingFee = 0;
+        }
+        console.log('Discount calculated:', voucherDiscount); // Debug
+    };
+
+    if(voucherDiscount > 0) {
+        $('.voucher-discount-applied').show();
+        $('#voucher-discount-amount').text('- RM ' + voucherDiscount.toFixed(2)); // Added minus sign
+    } else {
+        $('.voucher-discount-applied').hide();
+    };
+
+    var grandTotal = subtotal + shippingFee + tax - voucherDiscount; // Grand total = subtotal + shipping + tax - discount
     
     // handle case when no items are selected
     if ($('.item-checkbox:checked').length === 0) {
@@ -149,7 +202,7 @@ function updateOrderSummary() {
         tax = 0;
         grandTotal = 0;
         shippingFee = 0; // No shipping if no items
-    }
+    };
     
     // update the order summary display
     // Find each summary line and update the last span (the amount)

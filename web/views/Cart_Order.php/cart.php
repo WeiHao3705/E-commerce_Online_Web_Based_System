@@ -50,11 +50,12 @@ $vouchers = $voucherStmt->fetchAll(PDO::FETCH_ASSOC);
     foreach ($cartItems as $item) {
         $subtotal += $item['price'] * $item['quantity'];
     }
-    
+
     // set fixed values for shipping and tax
     $shippingFee = 15.00;
     $tax = $subtotal * 0.06; // 6% tax
     $grandTotal = $subtotal + $shippingFee + $tax;
+    
     ?>
 
     <!-- create dynamic cart message with IDs for JavaScript control -->
@@ -140,6 +141,12 @@ $vouchers = $voucherStmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="summary-line">
                     <span>Tax (6%):</span>
                     <span>RM <?= number_format($tax, 2) ?></span>
+                </div>
+
+                <!-- Voucher discount (hidden by default, shown by JavaScript when applied) -->
+                <div class="summary-line voucher-discount-applied">
+                    <span>Voucher Discount:</span>
+                    <span id="voucher-discount-amount">- RM 0.00</span>
                 </div>
                 
                 <hr>

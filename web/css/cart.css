@@ -487,6 +487,10 @@
     transform: scale(1.05);
 }
 
+.voucher-discount {
+    
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .cart-layout {
