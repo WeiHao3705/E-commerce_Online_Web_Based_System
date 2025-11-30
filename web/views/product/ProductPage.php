@@ -1,5 +1,20 @@
 <?php
-// Fetch product & image data
+session_start();
+
+// Include DB connection
+require __DIR__ . '/../../database/connection.php';
+$db = new Database();
+$conn = $db->getConnection();
+
+// Page title for header
+$pageTitle = "Products";
+
+// Include layout
+require __DIR__ . '/../../general/_header.php';
+require __DIR__ . '/../../general/_navbar.php';
+
+// ------------------- Fetch product data -------------------
+
 $sql = "
     SELECT 
         p.product_id, 
@@ -17,29 +32,23 @@ $sql = "
     ORDER BY p.category, p.product_name
 ";
 
-
-
 $stmt = $conn->prepare($sql);
 $stmt->execute();
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$grouped = [];
-
 // Group by category
+$grouped = [];
 foreach ($rows as $product) {
     $grouped[$product['category']][] = $product;
 }
-
 ?>
 
 <h2 style="margin-top: 20px;">Products</h2>
 
 <?php foreach ($grouped as $category => $products): ?>
-
     <h3 style="margin-top: 30px;"><?= htmlspecialchars($category) ?></h3>
 
     <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-
         <?php foreach ($products as $row): ?>
             <div style="
                 border:1px solid #ccc; 
@@ -60,12 +69,9 @@ foreach ($rows as $product) {
                 <?php else: ?>
                     (No image)
                 <?php endif; ?>
-
             </div>
         <?php endforeach; ?>
-
     </div>
-
 <?php endforeach; ?>
 
-
+<?php require __DIR__ . '/../../general/_footer.php'; ?>

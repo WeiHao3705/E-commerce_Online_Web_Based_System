@@ -14,9 +14,6 @@ include 'general/_navbar.php';
 
 // ROUTING
 switch ($page) {
-    case 'product':
-        require __DIR__ . '/views/ProductPage.php';
-        break;
 
     case 'home':
     default:
