@@ -29,7 +29,7 @@ $heroWidth = $placement['width'] ?? '40%';
         <img class="guest-img" src="<?php echo $prefix; ?>images/guest/<?php echo htmlspecialchars($randomGuestImg); ?>" alt="Guest hero">
         <div class="hero-content">
             <h2>ONLINE SHOPPING</h2>
-            <p>Explore our wide selection of sports equipment and accessories.<br>Sign up or log in to get the best deals and faster checkout.</p>
+            <p>Explore our wide selection of sports equipment and accessories. Sign up or log in to get the best deals and faster checkout.</p>
             <div class="hero-actions">
                 <a href="<?php echo $prefix; ?>products.php" class="btn-primary">Sign up</a>
                 <a href="<?php echo $prefix; ?>account.php" class="btn-ghost">Login</a>
