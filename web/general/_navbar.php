@@ -37,11 +37,11 @@ $prefix = $webBasePath;
                         <li><a href="<?php echo $prefix; ?>account.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'account.php' ? 'active' : ''; ?>">Login</a></li>
                     <?php else: ?>
                         <li class="dropdown">
-                            <a href="<?php echo $prefix; ?>account.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'account.php' ? 'active' : ''; ?>">
+                            <a href="<?php echo $prefix; ?>index.php" class="<?php echo (basename($_SERVER['PHP_SELF']) == 'index.php' || basename($_SERVER['PHP_SELF']) == 'account.php') ? 'active' : ''; ?>">
                                 Account <i class="fas fa-caret-down"></i>
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a href="<?php echo $prefix; ?>profile.php"><i class="fas fa-user"></i> My Profile</a></li>
+                                <li><a href="<?php echo $prefix; ?>index.php"><i class="fas fa-user"></i> My Profile</a></li>
                                 <li><a href="<?php echo $prefix; ?>orders.php"><i class="fas fa-box"></i> My Orders</a></li>
                                 <li><a href="<?php echo $prefix; ?>controller/VoucherController.php?action=showMemberVouchers"><i class="fas fa-ticket-alt"></i> My Vouchers</a></li>
                                 <li><a href="<?php echo $prefix; ?>wishlist.php"><i class="fas fa-heart"></i> Wishlist</a></li>

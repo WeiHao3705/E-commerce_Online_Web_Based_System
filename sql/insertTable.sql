@@ -40,7 +40,8 @@ CREATE TABLE voucher (
     max_discount DECIMAL(10,2),
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
-    status ENUM('active', 'inactive', 'expired') DEFAULT 'active'
+    status ENUM('active', 'inactive', 'expired') DEFAULT 'active',
+    is_redeemable BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- Address table (depends on users)

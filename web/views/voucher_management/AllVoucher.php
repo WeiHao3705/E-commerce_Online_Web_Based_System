@@ -30,6 +30,7 @@ $docRoot = $_SERVER['DOCUMENT_ROOT'];
 $relativePath = str_replace($docRoot, '', $webRootDir);
 $imageBasePath = str_replace('\\', '/', $relativePath) . '/'; // Normalize slashes
 $cssBasePath = $imageBasePath . 'css/'; // CSS files are in web/css/
+$viewsBasePath = $imageBasePath . 'views/'; // Views files are in web/views/
 
 $pageTitle = 'All Vouchers - Admin Dashboard';
 
@@ -114,30 +115,8 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
 
 <body class="page-body">
 
-    <?php include __DIR__ . '/../../general/_header.php'; ?>
-    <?php include __DIR__ . '/../../general/_navbar.php'; ?>
-
     <div class="page-container">
         <div class="page-content">
-            <!-- Header -->
-            <header class="page-header">
-                <div class="header-logo">
-                    <svg class="logo-svg" fill="none" viewBox="0 0 140 42" xmlns="http://www.w3.org/2000/svg">
-                        <text fill="#FF523B" font-family="Poppins, sans-serif" font-size="28" font-weight="bold" letter-spacing="0em" style="white-space: pre" xml:space="preserve">
-                            <tspan x="0" y="29.9219">NGear</tspan>
-                        </text>
-                        <text class="logo-subtitle" fill="#555" font-family="Poppins, sans-serif" font-size="8" font-style="italic" letter-spacing="0.05em" style="white-space: pre" xml:space="preserve">
-                            <tspan x="60" y="38">athlete's choice</tspan>
-                        </text>
-                        <rect height="42" rx="4" stroke="#FF523B" stroke-width="2" width="115" x="0" y="0"></rect>
-                    </svg>
-                </div>
-                <div class="header-title">
-                    <h1 class="page-title">Admin Dashboard</h1>
-                    <p class="page-subtitle">Manage Vouchers</p>
-                </div>
-            </header>
-
             <!-- Success/Error Messages -->
             <?php if (isset($_SESSION['success_message'])): ?>
                 <div class="message message-success">
@@ -180,18 +159,15 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                                         value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>" />
                                 </div>
                                 <button type="submit" class="btn btn-primary btn-search">
-                                    Search
+                                    <span class="material-symbols-outlined">search</span>
+                                    <span>Search</span>
                                 </button>
                             </form>
                         </div>
                         <div class="actions-section">
                             <?php
-                            // Calculate the path to VoucherRegisterForm.php
-                            // Since AllVoucher.php is in web/views/voucher_management/ and accessed via controller
-                            // We need to go from controller location to views location
-                            $currentScript = $_SERVER['SCRIPT_NAME']; // e.g., /E-commerce_Online_Web_Based_System/web/controller/VoucherController.php
-                            $basePath = dirname(dirname($currentScript)); // Gets to /E-commerce_Online_Web_Based_System/web/
-                            $voucherFormUrl = $basePath . '/views/voucher_management/VoucherRegisterForm.php?return_to=admin';
+                            // Calculate the path to VoucherRegisterForm.php using the same base path calculation
+                            $voucherFormUrl = $viewsBasePath . 'voucher_management/VoucherRegisterForm.php?return_to=admin';
                             ?>
                             <a href="<?php echo $voucherFormUrl; ?>" class="btn btn-primary btn-add">
                                 <span class="material-symbols-outlined">add</span>
@@ -252,6 +228,9 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                                         <span>Status</span>
                                         <?php echo getSortArrow('status', $currentSortBy, $currentSortOrder); ?>
                                     </a>
+                                </th>
+                                <th class="col-sortable">
+                                    <span>Redeemable</span>
                                 </th>
                                 <th class="col-actions">
                                     <span class="sr-only">Actions</span>
@@ -335,6 +314,14 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                                             ?>
                                             <span class="<?php echo $statusClass; ?>"><?php echo htmlspecialchars($statusText); ?></span>
                                         </td>
+                                        <td class="col-redeemable">
+                                            <?php
+                                            $isRedeemable = isset($voucher['is_redeemable']) ? (bool)$voucher['is_redeemable'] : true;
+                                            $redeemableClass = $isRedeemable ? 'status-badge status-active' : 'status-badge status-inactive';
+                                            $redeemableText = $isRedeemable ? 'Yes' : 'No';
+                                            ?>
+                                            <span class="<?php echo $redeemableClass; ?>"><?php echo htmlspecialchars($redeemableText); ?></span>
+                                        </td>
                                         <td class="col-actions">
                                             <button
                                                 class="action-btn edit-btn"
@@ -348,6 +335,7 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                                                 data-max-discount="<?php echo htmlspecialchars($voucher['max_discount'] ?? '', ENT_QUOTES); ?>"
                                                 data-start-date="<?php echo htmlspecialchars($voucher['start_date'], ENT_QUOTES); ?>"
                                                 data-end-date="<?php echo htmlspecialchars($voucher['end_date'], ENT_QUOTES); ?>"
+                                                data-is-redeemable="<?php echo isset($voucher['is_redeemable']) ? ($voucher['is_redeemable'] ? '1' : '0') : '1'; ?>"
                                                 title="Edit voucher">
                                                 <span class="material-symbols-outlined">edit</span>
                                             </button>
@@ -363,7 +351,7 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                                                     data-code="<?php echo htmlspecialchars($voucher['code'], ENT_QUOTES); ?>"
                                                     data-status="inactive"
                                                     title="Set to inactive">
-                                                    <i class="fas fa-pause-circle"></i>
+                                                    <span class="material-symbols-outlined">pause_circle</span>
                                                 </button>
                                             <?php endif; ?>
 
@@ -375,7 +363,7 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                                                     data-code="<?php echo htmlspecialchars($voucher['code'], ENT_QUOTES); ?>"
                                                     data-status="active"
                                                     title="Activate voucher">
-                                                    <i class="fas fa-check-circle"></i>
+                                                    <span class="material-symbols-outlined">check_circle</span>
                                                 </button>
                                             <?php endif; ?>
 
@@ -401,7 +389,7 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr class="table-row table-row-empty">
-                                    <td colspan="9" class="col-empty">
+                                    <td colspan="10" class="col-empty">
                                         No vouchers found. <?php echo !empty($_GET['search']) ? 'Try a different search term.' : ''; ?>
                                     </td>
                                 </tr>
@@ -506,7 +494,6 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
         <!-- Member IDs will be added dynamically -->
     </form>
 
-    <?php include __DIR__ . '/../../general/_footer.php'; ?>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
@@ -581,7 +568,7 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                     tbody.append(row);
                 });
             } else {
-                tbody.append('<tr class="table-row table-row-empty"><td colspan="9" class="col-empty">No vouchers found. Try a different search term.</td></tr>');
+                tbody.append('<tr class="table-row table-row-empty"><td colspan="10" class="col-empty">No vouchers found. Try a different search term.</td></tr>');
             }
         }
 
@@ -616,16 +603,19 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
             
             // Format dates
             const startDate = voucher.start_date ? new Date(voucher.start_date).toISOString().split('T')[0] : '-';
-            const endDate = voucher.end_date ? new Date(voucher.end_date).toISOString().split('T')[0] : '-';
+                    const endDate = voucher.end_date ? new Date(voucher.end_date).toISOString().split('T')[0] : '-';
             const minSpend = voucher.min_spend && voucher.min_spend > 0 ? 'RM' + parseFloat(voucher.min_spend).toFixed(2) : '-';
+            const isRedeemable = voucher.is_redeemable !== undefined ? (voucher.is_redeemable ? true : false) : true;
+            const redeemableText = isRedeemable ? 'Yes' : 'No';
+            const redeemableClass = isRedeemable ? 'status-active' : 'status-inactive';
             
             // Build status buttons
             let statusButtons = '';
             if (status !== 'inactive') {
-                statusButtons += '<button class="action-btn inactive-btn" data-action="status" data-voucher-id="' + voucher.voucher_id + '" data-code="' + escapeHtml(voucher.code) + '" data-status="inactive" title="Set to inactive"><i class="fas fa-pause-circle"></i></button>';
+                statusButtons += '<button class="action-btn inactive-btn" data-action="status" data-voucher-id="' + voucher.voucher_id + '" data-code="' + escapeHtml(voucher.code) + '" data-status="inactive" title="Set to inactive"><span class="material-symbols-outlined">pause_circle</span></button>';
             }
             if (status !== 'active') {
-                statusButtons += '<button class="action-btn activate-btn" data-action="status" data-voucher-id="' + voucher.voucher_id + '" data-code="' + escapeHtml(voucher.code) + '" data-status="active" title="Activate voucher"><i class="fas fa-check-circle"></i></button>';
+                statusButtons += '<button class="action-btn activate-btn" data-action="status" data-voucher-id="' + voucher.voucher_id + '" data-code="' + escapeHtml(voucher.code) + '" data-status="active" title="Activate voucher"><span class="material-symbols-outlined">check_circle</span></button>';
             }
             
             const row = `
@@ -640,8 +630,11 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                     <td class="col-status col-voucher-status">
                         <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
                     </td>
+                    <td class="col-redeemable">
+                        <span class="status-badge ${redeemableClass}">${redeemableText}</span>
+                    </td>
                     <td class="col-actions">
-                        <button class="action-btn edit-btn" data-action="edit" data-voucher-id="${voucher.voucher_id}" data-code="${escapeHtml(voucher.code)}" data-description="${escapeHtml(voucher.description || '')}" data-type="${escapeHtml(voucher.type)}" data-discount-value="${escapeHtml(voucher.discount_value)}" data-min-spend="${escapeHtml(voucher.min_spend || '0')}" data-max-discount="${escapeHtml(voucher.max_discount || '')}" data-start-date="${escapeHtml(voucher.start_date)}" data-end-date="${escapeHtml(voucher.end_date)}" title="Edit voucher">
+                        <button class="action-btn edit-btn" data-action="edit" data-voucher-id="${voucher.voucher_id}" data-code="${escapeHtml(voucher.code)}" data-description="${escapeHtml(voucher.description || '')}" data-type="${escapeHtml(voucher.type)}" data-discount-value="${escapeHtml(voucher.discount_value)}" data-min-spend="${escapeHtml(voucher.min_spend || '0')}" data-max-discount="${escapeHtml(voucher.max_discount || '')}" data-start-date="${escapeHtml(voucher.start_date)}" data-end-date="${escapeHtml(voucher.end_date)}" data-is-redeemable="${isRedeemable ? '1' : '0'}" title="Edit voucher">
                             <span class="material-symbols-outlined">edit</span>
                         </button>
                         ${statusButtons}
@@ -740,6 +733,7 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                 var maxDiscount = $btn.data('max-discount');
                 var startDate = $btn.data('start-date');
                 var endDate = $btn.data('end-date');
+                var isRedeemable = $btn.data('is-redeemable') === '1' || $btn.data('is-redeemable') === 1;
                 
                 $('#editVoucherId').val(voucherId);
                 $('#editCode').val(code);
@@ -750,6 +744,7 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                 $('#editMaxDiscount').val(maxDiscount || '');
                 $('#editStartDate').val(startDate);
                 $('#editEndDate').val(endDate);
+                $('#editIsRedeemable').prop('checked', isRedeemable);
                 $('#editModal').removeClass('hidden');
             });
             
@@ -818,7 +813,7 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
         });
         
         // Legacy function names for backward compatibility (if needed)
-        function openEditModal(voucherId, code, description, type, discountValue, minSpend, maxDiscount, startDate, endDate) {
+            function openEditModal(voucherId, code, description, type, discountValue, minSpend, maxDiscount, startDate, endDate, isRedeemable) {
             $('#editVoucherId').val(voucherId);
             $('#editCode').val(code);
             $('#editDescription').val(description || '');
@@ -828,6 +823,7 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
             $('#editMaxDiscount').val(maxDiscount || '');
             $('#editStartDate').val(startDate);
             $('#editEndDate').val(endDate);
+            $('#editIsRedeemable').prop('checked', isRedeemable !== undefined ? isRedeemable : true);
             $('#editModal').removeClass('hidden');
         }
 
@@ -1038,10 +1034,12 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
 
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary btn-close-assign-modal">
-                            Cancel
+                            <span class="material-symbols-outlined">close</span>
+                            <span>Cancel</span>
                         </button>
                         <button type="button" id="assignFormSubmit" class="btn btn-primary">
-                            Assign Voucher
+                            <span class="material-symbols-outlined">send</span>
+                            <span>Assign Voucher</span>
                         </button>
                     </div>
                 </form>
@@ -1103,12 +1101,22 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                         <input type="date" name="end_date" id="editEndDate" class="form-input">
                     </div>
 
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" name="is_redeemable" id="editIsRedeemable" value="1" checked>
+                            <span>Allow members to redeem this voucher</span>
+                        </label>
+                        <small style="display: block; margin-top: 0.5rem; color: #6b7280;">If unchecked, only admins can assign this voucher to members.</small>
+                    </div>
+
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary btn-close-edit-modal">
-                            Cancel
+                            <span class="material-symbols-outlined">close</span>
+                            <span>Cancel</span>
                         </button>
                         <button type="submit" class="btn btn-primary">
-                            Save Changes
+                            <span class="material-symbols-outlined">save</span>
+                            <span>Save Changes</span>
                         </button>
                     </div>
                 </form>

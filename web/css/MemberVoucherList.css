@@ -82,6 +82,118 @@
     font-size: 16px;
 }
 
+/* Message Alerts */
+.message-alert {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.message-alert .material-symbols-outlined {
+    font-size: 20px;
+}
+
+.success-message {
+    background-color: #d1fae5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+}
+
+.success-message .material-symbols-outlined {
+    color: #10b981;
+}
+
+.error-message {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+
+.error-message .material-symbols-outlined {
+    color: #ef4444;
+}
+
+/* Redeem Voucher Section */
+.redeem-voucher-section {
+    padding: 8px;
+}
+
+.redeem-voucher-card {
+    padding: 20px;
+    border-radius: 8px;
+    background-color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.redeem-voucher-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.redeem-voucher-header .material-symbols-outlined {
+    font-size: 28px;
+    color: #ec1313;
+}
+
+.redeem-voucher-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.redeem-voucher-form {
+    width: 100%;
+}
+
+.redeem-voucher-input-group {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+}
+
+.redeem-voucher-input {
+    flex: 1;
+    height: 44px;
+    padding: 0 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #111827;
+    transition: border-color 0.2s;
+    font-family: 'Inter', sans-serif;
+}
+
+.redeem-voucher-input:focus {
+    outline: none;
+    border-color: #ec1313;
+}
+
+.redeem-voucher-input::placeholder {
+    color: #9ca3af;
+}
+
+.btn-redeem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 20px;
+    white-space: nowrap;
+}
+
+.btn-redeem .material-symbols-outlined {
+    font-size: 18px;
+}
+
 /* Filter Tabs */
 .filter-tabs {
     display: flex;
@@ -418,6 +530,41 @@
         background-color: #374151;
         color: #9ca3af;
     }
+
+    .redeem-voucher-card {
+        background-color: #221010;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .redeem-voucher-title {
+        color: #f9fafb;
+    }
+
+    .redeem-voucher-input {
+        background-color: #374151;
+        border-color: #4b5563;
+        color: #f9fafb;
+    }
+
+    .redeem-voucher-input:focus {
+        border-color: #ec1313;
+    }
+
+    .redeem-voucher-input::placeholder {
+        color: #6b7280;
+    }
+
+    .success-message {
+        background-color: #064e3b;
+        color: #6ee7b7;
+        border-color: #10b981;
+    }
+
+    .error-message {
+        background-color: #7f1d1d;
+        color: #fca5a5;
+        border-color: #ef4444;
+    }
 }
 
 /* Responsive */
@@ -439,6 +586,14 @@
     .btn-secondary {
         width: 100%;
         max-width: 100%;
+    }
+
+    .redeem-voucher-input-group {
+        flex-direction: column;
+    }
+
+    .btn-redeem {
+        width: 100%;
     }
 }
 

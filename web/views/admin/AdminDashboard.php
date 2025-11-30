@@ -114,10 +114,13 @@ $recentOrders = [
 <body>
     <div class="admin-layout">
         <!-- Sidebar -->
-        <aside class="admin-sidebar">
+        <aside class="admin-sidebar" id="admin-sidebar">
             <div class="admin-sidebar-header">
                 <span class="material-symbols-outlined admin-sidebar-logo">sports_soccer</span>
                 <h1 class="admin-sidebar-title">NGear</h1>
+                <button class="admin-sidebar-toggle" id="sidebar-toggle" title="Toggle Sidebar">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
             </div>
 
             <div class="admin-user-profile">
@@ -129,19 +132,19 @@ $recentOrders = [
             </div>
 
             <nav class="admin-nav">
-                <a href="<?php echo $viewsBasePath; ?>admin/AdminDashboard.php" class="admin-nav-item active">
+                <a href="#" data-view="dashboard" class="admin-nav-item active">
                     <span class="material-symbols-outlined">dashboard</span>
                     <p>Dashboard</p>
                 </a>
-                <a href="<?php echo $viewsBasePath; ?>ProductPage.php" class="admin-nav-item">
+                <a href="<?php echo $viewsBasePath; ?>ProductPage.php" class="admin-nav-item" target="_blank">
                     <span class="material-symbols-outlined">inventory_2</span>
                     <p>Products</p>
                 </a>
-                <a href="<?php echo $controllerBasePath; ?>MemberController.php?action=showAll" class="admin-nav-item">
+                <a href="#" data-view="members" data-url="<?php echo $controllerBasePath; ?>MemberController.php?action=showAll" class="admin-nav-item">
                     <span class="material-symbols-outlined">group</span>
                     <p>Members</p>
                 </a>
-                <a href="<?php echo $controllerBasePath; ?>VoucherController.php?action=showAll" class="admin-nav-item">
+                <a href="#" data-view="vouchers" data-url="<?php echo $controllerBasePath; ?>VoucherController.php?action=showAll" class="admin-nav-item">
                     <span class="material-symbols-outlined">sell</span>
                     <p>Vouchers</p>
                 </a>
@@ -161,7 +164,8 @@ $recentOrders = [
 
         <!-- Main Content -->
         <main class="admin-main">
-            <div class="admin-main-content">
+            <!-- Dashboard View (Default) -->
+            <div class="admin-main-content" id="dashboard-view">
                 <!-- Header -->
                 <header class="admin-header">
                     <h1 class="admin-page-title">Dashboard</h1>
@@ -185,7 +189,7 @@ $recentOrders = [
                         <p class="admin-stat-value"><?php echo htmlspecialchars($stats['total_sales']['value']); ?></p>
                         <p class="admin-stat-change"><?php echo htmlspecialchars($stats['total_sales']['change']); ?></p>
                     </div>
-                    <div class="admin-stat-card">
+                    <div class="admin-stat-card clickable-stat" data-view="members" data-url="<?php echo $controllerBasePath; ?>MemberController.php?action=showAll">
                         <p class="admin-stat-label">Active Members</p>
                         <p class="admin-stat-value"><?php echo htmlspecialchars($stats['active_members']['value']); ?></p>
                         <p class="admin-stat-change"><?php echo htmlspecialchars($stats['active_members']['change']); ?></p>
@@ -195,7 +199,7 @@ $recentOrders = [
                         <p class="admin-stat-value"><?php echo htmlspecialchars($stats['total_products']['value']); ?></p>
                         <p class="admin-stat-change"><?php echo htmlspecialchars($stats['total_products']['change']); ?></p>
                     </div>
-                    <div class="admin-stat-card">
+                    <div class="admin-stat-card clickable-stat" data-view="vouchers" data-url="<?php echo $controllerBasePath; ?>VoucherController.php?action=showAll">
                         <p class="admin-stat-label">Active Vouchers</p>
                         <p class="admin-stat-value"><?php echo htmlspecialchars($stats['active_vouchers']['value']); ?></p>
                         <p class="admin-stat-change"><?php echo htmlspecialchars($stats['active_vouchers']['change']); ?></p>
@@ -265,6 +269,16 @@ $recentOrders = [
                     </div>
                 </section>
             </div>
+            
+            <!-- Content View (Members/Vouchers) -->
+            <div class="admin-content-view" id="content-view" style="display: none;">
+                <div class="admin-content-header">
+                    <h1 class="admin-content-title" id="content-title">Content</h1>
+                </div>
+                <div class="admin-content-iframe-wrapper">
+                    <iframe id="content-iframe" class="admin-content-iframe" frameborder="0" allowfullscreen></iframe>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -279,12 +293,88 @@ $recentOrders = [
                 console.log('Searching for:', searchTerm);
             });
 
-            // Navigation active state
-            var currentPage = window.location.pathname;
-            $('.admin-nav-item').each(function() {
-                var href = $(this).attr('href');
-                if (href && currentPage.indexOf(href.split('/').pop()) !== -1) {
-                    $(this).addClass('active');
+            // Navigation click handlers
+            $('.admin-nav-item[data-view]').on('click', function(e) {
+                e.preventDefault();
+                var view = $(this).data('view');
+                var url = $(this).data('url');
+                
+                // Update active state
+                $('.admin-nav-item').removeClass('active');
+                $(this).addClass('active');
+                
+                if (view === 'dashboard') {
+                    showDashboard();
+                } else if (url) {
+                    showContentView(view, url);
+                }
+            });
+
+            // Clickable stat cards
+            $('.clickable-stat').on('click', function() {
+                var view = $(this).data('view');
+                var url = $(this).data('url');
+                if (url) {
+                    // Update navigation active state
+                    $('.admin-nav-item').removeClass('active');
+                    $('.admin-nav-item[data-view="' + view + '"]').addClass('active');
+                    showContentView(view, url);
+                }
+            });
+
+            function showDashboard() {
+                $('#dashboard-view').show();
+                $('#content-view').hide();
+                // Update navigation
+                $('.admin-nav-item').removeClass('active');
+                $('.admin-nav-item[data-view="dashboard"]').addClass('active');
+            }
+
+            function showContentView(view, url) {
+                var title = view === 'members' ? 'Members Management' : 
+                          view === 'vouchers' ? 'Vouchers Management' : 'Content';
+                
+                $('#content-title').text(title);
+                $('#content-iframe').attr('src', url);
+                $('#dashboard-view').hide();
+                $('#content-view').show();
+            }
+
+            // Handle iframe load events
+            $('#content-iframe').on('load', function() {
+                // Optional: Add loading indicator logic here
+                console.log('Content loaded');
+            });
+
+            // Listen for messages from iframe (for back button functionality)
+            window.addEventListener('message', function(event) {
+                if (event.data && event.data.action === 'showDashboard') {
+                    showDashboard();
+                }
+            });
+
+            // Sidebar toggle functionality
+            var sidebar = $('#admin-sidebar');
+            var sidebarToggle = $('#sidebar-toggle');
+            var isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+
+            // Initialize sidebar state
+            if (isCollapsed) {
+                sidebar.addClass('collapsed');
+                sidebarToggle.find('.material-symbols-outlined').text('menu_open');
+            }
+
+            // Toggle sidebar
+            sidebarToggle.on('click', function() {
+                sidebar.toggleClass('collapsed');
+                var isNowCollapsed = sidebar.hasClass('collapsed');
+                localStorage.setItem('sidebarCollapsed', isNowCollapsed);
+                
+                // Update icon
+                if (isNowCollapsed) {
+                    sidebarToggle.find('.material-symbols-outlined').text('menu_open');
+                } else {
+                    sidebarToggle.find('.material-symbols-outlined').text('menu');
                 }
             });
         });

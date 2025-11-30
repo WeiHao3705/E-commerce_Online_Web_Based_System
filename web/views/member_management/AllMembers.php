@@ -16,6 +16,7 @@ $docRoot = $_SERVER['DOCUMENT_ROOT'];
 $relativePath = str_replace($docRoot, '', $webRootDir);
 $imageBasePath = str_replace('\\', '/', $relativePath) . '/'; // Normalize slashes
 $cssBasePath = $imageBasePath . 'css/'; // CSS files are in web/css/
+$viewsBasePath = $imageBasePath . 'views/'; // Views files are in web/views/
 
 // if (!isset($_SESSION['user'])) {
 //     header('Location: ../../views/LoginForm.php');
@@ -112,30 +113,8 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
 
 <body class="page-body">
 
-    <?php include __DIR__ . '/../../general/_header.php'; ?>
-    <?php include __DIR__ . '/../../general/_navbar.php'; ?>
-
     <div class="page-container">
         <div class="page-content">
-            <!-- Header -->
-            <header class="page-header">
-                <div class="header-logo">
-                    <svg class="logo-svg" fill="none" viewBox="0 0 140 42" xmlns="http://www.w3.org/2000/svg">
-                        <text fill="#FF523B" font-family="Poppins, sans-serif" font-size="28" font-weight="bold" letter-spacing="0em" style="white-space: pre" xml:space="preserve">
-                            <tspan x="0" y="29.9219">NGear</tspan>
-                        </text>
-                        <text class="logo-subtitle" fill="#555" font-family="Poppins, sans-serif" font-size="8" font-style="italic" letter-spacing="0.05em" style="white-space: pre" xml:space="preserve">
-                            <tspan x="60" y="38">athlete's choice</tspan>
-                        </text>
-                        <rect height="42" rx="4" stroke="#FF523B" stroke-width="2" width="115" x="0" y="0"></rect>
-                    </svg>
-                </div>
-                <div class="header-title">
-                    <h1 class="page-title">Admin Dashboard</h1>
-                    <p class="page-subtitle">Manage Members</p>
-                </div>
-            </header>
-
             <!-- Success/Error Messages -->
             <?php if (isset($_SESSION['success_message'])): ?>
                 <div class="message message-success">
@@ -178,18 +157,15 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                         value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>" />
                                 </div>
                                 <button type="submit" class="btn btn-primary btn-search">
-                                    Search
+                                    <span class="material-symbols-outlined">search</span>
+                                    <span>Search</span>
                                 </button>
                             </form>
                         </div>
                         <div class="actions-section">
                             <?php
-                            // Calculate the path to MemberRegisterForm.php
-                            // Since AllMembers.php is in web/views/member_management/ and accessed via controller
-                            // We need to go from controller location to views location
-                            $currentScript = $_SERVER['SCRIPT_NAME']; // e.g., /E-commerce_Online_Web_Based_System/web/controller/MemberController.php
-                            $basePath = dirname(dirname($currentScript)); // Gets to /E-commerce_Online_Web_Based_System/web/
-                            $memberFormUrl = $basePath . '/views/member_management/MemberRegisterForm.php?return_to=admin';
+                            // Calculate the path to MemberRegisterForm.php using the same base path calculation
+                            $memberFormUrl = $viewsBasePath . 'member_management/MemberRegisterForm.php?return_to=admin';
                             ?>
                             <a href="<?php echo $memberFormUrl; ?>" class="btn btn-primary btn-add">
                                 <span class="material-symbols-outlined">add</span>
@@ -347,7 +323,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                                     data-user-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>"
                                                     data-status="banned"
                                                     title="Ban member">
-                                                    <i class="fas fa-ban"></i>
+                                                    <span class="material-symbols-outlined">block</span>
                                                 </button>
                                             <?php endif; ?>
                                             
@@ -359,7 +335,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                                     data-user-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>"
                                                     data-status="inactive"
                                                     title="Set to inactive">
-                                                    <i class="fas fa-pause-circle"></i>
+                                                    <span class="material-symbols-outlined">pause_circle</span>
                                                 </button>
                                             <?php endif; ?>
                                             
@@ -371,7 +347,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                                     data-user-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>"
                                                     data-status="active"
                                                     title="Activate member">
-                                                    <i class="fas fa-check-circle"></i>
+                                                    <span class="material-symbols-outlined">check_circle</span>
                                                 </button>
                                             <?php endif; ?>
 
@@ -485,7 +461,6 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
         <input type="hidden" name="user_id" id="deleteUserId">
     </form>
 
-    <?php include __DIR__ . '/../../general/_footer.php'; ?>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
@@ -656,10 +631,12 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
 
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary btn-close-edit-modal">
-                            Cancel
+                            <span class="material-symbols-outlined">close</span>
+                            <span>Cancel</span>
                         </button>
                         <button type="submit" class="btn btn-primary">
-                            Save Changes
+                            <span class="material-symbols-outlined">save</span>
+                            <span>Save Changes</span>
                         </button>
                     </div>
                 </form>

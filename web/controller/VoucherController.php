@@ -104,6 +104,7 @@ class VoucherController
     {
         try {
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $isRedeemable = isset($_POST['is_redeemable']) && ($_POST['is_redeemable'] === '1' || $_POST['is_redeemable'] === 'on' || $_POST['is_redeemable'] === true);
                 $voucherDTO = new VoucherRegistrationDTO(
                     $_POST['code'],
                     $_POST['description'] ?? '',
@@ -113,7 +114,8 @@ class VoucherController
                     $_POST['max_discount'] ?? null,
                     $_POST['start_date'],
                     $_POST['end_date'],
-                    false
+                    false,
+                    $isRedeemable
                 );
 
                 $result = $this->voucherService->registerVoucher($voucherDTO);
@@ -159,6 +161,7 @@ class VoucherController
                     throw new Exception("Voucher ID is required");
                 }
 
+                $isRedeemable = isset($_POST['is_redeemable']) && ($_POST['is_redeemable'] === '1' || $_POST['is_redeemable'] === 'on' || $_POST['is_redeemable'] === true);
                 $voucherDTO = new VoucherUpdateDTO(
                     (int)$_POST['voucher_id'],
                     $_POST['code'],
@@ -169,7 +172,8 @@ class VoucherController
                     $_POST['max_discount'] ?? null,
                     $_POST['start_date'],
                     $_POST['end_date'],
-                    false
+                    false,
+                    $isRedeemable
                 );
 
                 $result = $this->voucherService->updateVoucher($voucherDTO);
@@ -366,7 +370,8 @@ class VoucherController
                 'min_spend',
                 'max_discount',
                 'start_date',
-                'end_date'
+                'end_date',
+                'is_redeemable'
             ]);
             
             // Write example row
@@ -378,7 +383,8 @@ class VoucherController
                 '100',
                 '50',
                 '2024-06-01',
-                '2024-08-31'
+                '2024-08-31',
+                '1'
             ]);
             
             fclose($output);
@@ -523,6 +529,46 @@ class VoucherController
             exit;
         }
     }
+
+    public function redeemVoucher()
+    {
+        try {
+            // Check if user is logged in and is a member
+            if (!isset($_SESSION['user']) || empty($_SESSION['user']) || $_SESSION['user']['role'] !== 'member') {
+                $_SESSION['error_message'] = 'Please login as a member to redeem vouchers.';
+                header('Location: ../controller/VoucherController.php?action=showMemberVouchers');
+                exit;
+            }
+
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                // Validate voucher code
+                if (!isset($_POST['voucher_code']) || empty(trim($_POST['voucher_code']))) {
+                    $_SESSION['error_message'] = 'Please enter a voucher code.';
+                    header('Location: ../controller/VoucherController.php?action=showMemberVouchers');
+                    exit;
+                }
+
+                $userId = $_SESSION['user']['user_id'];
+                $voucherCode = trim($_POST['voucher_code']);
+
+                // Redeem voucher
+                $result = $this->voucherService->redeemVoucherByCode($voucherCode, $userId);
+
+                if ($result['success']) {
+                    $_SESSION['success_message'] = $result['message'];
+                } else {
+                    $_SESSION['error_message'] = $result['message'];
+                }
+
+                header('Location: ../controller/VoucherController.php?action=showMemberVouchers');
+                exit;
+            }
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
+            header('Location: ../controller/VoucherController.php?action=showMemberVouchers');
+            exit;
+        }
+    }
 }
 
 // Handle the request
@@ -545,6 +591,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $controller->previewBulkImport();
     } elseif ($action === 'executeBulkImport') {
         $controller->executeBulkImport();
+    } elseif ($action === 'redeemVoucher') {
+        $controller->redeemVoucher();
     }
 } else {
     // Handle GET requests

@@ -56,18 +56,8 @@ if (!empty($_POST)) {
     <link rel="stylesheet" href="<?php echo $prefix; ?>css/VoucherForm.css">
 </head>
 <body>
-    <!-- Include Navbar -->
-    <?php include __DIR__ . '/../../general/_navbar.php'; ?>
-
     <main class="voucher-main">
         <div class="voucher-container">
-            <div class="mb-6">
-                <a href="<?php echo isset($_GET['return_to']) && $_GET['return_to'] === 'admin' ? $prefix . 'controller/VoucherController.php?action=showAll' : $prefix . 'index.php'; ?>" class="back-link">
-                    <span class="material-symbols-outlined">arrow_back</span>
-                    Back
-                </a>
-            </div>
-            
             <?php if (isset($_SESSION['success_message'])): ?>
                 <div class="message-box message-success mb-4">
                     <?php echo htmlspecialchars($_SESSION['success_message']); unset($_SESSION['success_message']); ?>
@@ -226,6 +216,28 @@ if (!empty($_POST)) {
                     </div>
 
                     <div class="voucher-card-section">
+                        <h3>Redemption Settings</h3>
+                        <div class="form-grid">
+                            <label class="form-label form-grid-full">
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    <input 
+                                        type="checkbox" 
+                                        name="is_redeemable" 
+                                        id="is-redeemable" 
+                                        value="1" 
+                                        checked
+                                        style="width: 20px; height: 20px; cursor: pointer;"
+                                    />
+                                    <div>
+                                        <span class="form-label">Allow members to redeem this voucher</span>
+                                        <small style="display: block; margin-top: 0.25rem; color: #6b7280;">If unchecked, only admins can assign this voucher to members. Members won't be able to redeem it using the voucher code.</small>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="voucher-card-section">
                         <h3>Initial Status</h3>
                         <div class="toggle-wrapper">
                             <div class="toggle-label">
@@ -306,9 +318,6 @@ if (!empty($_POST)) {
             </div>
         </div>
     </div>
-
-    <!-- Include Footer -->
-    <?php include __DIR__ . '/../../general/_footer.php'; ?>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>

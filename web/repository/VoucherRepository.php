@@ -13,8 +13,8 @@ class VoucherRepository
 
     public function createVoucher(VoucherRegistrationDTO $voucherDTO)
     {
-        $sql = "INSERT INTO voucher (code, description, type, discount_value, min_spend, max_discount, start_date, end_date) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO voucher (code, description, type, discount_value, min_spend, max_discount, start_date, end_date, is_redeemable) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $this->db->prepare($sql);
 
@@ -26,7 +26,8 @@ class VoucherRepository
             $voucherDTO->getMinSpend(),
             $voucherDTO->getMaxDiscount(),
             $voucherDTO->getStartDate(),
-            $voucherDTO->getEndDate()
+            $voucherDTO->getEndDate(),
+            $voucherDTO->getIsRedeemable() ? 1 : 0
         ]);
 
         return $result;
@@ -92,7 +93,8 @@ class VoucherRepository
                     max_discount,
                     start_date,
                     end_date,
-                    status
+                    status,
+                    is_redeemable
                 FROM voucher
                 WHERE 1=1";
 
@@ -228,7 +230,7 @@ class VoucherRepository
         try {
             $sql = "UPDATE voucher 
                     SET code = ?, description = ?, type = ?, discount_value = ?, 
-                        min_spend = ?, max_discount = ?, start_date = ?, end_date = ? 
+                        min_spend = ?, max_discount = ?, start_date = ?, end_date = ?, is_redeemable = ? 
                     WHERE voucher_id = ?";
 
             $stmt = $this->db->prepare($sql);
@@ -242,6 +244,7 @@ class VoucherRepository
                 $voucherDTO->getMaxDiscount(),
                 $voucherDTO->getStartDate(),
                 $voucherDTO->getEndDate(),
+                $voucherDTO->getIsRedeemable() ? 1 : 0,
                 $voucherDTO->getVoucherId()
             ]);
 
@@ -511,6 +514,102 @@ class VoucherRepository
         } catch (PDOException $e) {
             error_log("Database error in getMemberVouchers: " . $e->getMessage());
             throw new Exception("Error retrieving member vouchers");
+        }
+    }
+
+    /**
+     * Redeem a voucher by code for a specific member
+     * Validates the voucher and assigns it to the member if valid
+     */
+    public function redeemVoucherByCode($code, $userId): array
+    {
+        try {
+            $currentDate = date('Y-m-d');
+            $currentDateTime = date('Y-m-d H:i:s');
+
+            // First, check if voucher exists and is valid
+            $sql = "SELECT voucher_id, code, description, type, discount_value, min_spend, max_discount, 
+                           start_date, end_date, status, is_redeemable
+                    FROM voucher 
+                    WHERE code = ?";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$code]);
+            $voucher = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$voucher) {
+                return [
+                    'success' => false,
+                    'message' => 'Invalid voucher code. Please check and try again.'
+                ];
+            }
+
+            // Check if voucher is redeemable by members
+            if (!$voucher['is_redeemable'] || $voucher['is_redeemable'] == 0) {
+                return [
+                    'success' => false,
+                    'message' => 'This voucher cannot be redeemed directly. Please contact support for assistance.'
+                ];
+            }
+
+            // Check if voucher is active
+            if ($voucher['status'] !== 'active') {
+                return [
+                    'success' => false,
+                    'message' => 'This voucher is not active.'
+                ];
+            }
+
+            // Check if voucher is within valid date range
+            if ($voucher['start_date'] > $currentDate) {
+                return [
+                    'success' => false,
+                    'message' => 'This voucher is not yet valid. It starts on ' . date('d M Y', strtotime($voucher['start_date'])) . '.'
+                ];
+            }
+
+            if ($voucher['end_date'] < $currentDate) {
+                return [
+                    'success' => false,
+                    'message' => 'This voucher has expired on ' . date('d M Y', strtotime($voucher['end_date'])) . '.'
+                ];
+            }
+
+            // Check if member already has this voucher assigned
+            $checkSql = "SELECT assignment_id FROM voucher_assignment 
+                           WHERE voucher_id = ? AND user_id = ?";
+            $checkStmt = $this->db->prepare($checkSql);
+            $checkStmt->execute([$voucher['voucher_id'], $userId]);
+            $existingAssignment = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($existingAssignment) {
+                return [
+                    'success' => false,
+                    'message' => 'You already have this voucher in your account.'
+                ];
+            }
+
+            // Assign voucher to member
+            $assignSql = "INSERT INTO voucher_assignment (voucher_id, user_id, assigned_at, assigned_by) 
+                         VALUES (?, ?, ?, NULL)";
+            $assignStmt = $this->db->prepare($assignSql);
+            $result = $assignStmt->execute([$voucher['voucher_id'], $userId, $currentDateTime]);
+
+            if ($result) {
+                return [
+                    'success' => true,
+                    'message' => 'Voucher redeemed successfully! You can now use it for your purchases.',
+                    'voucher' => $voucher
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Failed to redeem voucher. Please try again.'
+                ];
+            }
+        } catch (PDOException $e) {
+            error_log("Database error in redeemVoucherByCode: " . $e->getMessage());
+            throw new Exception("Error redeeming voucher: " . $e->getMessage());
         }
     }
 }

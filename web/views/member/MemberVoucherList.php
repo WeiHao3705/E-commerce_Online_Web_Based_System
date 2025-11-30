@@ -139,6 +139,55 @@ include __DIR__ . '/../../general/_navbar.php';
             </div>
 
             <?php
+            // Show success/error messages
+            if (isset($_SESSION['success_message'])): ?>
+                <div class="message-alert success-message">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <span><?php echo htmlspecialchars($_SESSION['success_message']); ?></span>
+                </div>
+                <?php unset($_SESSION['success_message']); ?>
+            <?php endif; ?>
+
+            <?php if (isset($_SESSION['error_message'])): ?>
+                <div class="message-alert error-message">
+                    <span class="material-symbols-outlined">error</span>
+                    <span><?php echo htmlspecialchars($_SESSION['error_message']); ?></span>
+                </div>
+                <?php unset($_SESSION['error_message']); ?>
+            <?php endif; ?>
+
+            <?php
+            // Show voucher redemption form if user is logged in and is a member
+            if ($isLoggedIn && $isMember): ?>
+                <div class="redeem-voucher-section">
+                    <div class="redeem-voucher-card">
+                        <div class="redeem-voucher-header">
+                            <span class="material-symbols-outlined">redeem</span>
+                            <h2 class="redeem-voucher-title">Redeem Voucher Code</h2>
+                        </div>
+                        <form method="POST" action="<?php echo $prefix; ?>controller/VoucherController.php" class="redeem-voucher-form">
+                            <input type="hidden" name="action" value="redeemVoucher">
+                            <div class="redeem-voucher-input-group">
+                                <input 
+                                    type="text" 
+                                    name="voucher_code" 
+                                    id="voucher_code" 
+                                    class="redeem-voucher-input" 
+                                    placeholder="Enter voucher code"
+                                    required
+                                    autocomplete="off"
+                                >
+                                <button type="submit" class="btn-primary btn-redeem">
+                                    <span>Redeem</span>
+                                    <span class="material-symbols-outlined">arrow_forward</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <?php
             // Only show filter tabs if user is logged in and is a member
             if ($isLoggedIn && $isMember): ?>
                 <div class="filter-tabs">

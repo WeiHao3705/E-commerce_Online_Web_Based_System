@@ -186,7 +186,7 @@ class VoucherService
                 $rowNumber++;
 
                 // Validate headers
-                $expectedHeaders = ['code', 'description', 'type', 'discount_value', 'min_spend', 'max_discount', 'start_date', 'end_date'];
+                $expectedHeaders = ['code', 'description', 'type', 'discount_value', 'min_spend', 'max_discount', 'start_date', 'end_date', 'is_redeemable'];
                 if ($headers !== $expectedHeaders) {
                     fclose($handle);
                     return [
@@ -213,6 +213,10 @@ class VoucherService
                         $discountValue = '0';
                     }
                     
+                    // Parse is_redeemable (default to 1 if not provided or empty)
+                    $isRedeemable = trim($data[8] ?? '1');
+                    $isRedeemable = ($isRedeemable === '1' || $isRedeemable === 'true' || $isRedeemable === 'yes' || $isRedeemable === '') ? true : false;
+                    
                     $voucherData = [
                         'code' => trim($data[0] ?? ''),
                         'description' => trim($data[1] ?? ''),
@@ -222,6 +226,7 @@ class VoucherService
                         'max_discount' => trim($data[5] ?? ''),
                         'start_date' => trim($data[6] ?? ''),
                         'end_date' => trim($data[7] ?? ''),
+                        'is_redeemable' => $isRedeemable,
                         'row_number' => $rowNumber
                     ];
 
@@ -375,6 +380,9 @@ class VoucherService
                         $discountValue = 0;
                     }
                     
+                    // Handle is_redeemable
+                    $isRedeemable = isset($voucherData['is_redeemable']) ? $voucherData['is_redeemable'] : true;
+                    
                     // Create DTO
                     $voucherDTO = new VoucherRegistrationDTO(
                         $voucherData['code'],
@@ -385,7 +393,8 @@ class VoucherService
                         !empty($voucherData['max_discount']) ? $voucherData['max_discount'] : null,
                         $voucherData['start_date'],
                         $voucherData['end_date'],
-                        false
+                        false,
+                        $isRedeemable
                     );
 
                     // Register voucher
@@ -445,6 +454,23 @@ class VoucherService
     public function getMemberVouchers($userId, $filter = 'all', $sortBy = 'end_date', $sortOrder = 'ASC'): array
     {
         return $this->voucherRepository->getMemberVouchers($userId, $filter, $sortBy, $sortOrder);
+    }
+
+    /**
+     * Redeem a voucher by code for a specific member
+     */
+    public function redeemVoucherByCode($code, $userId): array
+    {
+        // Validate code is not empty
+        if (empty(trim($code))) {
+            return [
+                'success' => false,
+                'message' => 'Please enter a voucher code.'
+            ];
+        }
+
+        // Call repository method to redeem voucher
+        return $this->voucherRepository->redeemVoucherByCode(trim($code), $userId);
     }
 }
 

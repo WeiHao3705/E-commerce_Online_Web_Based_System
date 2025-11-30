@@ -13,10 +13,11 @@ class VoucherRegistrationDTO {
     private $start_date;
     private $end_date;
     private $membership_required;
+    private $is_redeemable;
 
     public function __construct(
         $code, $description, $type, $discount_value,
-        $min_spend, $max_discount, $start_date, $end_date, $membership_required
+        $min_spend, $max_discount, $start_date, $end_date, $membership_required, $is_redeemable = true
     ) {
         $this->code = $code;
         $this->description = $description;
@@ -27,6 +28,7 @@ class VoucherRegistrationDTO {
         $this->start_date = $start_date;
         $this->end_date = $end_date;
         $this->membership_required = $membership_required;
+        $this->is_redeemable = $is_redeemable;
     }
 
     //Getters
@@ -39,6 +41,7 @@ class VoucherRegistrationDTO {
     public function getStartDate() { return $this->start_date; }
     public function getEndDate() { return $this->end_date; }
     public function getMembershipRequired() { return $this->membership_required; }
+    public function getIsRedeemable() { return $this->is_redeemable; }
 
     //Setters
     public function setCode($code) { $this->code = $code; }
@@ -50,6 +53,7 @@ class VoucherRegistrationDTO {
     public function setStartDate($start_date) { $this->start_date = $start_date; }
     public function setEndDate($end_date) { $this->end_date = $end_date; }
     public function setMembershipRequired($membership_required) { $this->membership_required = $membership_required; }
+    public function setIsRedeemable($is_redeemable) { $this->is_redeemable = $is_redeemable; }
 }
 
 // ------------------------------------------------------
@@ -66,10 +70,11 @@ class VoucherUpdateDTO {
     private $start_date;
     private $end_date;
     private $membership_required;
+    private $is_redeemable;
 
     public function __construct(
         $voucher_id, $code, $description, $type, $discount_value,
-        $min_spend, $max_discount, $start_date, $end_date, $membership_required
+        $min_spend, $max_discount, $start_date, $end_date, $membership_required, $is_redeemable = true
     ) {
         $this->voucher_id = $voucher_id;
         $this->code = $code;
@@ -81,6 +86,7 @@ class VoucherUpdateDTO {
         $this->start_date = $start_date;
         $this->end_date = $end_date;
         $this->membership_required = $membership_required;
+        $this->is_redeemable = $is_redeemable;
     }
 
     //Getters
@@ -94,6 +100,7 @@ class VoucherUpdateDTO {
     public function getStartDate() { return $this->start_date; }
     public function getEndDate() { return $this->end_date; }
     public function getMembershipRequired() { return $this->membership_required; }
+    public function getIsRedeemable() { return $this->is_redeemable; }
 
     //Setters
     public function setVoucherId($voucher_id) { $this->voucher_id = $voucher_id; }
@@ -106,5 +113,6 @@ class VoucherUpdateDTO {
     public function setStartDate($start_date) { $this->start_date = $start_date; }
     public function setEndDate($end_date) { $this->end_date = $end_date; }
     public function setMembershipRequired($membership_required) { $this->membership_required = $membership_required; }
+    public function setIsRedeemable($is_redeemable) { $this->is_redeemable = $is_redeemable; }
 }
 

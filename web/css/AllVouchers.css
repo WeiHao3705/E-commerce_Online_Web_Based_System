@@ -1,22 +1,94 @@
 /* Voucher-specific styles */
 
+/* Reduce column gaps for all vouchers table cells */
+.vouchers-table th {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+}
+
+.vouchers-table td {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+}
+
 /* Vouchers table actions */
 .vouchers-table .col-actions {
-    padding-left: 0.5rem !important;
-    padding-right: 0.5rem !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
     box-sizing: border-box;
     max-width: 100%;
-    overflow: hidden;
+    overflow: visible;
+    width: 100%;
 }
 
 .vouchers-table td.col-actions {
-    padding-left: 0.5rem !important;
-    padding-right: 0.5rem !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    gap: 0.125rem;
+    overflow: visible;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
 }
 
 .vouchers-table th.col-actions {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+}
+
+/* Ensure buttons start at the very left with no margin and stay within table */
+.vouchers-table td.col-actions .action-btn {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+.vouchers-table td.col-actions .action-btn:first-child {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+}
+
+/* Reduce Redeemable column width */
+.vouchers-table .col-redeemable {
+    width: 5%;
+    min-width: 60px;
+    max-width: 80px;
+    text-overflow: clip;
+    overflow: visible;
+    white-space: normal;
+    text-align: center !important;
+}
+
+.vouchers-table td.col-redeemable {
+    text-overflow: clip;
+    overflow: visible;
+    white-space: normal;
     padding-left: 0.5rem !important;
     padding-right: 0.5rem !important;
+    text-align: center !important;
+}
+
+.vouchers-table th.col-redeemable {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    text-align: center !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+.vouchers-table th.col-redeemable span {
+    display: inline-block;
+    text-align: center !important;
+    width: 100%;
 }
 
 /* Reduce ID column width in vouchers table */

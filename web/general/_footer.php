@@ -28,14 +28,15 @@
                 <h3>Useful Links</h3>
                 <ul class="footer-links">
                     <?php
-                    // Check user role for voucher link
-                    if (session_status() === PHP_SESSION_NONE) {
-                        session_start();
-                    }
-                    $isAdmin = !empty($_SESSION['user']) && isset($_SESSION['user']['role']) && $_SESSION['user']['role'] === 'admin';
-                    $voucherLink = $isAdmin ? '../controller/VoucherController.php?action=showAll' : 'vouchers.php';
+                    // Calculate base path dynamically to work from any location
+                    $currentFileDir = dirname(__FILE__); // Gets web/general/
+                    $webRootDir = dirname($currentFileDir); // Gets web/
+                    $docRoot = $_SERVER['DOCUMENT_ROOT'];
+                    $relativePath = str_replace($docRoot, '', $webRootDir);
+                    $webBasePath = str_replace('\\', '/', $relativePath) . '/';
+                    $controllerBasePath = $webBasePath . 'controller/';
                     ?>
-                    <li><a href="<?php echo $voucherLink; ?>">Vouchers</a></li>
+                    <li><a href="<?php echo $controllerBasePath; ?>VoucherController.php?action=showMemberVouchers">Vouchers</a></li>
                     <li><a href="blog.php">Blog Post</a></li>
                     <li><a href="return-policy.php">Return Policy</a></li>
                     <li><a href="affiliate.php">Join Affiliate</a></li>
