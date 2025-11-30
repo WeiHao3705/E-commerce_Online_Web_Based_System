@@ -27,17 +27,19 @@ $pageTitle = 'Member Login';
     <link rel="stylesheet" href="<?php echo $prefix; ?>css/Login.css">
 </head>
 
-<body>
+<body style="background: url('<?php echo $prefix; ?>images/Login_Signup/login.jpg') center top / cover no-repeat;">
 
     <?php include __DIR__ . '/../general/_navbar.php'; ?>
 
     <?php
+    $login_error = '';
     if (isset($_SESSION['success_message'])) {
-        echo '<div class="success-popup">' . $_SESSION['success_message'] . '</div>';
+        echo '<div class="success-popup">' . htmlspecialchars($_SESSION['success_message']) . '</div>';
         unset($_SESSION['success_message']);
     }
     if (isset($_SESSION['error_message'])) {
-        echo '<div class="error-messages">' . $_SESSION['error_message'] . '</div>';
+        // capture the login error and render it near the username field below
+        $login_error = htmlspecialchars($_SESSION['error_message']);
         unset($_SESSION['error_message']);
     }
     ?>
@@ -58,6 +60,9 @@ $pageTitle = 'Member Login';
                         <span class="material-symbols-outlined input-icon">person</span>
                         <input type="text" id="username" name="username" class="form-control" placeholder="Username" required>
                     </div>
+                    <?php if (!empty($login_error)): ?>
+                        <div class="field-error"><?php echo $login_error; ?></div>
+                    <?php endif; ?>
                 </div>
 
                 <div class="form-group">
@@ -67,6 +72,11 @@ $pageTitle = 'Member Login';
                         <input type="password" id="password" name="password" class="form-control with-toggle" placeholder="Password" required>
                         <i class="fa fa-eye toggle-password" id="togglePassword" aria-hidden="true" title="Show password"></i>
                     </div>
+                </div>
+
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                    <div></div>
+                    <div class="forgot-link"><a href="<?php echo $prefix; ?>views/forgot_password.php?start=1">Forgot your password?</a></div>
                 </div>
 
                 <button type="submit" class="submit-btn">Log In</button>

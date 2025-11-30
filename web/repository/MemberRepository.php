@@ -234,6 +234,42 @@ class MembershipRepository
             throw new Exception("Error fetching member");
         }
     }
+    
+    /**
+     * Fetch a single user record by email
+     */
+    public function getMemberByEmail($email)
+    {
+        try {
+            $sql = "SELECT * FROM users WHERE email = ? LIMIT 1";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$email]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $result ? $result : null;
+        } catch (PDOException $e) {
+            error_log("Database error in getMemberByEmail: " . $e->getMessage());
+            throw new Exception("Error fetching member by email");
+        }
+    }
+
+    /**
+     * Fetch a single user record by id
+     */
+    public function getMemberById($userId)
+    {
+        try {
+            $sql = "SELECT * FROM users WHERE user_id = ? LIMIT 1";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$userId]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $result ? $result : null;
+        } catch (PDOException $e) {
+            error_log("Database error in getMemberById: " . $e->getMessage());
+            throw new Exception("Error fetching member by id");
+        }
+    }
 
     /**
      * Update the stored password hash for a user by id

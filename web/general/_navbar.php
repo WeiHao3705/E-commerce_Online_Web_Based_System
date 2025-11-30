@@ -67,10 +67,12 @@ $prefix = $webBasePath;
 
                 <!-- Cart Icon -->
                 <div class="nav-icons">
+                    <?php if (!$isGuest): ?>
                     <a href="<?php echo $prefix; ?>views/Cart_Order.php/cart.php" class="cart-icon">
                         <i class="fas fa-shopping-bag"></i>
                         <span class="cart-count" id="cartCount">0</span>
                     </a>
+                    <?php endif; ?>
                     <div class="menu-toggle" id="menuToggle">
                         <i class="fas fa-bars"></i>
                     </div>

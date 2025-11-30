@@ -1,0 +1,88 @@
+.guest-hero{
+    padding:0; /* remove top gap so image can touch top */
+    background-color:#f4f6f9;
+}
+
+/* Use an actual <img> so we can size it to 60% of the viewport and keep full-image visible */
+.guest-container{
+    width:100%;
+    margin:0 auto;
+    position:relative;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    --guest-image-vw: 60vw; /* image displayed width (user requested 60% of screen) */
+}
+
+.guest-img{
+    width:var(--guest-image-vw);
+    max-width:95vw;
+    height:auto;
+    display:block;
+    border-radius:6px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.06);
+}
+
+/* Hero content placed at left middle of container, positioned relative to the centered image */
+.hero-content{
+    position:absolute;
+    /* compute left so text sits on the left blank area beside centered image */
+    left: calc((100% - var(--guest-image-vw)) / 2 + 2vw);
+    top:45%;
+    transform:translateY(-50%);
+    /* width relative to the image width so content stays within left half */
+    width: calc(0.5 * var(--guest-image-vw));
+    max-width:560px;
+    z-index:20;
+    padding:18px 20px;
+    border-radius:8px;
+    color:#ffffff;
+}
+
+.hero-content h2{font-size:32px;margin:0 0 10px;color:#FF523B;font-weight:800;text-transform:uppercase}
+.hero-content p{color:rgba(255,255,255,0.95);line-height:1.5;margin-bottom:18px}
+.hero-actions{display:flex;gap:12px;align-items:center}
+.btn-primary{background:#FF523B;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600}
+.btn-ghost{color:#FF523B;text-decoration:none;font-weight:600}
+
+/* Mobile: stack and use cover for image */
+
+@media (max-width: 1024px){
+    /* medium screens: increase image to be more prominent but keep within viewport */
+    .guest-container{--guest-image-vw:70vw}
+}
+
+@media (max-width: 768px){
+    /* Mobile: stack content under image, make image full-width-ish and keep content readable */
+    .guest-container{--guest-image-vw:92vw}
+    .hero-content{position:static;transform:none;width:100%;padding:14px;margin:12px auto;background:rgba(0,0,0,0.28)}
+    .guest-img{width:var(--guest-image-vw);max-width:92vw}
+}
+
+.guest-hero .hero-text h1{font-size:40px;margin-bottom:10px;color:#FF8C00;font-weight:700;text-shadow:1px 1px 3px rgba(0,0,0,0.3)}
+.guest-hero .hero-text h2{font-size:34px;margin-bottom:18px;color:#FF8C00;font-weight:700;text-shadow:1px 1px 3px rgba(0,0,0,0.3)}
+.guest-hero .hero-text p{color:#f4f6f9;margin-bottom:20px}
+
+/* Hide spacer - background image handles the center */
+.guest-hero .hero-spacer{display:none}
+
+/* On small screens, adjust for mobile */
+@media (max-width: 1024px){
+    /* make text area narrower on medium screens */
+    .guest-hero .hero-text{width:44%;left:5%;}
+}
+
+@media (max-width: 768px){
+    .guest-hero{
+        padding:24px 0;
+        min-height:auto;
+        background-size: cover; /* let it fill on small screens */
+        background-position: center top;
+    }
+    .guest-hero .container{flex-direction:column}
+    .guest-hero .hero-text{position:static;transform:none;width:100%;padding:0 12px;margin-bottom:12px}
+    .hero-inline-image{display:block;max-width:420px;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.08);margin:0 auto 12px}
+}
+
+/* Utility: keep inline image hidden on desktop (used only for mobile fallback) */
+.hero-inline-image{display:none}

@@ -179,6 +179,39 @@ class MembershipServices
     }
 
     /**
+     * Fetch member by email (pass-through to repository)
+     */
+    public function getMemberByEmail($email)
+    {
+        return $this->membershipRepository->getMemberByEmail($email);
+    }
+
+    /**
+     * Fetch member by id
+     */
+    public function getMemberById($userId)
+    {
+        return $this->membershipRepository->getMemberById($userId);
+    }
+
+    /**
+     * Fetch member by username
+     */
+    public function getMemberByUsername($username)
+    {
+        return $this->membershipRepository->getMemberByUsername($username);
+    }
+
+    /**
+     * Reset a member password by id (handles hashing)
+     */
+    public function resetPassword($userId, $newPassword)
+    {
+        $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
+        return $this->membershipRepository->updatePasswordHash($userId, $hashed);
+    }
+
+    /**
      * Get count of active members
      */
     public function getActiveMembersCount(): int
