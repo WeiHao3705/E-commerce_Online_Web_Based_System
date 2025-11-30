@@ -487,8 +487,21 @@
     transform: scale(1.05);
 }
 
-.voucher-discount {
-    
+.unuse-voucher-btn {
+    flex-shrink: 0;
+    background: #999;
+    color: black;
+    border: 2px solid #666;
+    padding: 10px 25px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.unuse-voucher-btn:hover {
+    background: #ccc;
+    transform: scale(1.05)
 }
 
 /* Responsive Design */

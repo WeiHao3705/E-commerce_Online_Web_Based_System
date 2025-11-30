@@ -67,13 +67,35 @@ $(document).ready(function() {
     var voucherModal = $('#voucherModal');
     var openModalBtn = $('#selectVoucherBtn');
     var closeModalSpan = $('.close');
-    var selectedVoucher = $('.use-voucher-btn');
 
     // popup a window after click the select button
     // WHY: When user clicks "Select Voucher", we need to show the modal window
     // so they can browse available vouchers
     openModalBtn.click(function() {
         voucherModal.fadeIn(300); // Show the modal with smooth fade animation
+
+        var currentSubtotal = 0;
+
+        $('.item-checkbox:checked').each(function() {
+            var row = $(this).closest('tr'); // Get the table row for this item
+            var price = parseFloat(row.find('.item-price').text().replace('RM ', '').replace(',', '')); // get the price of item
+            var quantity = parseInt(row.find('.qty-display').text()); // get the quantity of item
+            currentSubtotal += price * quantity; // add to subtotal
+        });
+
+        // check each voucher and disable if the min spend is not met
+        $('.voucher-card').each(function() {
+            var minSpend = parseFloat($(this).data('min'));
+            var $useBtn = $(this).find('.use-voucher-btn, .unuse-voucher-btn');
+
+            if(currentSubtotal < minSpend) {
+                $useBtn.prop('disabled', true).css('opacity', 0.5);
+                $(this).attr('title', 'Minimum spend of RM ' + minSpend.toFixed(2) + ' required');
+            } else if(!$useBtn.hasClass('unuse-voucher-btn')) {
+                $useBtn.prop('disabled', false).css('opacity', 1);
+                $(this).removeAttr('title');
+            }
+        });
     });
 
     // close the modal when user clicks the "x" button or outside the modal content
@@ -87,34 +109,64 @@ $(document).ready(function() {
         }
     });
 
-    // once the users select the a voucher, update the order summary
-    $('.voucher-option').click(function() {
-        // get the voucher code from the attribute
-        var voucherCode = $(this).data('voucher-code');
-        // update the selected voucher display
-        selectedVoucher.text(voucherCode); 
-        // recalculate totals after voucher selection
-        updateOrderSummary(); 
-    });
-
-    // Use event delegation because voucher buttons are loaded dynamically
-    // Attach to modal-body which exists when page loads
+    // handle voucher use buttons
     $(document).on('click', '.use-voucher-btn', function() {
-        var voucherCard = $(this).closest('.voucher-card');
+        var $button = $(this);
+        
+        // Check if button is disabled - prevent action if it is
+        if ($button.prop('disabled')) {
+            return false; // Stop execution
+        }
+        
+        var voucherCard = $button.closest('.voucher-card');
 
         appliedVoucher = {
             code: voucherCard.data('code'),
             type: voucherCard.data('type'),
             value: parseFloat(voucherCard.data('value')),
-            minSpend: parseFloat(voucherCard.data('min'))
+            minSpend: parseFloat(voucherCard.data('min')),
+            maxDiscount: parseFloat(voucherCard.data('max')),
+            Card: voucherCard
         };
+
+        // disable other voucher use buttons
+        $('.voucher-card').not(voucherCard).each(function() {
+            $(this).css('opacity', 0.5).addClass('voucher-disabled');
+            var $btn = $(this).find('.use-voucher-btn');
+            $btn.prop('disabled', true).css('pointer-events', 'none').css('cursor', 'not-allowed');
+        });
+
+        // change the button to unuse
+        $button.text('Unuse').removeClass('use-voucher-btn').addClass('unuse-voucher-btn');
+        voucherCard.addClass('selected-voucher');
         
         console.log('Voucher applied:', appliedVoucher); // Debug: check if this runs
-        
-        //close the modal
-        voucherModal.fadeOut(300);
 
         // update order summary
+        updateOrderSummary();
+    });
+
+    // handle voucher unuse buttons  
+    $(document).on('click', '.unuse-voucher-btn', function() {
+        var $button = $(this);
+        var voucherCard = $button.closest('.voucher-card');
+
+        // clear the applied voucher
+        appliedVoucher = null;
+
+        // enable all voucher use buttons
+        $('.voucher-card').each(function() {
+            $(this).css('opacity', 1).removeClass('voucher-disabled');
+            var $btn = $(this).find('.use-voucher-btn');
+            $btn.prop('disabled', false).css('pointer-events', 'auto').css('cursor', 'pointer');
+        });
+
+        // change the button back to use
+        $button.text('Use').removeClass('unuse-voucher-btn').addClass('use-voucher-btn');
+
+        // remove the highlight
+        voucherCard.removeClass('selected-voucher');
+
         updateOrderSummary();
     });
     
@@ -154,6 +206,14 @@ function updateOrderSummary() {
     var subtotal = 0; // Initialize subtotal to zero
     var shippingFee = 15.00; // Fixed shipping fee
     var taxRate = 0.06; // 6% tax rate
+    // check whether any item is selected
+    var itemSelected = $('.item-checkbox:checked').length;
+
+    if (itemSelected === 0) {
+        $('#selectVoucherBtn').prop('disabled', true).css('opacity', 0.5);
+    } else {
+        $('#selectVoucherBtn').prop('disabled', false).css('opacity', 1);
+    }
     
     // calculate subtotal from ONLY checked items
     // Loop through each checked checkbox to find selected items
@@ -202,8 +262,19 @@ function updateOrderSummary() {
         tax = 0;
         grandTotal = 0;
         shippingFee = 0; // No shipping if no items
-    };
+
+
+    appliedVoucher = null; // Reset the applied voucher
     
+    // hide any voucher selection
+    $('.voucher-discount-applied').hide();
+
+    // reset the button to use
+    $('.unuse-voucher-btn').text('Use')
+    .removeClass('unuse-voucher-btn')
+    .addClass('use-voucher-btn');
+    $('selected-voucher').removeClass('selected-voucher');
+        };
     // update the order summary display
     // Find each summary line and update the last span (the amount)
     $('.summary-line').eq(0).find('span:last').text('RM ' + subtotal.toFixed(2)); // Subtotal

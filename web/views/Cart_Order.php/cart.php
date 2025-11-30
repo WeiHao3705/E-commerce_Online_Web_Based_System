@@ -7,10 +7,15 @@ $pageTitle = "Shopping Cart";
 include '../../general/_header.php'; 
 include '../../general/_navbar.php'; 
 
-// fetch the vouchers from db
-$voucherQuery = "SELECT * FROM voucher WHERE status = 'active' AND start_date <= CURDATE() AND end_date >= CURDATE() ORDER BY type, min_spend";
+// query of fetching vouchers from db
+$voucherQuery = "SELECT * FROM voucher 
+WHERE status = 'active' 
+AND start_date <= CURDATE() 
+AND end_date >= CURDATE() 
+ORDER BY type, min_spend";
 $voucherStmt = $conn->prepare($voucherQuery);
 $voucherStmt->execute();
+// fetch all vouchers as an array
 $vouchers = $voucherStmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -204,9 +209,9 @@ $vouchers = $voucherStmt->fetchAll(PDO::FETCH_ASSOC);
                              data-code="<?= htmlspecialchars($voucher['code']) ?>"
                              data-type="<?= htmlspecialchars($voucher['type']) ?>"
                              data-value="<?= htmlspecialchars($voucher['discount_value']) ?>"
-                             data-min="<?= htmlspecialchars($voucher['min_spend']) ?>"
+                             data-min="<?= htmlspecialchars($voucher['min_spend']) ?? '' ?>"
                              data-max="<?= htmlspecialchars($voucher['max_discount'] ?? '') ?>">
-                            <div class="voucher-icon">
+                        <div class="voucher-icon">
                                 <i class="fas fa-ticket-alt"></i>
                             </div>
                             <div class="voucher-details">
