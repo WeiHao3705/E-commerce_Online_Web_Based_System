@@ -50,6 +50,8 @@ foreach ($rows as $product) {
 
     <div style="display: flex; flex-wrap: wrap; gap: 20px;">
         <?php foreach ($products as $row): ?>
+           <a href="ProductDetails.php?id=<?= $row['product_id'] ?>" 
+   style="text-decoration:none; color:inherit;">
             <div style="
                 border:1px solid #ccc; 
                 padding:10px; 
@@ -69,7 +71,9 @@ foreach ($rows as $product) {
                 <?php else: ?>
                     (No image)
                 <?php endif; ?>
+                </a>
             </div>
+            
         <?php endforeach; ?>
     </div>
 <?php endforeach; ?>
