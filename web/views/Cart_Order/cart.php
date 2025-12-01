@@ -182,7 +182,7 @@ $vouchers = $voucherStmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
                 
                 <button class="checkout-btn">
-                    <a href="../Checkout/checkout.php" style="color: white; text-decoration: none;">
+                    <a href="checkout.php" style="color: white; text-decoration: none;">
                         Proceed to Checkout
                     </a>
                 </button>
