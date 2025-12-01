@@ -211,8 +211,12 @@ function updateOrderSummary() {
 
     if (itemSelected === 0) {
         $('#selectVoucherBtn').prop('disabled', true).css('opacity', 0.5);
+        $('.checkout-btn').prop('disabled', true).css('opacity', .5).css('cursor', 'not-allowed');
+        $('.checkout-btn a').css('pointer-events', 'none');
     } else {
         $('#selectVoucherBtn').prop('disabled', false).css('opacity', 1);
+        $('#checkout-btn').prop('disabled', false).css('opacity', 1).css('cursor', 'pointer');
+        $('#checkout-btn a').css('pointer-events', 'auto');
     }
     
     // calculate subtotal from ONLY checked items

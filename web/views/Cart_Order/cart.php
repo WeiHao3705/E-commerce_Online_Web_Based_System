@@ -240,7 +240,7 @@ $grandTotal = $subtotal + $shippingFee + $tax;
                     </div>
                 </div>
                 
-                <button class="checkout-btn">
+                <button class="checkout-btn" id="checkout-btn">
                     <a href="checkout.php" style="color: white; text-decoration: none;">
                         Proceed to Checkout
                     </a>
