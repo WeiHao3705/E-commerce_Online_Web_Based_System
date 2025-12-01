@@ -17,6 +17,104 @@ $voucherStmt = $conn->prepare($voucherQuery);
 $voucherStmt->execute();
 // fetch all vouchers as an array
 $vouchers = $voucherStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// ----------------- Accept incoming item from ProductDetails -----------------
+$incomingItem = null;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['product_id'])) {
+    $pid = (int) ($_POST['product_id'] ?? 0);
+    $vid = isset($_POST['variant_id']) && $_POST['variant_id'] !== '' ? (int) $_POST['variant_id'] : null;
+    $size = trim($_POST['size'] ?? '');
+    $qty = max(1, (int) ($_POST['quantity'] ?? 1));
+
+    // fetch product name & price
+    $pStmt = $conn->prepare("SELECT p.product_id, p.product_name, pr.original_price FROM product p LEFT JOIN product_price pr ON p.product_id = pr.product_id WHERE p.product_id = :pid LIMIT 1");
+    $pStmt->execute([':pid' => $pid]);
+    $pRow = $pStmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($pRow) {
+        // try variant image first (by variant_id), fallback to product image, fallback to placeholder
+        $imgPath = null;
+        if ($vid) {
+            $imgStmt = $conn->prepare("SELECT image_path FROM product_image WHERE variant_id = :vid LIMIT 1");
+            $imgStmt->execute([':vid' => $vid]);
+            $imgRow = $imgStmt->fetch(PDO::FETCH_ASSOC);
+            if ($imgRow && !empty($imgRow['image_path'])) $imgPath = $imgRow['image_path'];
+        }
+        if (!$imgPath) {
+            $imgStmt = $conn->prepare("SELECT image_path FROM product_image WHERE product_id = :pid LIMIT 1");
+            $imgStmt->execute([':pid' => $pid]);
+            $imgRow = $imgStmt->fetch(PDO::FETCH_ASSOC);
+            if ($imgRow && !empty($imgRow['image_path'])) $imgPath = $imgRow['image_path'];
+        }
+        if (!$imgPath) $imgPath = '../../images/no-image.png'; // adjust placeholder path as needed
+
+        // build variant label (color - size) if possible
+        $variantLabel = '';
+        if ($vid) {
+            $vStmt = $conn->prepare("SELECT color, size FROM product_variant WHERE variant_id = :vid LIMIT 1");
+            $vStmt->execute([':vid' => $vid]);
+            $vRow = $vStmt->fetch(PDO::FETCH_ASSOC);
+            if ($vRow) {
+                $variantLabel = trim(($vRow['color'] ?? '') . ($vRow['size'] ? ' - ' . $vRow['size'] : ''));
+            } else {
+                $variantLabel = $size ?: '';
+            }
+        } else {
+            $variantLabel = $size ?: '';
+        }
+
+        $incomingItem = [
+            'id' => $pid,
+            'image' => $imgPath,
+            'name' => $pRow['product_name'],
+            'variant' => $variantLabel,
+            'price' => (float) ($pRow['original_price'] ?? 0),
+            'quantity' => $qty
+        ];
+    }
+}
+
+// Sample cart data - replace with actual database/session data later
+$cartItems = [
+    [
+        'id' => 1,
+        'image' => '../../images/products/AJ1.png',
+        'name' => 'Air Jordan 1',
+        'variant' => 'Black/Red - Size 9',
+        'price' => 299.90,
+        'quantity' => 1
+    ],
+    [
+        'id' => 2,
+        'image' => '../../images/products/Dunk_Panda.png',
+        'name' => 'Nike Dunk Panda',
+        'variant' => 'White/Black - Size 10',
+        'price' => 155.50,
+        'quantity' => 2
+    ]
+];
+
+// if an incoming item exists, add it to the top of cart items
+if ($incomingItem) {
+    array_unshift($cartItems, $incomingItem);
+}
+
+// calculate initial values from the cart items
+// array_column() gets the 'quantity' values from each item
+// array_sum() adds them all together
+$cartItemCount = array_sum(array_column($cartItems, 'quantity'));
+
+// calculate subtotal by looping through each item
+$subtotal = 0;
+foreach ($cartItems as $item) {
+    $subtotal += $item['price'] * $item['quantity'];
+}
+
+// set fixed values for shipping and tax
+$shippingFee = 15.00;
+$tax = $subtotal * 0.06; // 6% tax
+$grandTotal = $subtotal + $shippingFee + $tax;
+
 ?>
 
 <link rel="stylesheet" href="../../css/cart.css">
@@ -24,45 +122,6 @@ $vouchers = $voucherStmt->fetchAll(PDO::FETCH_ASSOC);
 <div class="container">
     <h1>Your Shopping Cart</h1>
         
-    <?php
-    // Sample cart data - replace with actual database/session data later
-    $cartItems = [
-        [
-            'id' => 1,
-            'image' => '../../images/products/AJ1.png',
-            'name' => 'Air Jordan 1',
-            'variant' => 'Black/Red - Size 9',
-            'price' => 299.90,
-            'quantity' => 1
-        ],
-        [
-            'id' => 2,
-            'image' => '../../images/products/Dunk_Panda.png',
-            'name' => 'Nike Dunk Panda',
-            'variant' => 'White/Black - Size 10',
-            'price' => 155.50,
-            'quantity' => 2
-        ]
-    ];
-    
-    // calculate initial values from the cart items
-    // array_column() gets the 'quantity' values from each item
-    // array_sum() adds them all together
-    $cartItemCount = array_sum(array_column($cartItems, 'quantity'));
-    
-    // calculate subtotal by looping through each item
-    $subtotal = 0;
-    foreach ($cartItems as $item) {
-        $subtotal += $item['price'] * $item['quantity'];
-    }
-
-    // set fixed values for shipping and tax
-    $shippingFee = 15.00;
-    $tax = $subtotal * 0.06; // 6% tax
-    $grandTotal = $subtotal + $shippingFee + $tax;
-    
-    ?>
-
     <!-- create dynamic cart message with IDs for JavaScript control -->
     <!-- The span elements allow JavaScript to update specific parts -->
     <p class="cart-count-message" id="cart-message">
