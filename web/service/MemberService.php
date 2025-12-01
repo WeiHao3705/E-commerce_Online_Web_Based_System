@@ -130,6 +130,11 @@ class MembershipServices
             }
         }
 
+        // Block login for banned users
+        if (isset($user['status']) && strtolower($user['status']) === 'banned') {
+            throw new Exception('Your account has been banned. Please contact support.');
+        }
+
         // Build DTO
         return new MemberDTO(
             $user['user_id'] ?? null,

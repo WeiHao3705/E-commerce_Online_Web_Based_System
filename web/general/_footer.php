@@ -18,7 +18,7 @@
             <!-- Logo and Purpose -->
             <div class="footer-section footer-center">
                 <div class="footer-logo">
-                    <img src="images/logo.png" alt="NGEAR">
+                    <img src="images/logo/logo2.png" alt="NGEAR">
                 </div>
                 <p class="footer-purpose">Our Purpose Is To Provide Affordable Sports Equipment to all.</p>
             </div>
@@ -138,7 +138,7 @@
     }
 
     .footer-logo img {
-        height: 40px;
+        height: 60px;
         width: auto;
         filter: brightness(0) invert(1);
     }

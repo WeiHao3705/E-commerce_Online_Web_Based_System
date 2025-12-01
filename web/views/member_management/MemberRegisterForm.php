@@ -59,7 +59,7 @@ if (!empty($_POST)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title><?php echo isset($pageTitle) ? $pageTitle . ' - REDSTORE' : 'REDSTORE - Sports & Fitness Store'; ?></title>
+    <title><?php echo isset($pageTitle) ? $pageTitle . ' - NGEAR' : 'NGEAR - Sports & Fitness Store'; ?></title>
 
     <!-- Font Awesome for navbar icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -94,7 +94,7 @@ if (!empty($_POST)) {
                 <div class="logo-container">
                     <svg fill="none" viewBox="0 0 162 42" xmlns="http://www.w3.org/2000/svg">
                         <text fill="#FF523B" font-family="Poppins, sans-serif" font-size="28" font-weight="bold" letter-spacing="0em" style="white-space: pre" xml:space="preserve">
-                            <tspan x="0" y="29.9219">REDSTORE</tspan>
+                            <tspan x="0" y="29.9219">NGEAR</tspan>
                         </text>
                         <text fill="#555" font-family="Poppins, sans-serif" font-size="8" font-style="italic" letter-spacing="0.05em" style="white-space: pre" xml:space="preserve">
                             <tspan x="100" y="38">athlete's choice</tspan>

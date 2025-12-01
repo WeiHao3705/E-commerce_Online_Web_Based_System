@@ -58,7 +58,7 @@ class MemberController
             }
         } catch (Exception $e) {
             $_SESSION['error_message'] = $e->getMessage();
-            header('Location: ../views/LoginForm.php');
+            header('Location: ../views/security/LoginForm.php');
             exit;
         }
     }
@@ -224,7 +224,7 @@ class MemberController
     {
         try {
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                header('Location: ../views/forgot_password.php');
+                header('Location: ../views/security/forgot_password.php');
                 exit;
             }
 
@@ -234,7 +234,7 @@ class MemberController
                 $user = $this->membershipServices->getMemberByUsername($username);
                 if (!$user) {
                     $_SESSION['fp_message'] = 'Username not found';
-                    header('Location: ../views/forgot_password.php');
+                    header('Location: ../views/security/forgot_password.php');
                     exit;
                 }
 
@@ -249,16 +249,16 @@ class MemberController
                 // ensure previous verification flag is cleared
                 unset($_SESSION['reset_verified']);
 
-                header('Location: ../views/forgot_password.php');
+                header('Location: ../views/security/forgot_password.php');
                 exit;
             }
 
             // Fallback: redirect back
-            header('Location: ../views/forgot_password.php');
+            header('Location: ../views/security/forgot_password.php');
             exit;
         } catch (Exception $e) {
             $_SESSION['fp_message'] = $e->getMessage();
-            header('Location: ../views/forgot_password.php');
+            header('Location: ../views/security/forgot_password.php');
             exit;
         }
     }
@@ -270,7 +270,7 @@ class MemberController
     {
         try {
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                header('Location: ../views/forgot_password.php');
+                header('Location: ../views/security/forgot_password.php');
                 exit;
             }
 
@@ -278,7 +278,7 @@ class MemberController
 
             if (empty($_SESSION['reset_user'])) {
                 $_SESSION['fp_message'] = 'Session expired. Please start again.';
-                header('Location: ../views/forgot_password.php');
+                header('Location: ../views/security/forgot_password.php');
                 exit;
             }
 
@@ -287,24 +287,24 @@ class MemberController
             if (!$user) {
                 $_SESSION['fp_message'] = 'User not found';
                 unset($_SESSION['reset_user']);
-                header('Location: ../views/forgot_password.php');
+                header('Location: ../views/security/forgot_password.php');
                 exit;
             }
 
             $stored = isset($user['security_answer']) ? trim($user['security_answer']) : '';
             if (strcasecmp($stored, $securityAnswer) !== 0) {
                 $_SESSION['fp_message'] = 'Security answer did not match';
-                header('Location: ../views/forgot_password.php');
+                header('Location: ../views/security/forgot_password.php');
                 exit;
             }
 
             // mark as verified and go to new-password step on the single page
             $_SESSION['reset_verified'] = true;
-            header('Location: ../views/forgot_password.php');
+            header('Location: ../views/security/forgot_password.php');
             exit;
         } catch (Exception $e) {
             $_SESSION['fp_message'] = $e->getMessage();
-            header('Location: ../views/forgot_password.php');
+            header('Location: ../views/security/forgot_password.php');
             exit;
         }
     }
@@ -316,13 +316,13 @@ class MemberController
     {
         try {
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                header('Location: ../views/forgot_password.php');
+                header('Location: ../views/security/forgot_password.php');
                 exit;
             }
 
             if (empty($_SESSION['reset_user']) || empty($_SESSION['reset_verified'])) {
                 $_SESSION['fp_message'] = 'Unauthorized action. Please verify your security answer first.';
-                header('Location: ../views/forgot_password.php');
+                header('Location: ../views/security/forgot_password.php');
                 exit;
             }
 
@@ -331,19 +331,19 @@ class MemberController
 
             if ($newPassword === null || $newPasswordConfirm === null) {
                 $_SESSION['fp_message'] = 'Please provide the new password and confirmation.';
-                header('Location: ../views/forgot_password.php');
+                header('Location: ../views/security/forgot_password.php');
                 exit;
             }
 
             if ($newPassword !== $newPasswordConfirm) {
                 $_SESSION['fp_message'] = 'Passwords do not match';
-                header('Location: ../views/forgot_password.php');
+                header('Location: ../views/security/forgot_password.php');
                 exit;
             }
 
             if (strlen($newPassword) < 6) {
                 $_SESSION['fp_message'] = 'Password must be at least 6 characters';
-                header('Location: ../views/forgot_password.php');
+                header('Location: ../views/security/forgot_password.php');
                 exit;
             }
 
@@ -355,16 +355,16 @@ class MemberController
                 // Use the general success message so it shows on the login page,
                 // and does not persist as a forgot-password specific message.
                 $_SESSION['success_message'] = 'Password updated successfully. You may now log in.';
-                header('Location: ../views/LoginForm.php');
+                header('Location: ../views/security/LoginForm.php');
                 exit;
             } else {
                 $_SESSION['fp_message'] = 'Failed to update password. Please try again.';
-                header('Location: ../views/forgot_password.php');
+                header('Location: ../views/security/forgot_password.php');
                 exit;
             }
         } catch (Exception $e) {
             $_SESSION['fp_message'] = $e->getMessage();
-            header('Location: ../views/forgot_password.php');
+            header('Location: ../views/security/forgot_password.php');
             exit;
         }
     }
