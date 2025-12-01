@@ -23,7 +23,7 @@ $prefix = $webBasePath;
                 <!-- Navigation Menu -->
                 <ul class="nav-menu" id="navMenu">
                     <li><a href="<?php echo $prefix; ?>index.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>">Home</a></li>
-                    <li><a href="<?php echo $prefix; ?>products.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'products.php' ? 'active' : ''; ?>">Products</a></li>
+                    <li><a href="<?php echo $prefix; ?>views/product/ProductPage.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'views/product/ProductPage.php' ? 'active' : ''; ?>">Products</a></li>
                     <li><a href="<?php echo $prefix; ?>about.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'about.php' ? 'active' : ''; ?>">About</a></li>
                     <li><a href="<?php echo $prefix; ?>contact.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'contact.php' ? 'active' : ''; ?>">Contact</a></li>
                     <?php
