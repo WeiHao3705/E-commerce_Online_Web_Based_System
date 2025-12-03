@@ -492,12 +492,12 @@ include 'general/_navbar.php';
                 <div class="team-member">
                     <img src="<?php echo $prefix; ?>images/About_Us/lwh.jpg" alt="Team Member - Lead Developer">
                     <h3>Lee Wei Hao</h3>
-                    <p class="role">Lead Developer</p>
+                    <p class="role">Chief Executive Officer</p>
                 </div>
                 <div class="team-member">
                     <img src="<?php echo $prefix; ?>images/About_Us/cws.jpg" alt="Team Member - Chief Technology Officer">
                     <h3>Chan Wei Song</h3>
-                    <p class="role">Chief Technology Officer</p>
+                    <p class="role">Marketing Manager</p>
                 </div>
                 <div class="team-member">
                     <img src="<?php echo $prefix; ?>images/About_Us/skh.jpg" alt="Team Member - Head of Operations">
