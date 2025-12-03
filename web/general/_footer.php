@@ -18,7 +18,14 @@
             <!-- Logo and Purpose -->
             <div class="footer-section footer-center">
                 <div class="footer-logo">
-                    <img src="images/logo/logo2.png" alt="NGEAR">
+                    <?php
+                    $currentFileDir = dirname(__FILE__);
+                    $webRootDir = dirname($currentFileDir);
+                    $docRoot = $_SERVER['DOCUMENT_ROOT'];
+                    $relativePath = str_replace($docRoot, '', $webRootDir);
+                    $webBasePath = str_replace('\\', '/', $relativePath) . '/';
+                    ?>
+                    <img src="<?php echo $webBasePath; ?>images/logo/logo2.png" alt="NGEAR">
                 </div>
                 <p class="footer-purpose">Our Purpose Is To Provide Affordable Sports Equipment to all.</p>
             </div>

@@ -1,7 +1,7 @@
 /* Sport-themed glass login (uses accent color #FF523B) */
 :root{
-    --accent: #FF523B;
-    --accent-dark: #E04634;
+    --accent: #FF5252; /* updated to match navbar theme */
+    --accent-dark: #E04848; /* darker variant close to FF5252 */
     /* stronger, darker glass background for better readability over photo */
     --glass-bg: rgba(10,12,20,0.68);
     --glass-border: rgba(255,255,255,0.06);
@@ -11,9 +11,12 @@ html,body{height:100%;}
 body{
     margin:0;
     font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
-    background: radial-gradient(1200px 600px at 10% 30%, rgba(255,82,59,0.06), transparent 8%),
-                radial-gradient(900px 400px at 95% 70%, rgba(0,0,0,0.18), transparent 10%),
-                linear-gradient(180deg,#0f1226 0%, #221223 60%);
+        /* Simplified gradient to remove mid-page band before footer */
+        background:
+            radial-gradient(900px 420px at 12% 28%, rgba(255,82,82,0.18), transparent 35%),
+            linear-gradient(180deg, #420C09 0%, #231b24 100%);
+        background-repeat: no-repeat;
+        background-attachment: fixed;
     color:#fff;
 }
 
@@ -35,7 +38,7 @@ body{
     padding:36px 34px;
     background:var(--glass-bg);
     border:1px solid var(--glass-border);
-    box-shadow: 0 14px 40px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.02);
+    box-shadow: 0 14px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
     backdrop-filter: blur(10px) saturate(120%);
 }
 
@@ -48,7 +51,7 @@ body{
 .input-wrapper .material-symbols-outlined.input-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.85);font-size:20px}
 .form-control{width:100%;padding:14px 16px 14px 44px;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#ffffff;font-size:15px;outline:none}
 .form-control::placeholder{color:rgba(255,255,255,0.7)}
-.form-control:focus{box-shadow:0 8px 30px rgba(255,82,59,0.12);border-color:rgba(255,82,59,0.28)}
+.form-control:focus{box-shadow:0 8px 30px rgba(255,82,82,0.12);border-color:rgba(255,82,82,0.28)}
 
 /* Toggle password icon */
 .toggle-password{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.8);cursor:pointer;font-size:16px}
@@ -56,7 +59,7 @@ body{
 
 /* Primary CTA */
 .submit-btn{
-    display:inline-block;width:100%;padding:12px 16px;border-radius:999px;border:0;background:linear-gradient(90deg,var(--accent) 0%, var(--accent-dark) 100%);color:#fff;font-weight:700;font-size:16px;cursor:pointer;box-shadow:0 8px 18px rgba(255,82,59,0.18);
+    display:inline-block;width:100%;padding:12px 16px;border-radius:999px;border:0;background:linear-gradient(90deg,var(--accent) 0%, var(--accent-dark) 100%);color:#fff;font-weight:700;font-size:16px;cursor:pointer;box-shadow:0 10px 24px rgba(255,82,82,0.28);
 }
 .submit-btn:active{transform:translateY(1px)}
 
