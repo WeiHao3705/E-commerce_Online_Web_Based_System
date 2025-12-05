@@ -1,0 +1,65 @@
+/* Profile page styles extracted from profile.php */
+.profile-page { max-width: 960px; margin: 30px auto; padding: 0 16px; }
+.profile-card { 
+  background: rgba(255,255,255,0.7);
+  border: 1px solid rgba(255,255,255,0.7);
+  border-radius: 18px; 
+  box-shadow: 0 12px 30px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  overflow: hidden; 
+}
+.profile-header { display: flex; align-items: center; gap: 20px; padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.12); }
+.profile-photo { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.profile-meta { display: flex; flex-direction: column; gap: 6px; }
+.profile-name { font-size: 20px; font-weight: 700; color: #4d4d4d; }
+.profile-username { color: #606060; font-size: 14px; }
+.status-chip { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.status-active { background: #e8f8ef; color: #1b8f4f; }
+.status-inactive { background: #f6f6f6; color: #777; }
+.status-banned { background: #fdeaea; color: #c23b3b; }
+
+.profile-body { 
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+  background: transparent;
+  border: 0;
+  margin: 0; 
+  border-radius: 0; 
+  overflow: hidden;
+}
+.field { display: flex; padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); background: transparent; }
+.label { width: 40%; color: #c0c0c0; font-weight: 600; }
+.value { width: 60%; color: #000; word-break: break-word; }
+
+@media (max-width: 720px) {
+  .profile-body { grid-template-columns: 1fr; }
+  .label { width: 40%; }
+  .value { width: 60%; }
+}
+/* Actions */
+.profile-actions { 
+  display:flex; justify-content:space-between; gap:10px; padding:16px 24px; 
+  background: transparent;
+  border-top: 1px solid rgba(255,255,255,0.12);
+  margin: 0; 
+  border-radius: 0;
+}
+.btn-logout { background:#FF5252; color:#fff; text-decoration:none; font-weight:600; padding:10px 16px; border-radius:8px; display:inline-block; }
+.btn-logout:hover { background:#E04848; }
+/* Update button + modal */
+.btn-update { background:#fff; color:#FF5252; border:2px solid #FF5252; text-decoration:none; font-weight:600; padding:9px 16px; border-radius:8px; display:inline-block; }
+.btn-update:hover { background:#FF5252; color:#fff; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.modal-overlay.open { display: flex; }
+.modal { width: 100%; max-width: 520px; background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); overflow: hidden; }
+.modal-header { padding: 16px 20px; border-bottom: 1px solid #f1f1f1; font-weight: 700; color:#333; }
+.modal-body { padding: 16px 20px; display: grid; gap: 12px; }
+.modal-body .form-row { display: grid; grid-template-columns: 1fr; gap: 6px; }
+.modal-body label { font-size: 14px; color:#555; font-weight:600; }
+.modal-body input, .modal-body select { padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; }
+.modal-actions { display:flex; justify-content:flex-end; gap:10px; padding: 14px 20px; border-top:1px solid #f1f1f1; background:#fafafa; }
+.btn-cancel { background:#eee; color:#333; text-decoration:none; font-weight:600; padding:9px 16px; border-radius:8px; display:inline-block; }
+.btn-cancel:hover { background:#e2e2e2; }
+.btn-save { background:#FF5252; color:#fff; text-decoration:none; font-weight:600; padding:10px 16px; border-radius:8px; display:inline-block; border:0; }
+.btn-save:hover { background:#E04848; }
+.form-error { color:#c23b3b; font-size:13px; margin-top:4px; }

@@ -45,8 +45,6 @@ class MemberController
                     'email' => $userDTO->getEmail(),
                     'role' => $userDTO->getRole()
                 ];
-
-                $_SESSION['success_message'] = 'Login successful';
                 
                 // Redirect based on user role
                 if ($userDTO->getRole() === 'admin') {
@@ -189,20 +187,50 @@ class MemberController
                     throw new Exception("User ID is required");
                 }
 
+                // Basic input sanitization
+                $username = isset($_POST['username']) ? trim($_POST['username']) : '';
+                $full_name = isset($_POST['full_name']) ? trim($_POST['full_name']) : '';
+                $email = isset($_POST['email']) ? trim($_POST['email']) : '';
+                $gender = isset($_POST['gender']) ? trim($_POST['gender']) : '';
+                $contact_no = isset($_POST['contact_no']) ? trim($_POST['contact_no']) : '';
+
+                // Server-side constraints: no empty fields
+                if ($full_name === '' || $email === '' || $gender === '' || $contact_no === '') {
+                    throw new Exception("All fields are required.");
+                }
+
+                // Email format
+                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    throw new Exception("Invalid email format.");
+                }
+
+                // Normalize phone, accept display format 000-000 0000, store digits-only
+                $contact_digits = preg_replace('/\D+/', '', $contact_no);
+                if (strlen($contact_digits) !== 10) {
+                    throw new Exception("Invalid phone number format. Use 000-000 0000.");
+                }
+                $contact_no = $contact_digits;
+
                 $memberDTO = new MemberUpdateDTO(
                     (int)$_POST['user_id'],
-                    $_POST['username'],
-                    $_POST['full_name'],
-                    $_POST['email'],
-                    $_POST['gender'],
-                    $_POST['contact_no']
+                    $username,
+                    $full_name,
+                    $email,
+                    $gender,
+                    $contact_no
                 );
 
                 $result = $this->membershipServices->updateMember($memberDTO);
 
                 if ($result) {
                     $_SESSION['success_message'] = "Member updated successfully!";
-                    header('Location: ../controller/MemberController.php?action=showAll');
+                    // Allow redirection back to profile when updating from user profile page
+                    $returnTo = isset($_POST['return_to']) ? $_POST['return_to'] : (isset($_GET['return_to']) ? $_GET['return_to'] : '');
+                    if ($returnTo === 'profile') {
+                        header('Location: ../views/member/profile.php');
+                    } else {
+                        header('Location: ../controller/MemberController.php?action=showAll');
+                    }
                     exit;
                 } else {
                     throw new Exception("Failed to update member");
@@ -210,7 +238,12 @@ class MemberController
             }
         } catch (Exception $e) {
             $_SESSION['error_message'] = $e->getMessage();
-            header('Location: ../controller/MemberController.php?action=showAll');
+            $returnTo = isset($_POST['return_to']) ? $_POST['return_to'] : (isset($_GET['return_to']) ? $_GET['return_to'] : '');
+            if ($returnTo === 'profile') {
+                header('Location: ../views/member/profile.php');
+            } else {
+                header('Location: ../controller/MemberController.php?action=showAll');
+            }
             exit;
         }
     }
