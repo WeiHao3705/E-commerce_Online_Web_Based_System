@@ -98,15 +98,7 @@ class MemberController
                 if ($result) {
                     $_SESSION['success_message'] = "Member registered successfully!";
                     
-                    // Check if registration is from admin panel
-                    $returnTo = isset($_POST['return_to']) ? $_POST['return_to'] : (isset($_GET['return_to']) ? $_GET['return_to'] : '');
-                    
-                    if ($returnTo === 'admin') {
-                        header('Location: ../controller/MemberController.php?action=showAll');
-                    } else {
-                        header('Location: ../views/member_management/MemberRegisterForm.php');
-                    }
-                    exit;
+                    header('Location: ../views/member_management/MemberRegisterForm.php');
                 }
             }
         } catch (Exception $e) {
@@ -132,14 +124,7 @@ class MemberController
                 $_SESSION['error_field'] = $errorField;
             }
             
-            // Check if registration is from admin panel
-            $returnTo = isset($_POST['return_to']) ? $_POST['return_to'] : (isset($_GET['return_to']) ? $_GET['return_to'] : '');
-            
-            if ($returnTo === 'admin') {
-                header('Location: ../views/member_management/MemberRegisterForm.php?return_to=admin');
-            } else {
-                header('Location: ../views/member_management/MemberRegisterForm.php');
-            }
+            header('Location: ../views/member_management/MemberRegisterForm.php');
             exit;
         }
     }

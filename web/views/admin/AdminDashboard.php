@@ -5,7 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Check if user is logged in and is admin
 if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
-    header('Location: ../LoginForm.php');
+    header('Location: ../security/LoginForm.php');
     exit;
 }
 
@@ -39,42 +39,50 @@ $adminAvatar = isset($_SESSION['user']['profile_photo']) ? $_SESSION['user']['pr
 // Get actual stats from database
 try {
     $database = new Database();
-    
+
     // Voucher stats
     $voucherRepository = new VoucherRepository($database);
     $voucherService = new VoucherService($voucherRepository);
-    
+
+    // Automatically expire vouchers that have passed their end date
+    $voucherService->autoExpireVouchers();
+
     // Get active vouchers count
     $activeVouchersCount = $voucherService->getActiveVouchersCount();
-    
+
     // Get recent active vouchers count (last 7 days)
     $recentActiveVouchersCount = $voucherService->getRecentActiveVouchersCount(7);
-    
+
     // Format the count with thousand separators
     $activeVouchersFormatted = number_format($activeVouchersCount);
-    
+
     // Format the change indicator
-    $activeVouchersChange = $recentActiveVouchersCount > 0 ? '+' . $recentActiveVouchersCount : '0';
-    
+    if ($recentActiveVouchersCount > 0) {
+        $activeVouchersChange = '+' . number_format($recentActiveVouchersCount) . ' (7d)';
+    } else {
+        $activeVouchersChange = '0 (7d)';
+    }
+
     // Member stats
     $memberRepository = new MembershipRepository($database);
     $memberService = new MembershipServices($memberRepository);
-    
+
     // Get active members count
     $activeMembersCount = $memberService->getActiveMembersCount();
-    
+
     // Get recent active members count (last 7 days)
     $recentActiveMembersCount = $memberService->getRecentActiveMembersCount(7);
-    
+
     // Format the count with thousand separators
     $activeMembersFormatted = number_format($activeMembersCount);
-    
-    // Calculate percentage change (approximate - comparing recent to total)
-    // This is a simplified calculation showing recent growth
-    $activeMembersChange = $recentActiveMembersCount > 0 
-        ? '+' . number_format(($recentActiveMembersCount / max($activeMembersCount, 1)) * 100, 1) . '%'
-        : '0%';
-    
+
+    // Format the change indicator
+    if ($recentActiveMembersCount > 0) {
+        $activeMembersChange = '+' . number_format($recentActiveMembersCount) . ' (7d)';
+    } else {
+        $activeMembersChange = '0 (7d)';
+    }
+
     // TODO: Get other stats from database (sales, products)
     $stats = [
         'total_sales' => ['value' => '$1,234,567', 'change' => '+5.2%'],
@@ -87,9 +95,9 @@ try {
     error_log("Error fetching stats: " . $e->getMessage());
     $stats = [
         'total_sales' => ['value' => '$1,234,567', 'change' => '+5.2%'],
-        'active_members' => ['value' => '0', 'change' => '0%'],
+        'active_members' => ['value' => '0', 'change' => '0 (7d)'],
         'total_products' => ['value' => '1,450', 'change' => '+12'],
-        'active_vouchers' => ['value' => '0', 'change' => '+0']
+        'active_vouchers' => ['value' => '0', 'change' => '0 (7d)']
     ];
 }
 
@@ -102,6 +110,7 @@ $recentOrders = [
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -111,7 +120,46 @@ $recentOrders = [
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AdminDashboard.css">
 </head>
+
 <body>
+    <?php
+    // Display and clear success/error messages
+    if (isset($_SESSION['success_message'])) {
+        echo '<div class="success-popup" style="position: fixed; top: 80px; right: 20px; background: #4CAF50; color: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000; max-width: 400px; animation: slideIn 0.3s ease;">';
+        echo '<i class="fas fa-check-circle" style="margin-right: 8px;"></i>';
+        echo htmlspecialchars($_SESSION['success_message']);
+        echo '</div>';
+        unset($_SESSION['success_message']);
+
+        echo '<script>
+            setTimeout(function() {
+                var popup = document.querySelector(".success-popup");
+                if (popup) {
+                    popup.style.animation = "slideOut 0.3s ease";
+                    setTimeout(function() { popup.remove(); }, 300);
+                }
+            }, 3000);
+        </script>';
+    }
+
+    if (isset($_SESSION['error_message'])) {
+        echo '<div class="error-popup" style="position: fixed; top: 80px; right: 20px; background: #f44336; color: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000; max-width: 400px; animation: slideIn 0.3s ease;">';
+        echo '<i class="fas fa-exclamation-circle" style="margin-right: 8px;"></i>';
+        echo htmlspecialchars($_SESSION['error_message']);
+        echo '</div>';
+        unset($_SESSION['error_message']);
+
+        echo '<script>
+            setTimeout(function() {
+                var popup = document.querySelector(".error-popup");
+                if (popup) {
+                    popup.style.animation = "slideOut 0.3s ease";
+                    setTimeout(function() { popup.remove(); }, 300);
+                }
+            }, 5000);
+        </script>';
+    }
+    ?>
     <div class="admin-layout">
         <!-- Sidebar -->
         <aside class="admin-sidebar" id="admin-sidebar">
@@ -186,23 +234,23 @@ $recentOrders = [
                 <section class="admin-stats-grid">
                     <div class="admin-stat-card">
                         <p class="admin-stat-label">Total Sales</p>
-                        <p class="admin-stat-value"><?php echo htmlspecialchars($stats['total_sales']['value']); ?></p>
-                        <p class="admin-stat-change"><?php echo htmlspecialchars($stats['total_sales']['change']); ?></p>
+                        <p class="admin-stat-value" id="stat-total-sales-value"><?php echo htmlspecialchars($stats['total_sales']['value']); ?></p>
+                        <p class="admin-stat-change" id="stat-total-sales-change"><?php echo htmlspecialchars($stats['total_sales']['change']); ?></p>
                     </div>
-                    <div class="admin-stat-card clickable-stat" data-view="members" data-url="<?php echo $controllerBasePath; ?>MemberController.php?action=showAll">
+                    <div class="admin-stat-card">
                         <p class="admin-stat-label">Active Members</p>
-                        <p class="admin-stat-value"><?php echo htmlspecialchars($stats['active_members']['value']); ?></p>
-                        <p class="admin-stat-change"><?php echo htmlspecialchars($stats['active_members']['change']); ?></p>
+                        <p class="admin-stat-value" id="stat-active-members-value"><?php echo htmlspecialchars($stats['active_members']['value']); ?></p>
+                        <p class="admin-stat-change" id="stat-active-members-change"><?php echo htmlspecialchars($stats['active_members']['change']); ?></p>
                     </div>
                     <div class="admin-stat-card">
                         <p class="admin-stat-label">Total Products</p>
-                        <p class="admin-stat-value"><?php echo htmlspecialchars($stats['total_products']['value']); ?></p>
-                        <p class="admin-stat-change"><?php echo htmlspecialchars($stats['total_products']['change']); ?></p>
+                        <p class="admin-stat-value" id="stat-total-products-value"><?php echo htmlspecialchars($stats['total_products']['value']); ?></p>
+                        <p class="admin-stat-change" id="stat-total-products-change"><?php echo htmlspecialchars($stats['total_products']['change']); ?></p>
                     </div>
-                    <div class="admin-stat-card clickable-stat" data-view="vouchers" data-url="<?php echo $controllerBasePath; ?>VoucherController.php?action=showAll">
+                    <div class="admin-stat-card">
                         <p class="admin-stat-label">Active Vouchers</p>
-                        <p class="admin-stat-value"><?php echo htmlspecialchars($stats['active_vouchers']['value']); ?></p>
-                        <p class="admin-stat-change"><?php echo htmlspecialchars($stats['active_vouchers']['change']); ?></p>
+                        <p class="admin-stat-value" id="stat-active-vouchers-value"><?php echo htmlspecialchars($stats['active_vouchers']['value']); ?></p>
+                        <p class="admin-stat-change" id="stat-active-vouchers-change"><?php echo htmlspecialchars($stats['active_vouchers']['change']); ?></p>
                     </div>
                 </section>
 
@@ -261,7 +309,7 @@ $recentOrders = [
                                 <span class="material-symbols-outlined">add_shopping_cart</span>
                                 <span>Add New Product</span>
                             </a>
-                            <a href="<?php echo $viewsBasePath; ?>voucher_management/VoucherRegisterForm.php?return_to=admin" class="admin-quick-action-btn">
+                            <a href="#" data-view="vouchers" data-url="<?php echo $viewsBasePath; ?>voucher_management/VoucherRegisterForm.php?return_to=admin" class="admin-quick-action-btn">
                                 <span class="material-symbols-outlined">confirmation_number</span>
                                 <span>Create Voucher</span>
                             </a>
@@ -269,7 +317,7 @@ $recentOrders = [
                     </div>
                 </section>
             </div>
-            
+
             <!-- Content View (Members/Vouchers) -->
             <div class="admin-content-view" id="content-view" style="display: none;">
                 <div class="admin-content-header">
@@ -298,11 +346,11 @@ $recentOrders = [
                 e.preventDefault();
                 var view = $(this).data('view');
                 var url = $(this).data('url');
-                
+
                 // Update active state
                 $('.admin-nav-item').removeClass('active');
                 $(this).addClass('active');
-                
+
                 if (view === 'dashboard') {
                     showDashboard();
                 } else if (url) {
@@ -322,18 +370,67 @@ $recentOrders = [
                 }
             });
 
+            // Quick action buttons with data-view and data-url
+            $('.admin-quick-action-btn[data-view]').on('click', function(e) {
+                e.preventDefault();
+                var view = $(this).data('view');
+                var url = $(this).data('url');
+                if (url) {
+                    // Update navigation active state
+                    $('.admin-nav-item').removeClass('active');
+                    $('.admin-nav-item[data-view="' + view + '"]').addClass('active');
+                    showContentView(view, url);
+                }
+            });
+
             function showDashboard() {
                 $('#dashboard-view').show();
                 $('#content-view').hide();
                 // Update navigation
                 $('.admin-nav-item').removeClass('active');
                 $('.admin-nav-item[data-view="dashboard"]').addClass('active');
+
+                // Fetch and update statistics
+                $.ajax({
+                    url: '<?php echo $viewsBasePath; ?>admin/getDashboardStats.php', // URL to fetch stats
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success && response.stats) {
+                            var stats = response.stats;
+                            $('#stat-total-sales-value').text(stats.total_sales.value);
+                            $('#stat-total-sales-change').text(stats.total_sales.change);
+                            $('#stat-active-members-value').text(stats.active_members.value);
+                            $('#stat-active-members-change').text(stats.active_members.change);
+                            $('#stat-total-products-value').text(stats.total_products.value);
+                            $('#stat-total-products-change').text(stats.total_products.change);
+                            $('#stat-active-vouchers-value').text(stats.active_vouchers.value);
+                            $('#stat-active-vouchers-change').text(stats.active_vouchers.change);
+                        } else {
+                            console.error('Invalid response format:', response);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching stats:', error);
+                        console.error('Response:', xhr.responseText);
+                    }
+                });
             }
 
             function showContentView(view, url) {
-                var title = view === 'members' ? 'Members Management' : 
-                          view === 'vouchers' ? 'Vouchers Management' : 'Content';
-                
+                var title = 'Content';
+
+                if (view === 'members') {
+                    title = 'Members Management';
+                } else if (view === 'vouchers') {
+                    // Check if URL contains VoucherRegisterForm to show "Create Voucher"
+                    if (url.indexOf('VoucherRegisterForm') !== -1) {
+                        title = 'Create Voucher';
+                    } else {
+                        title = 'Vouchers Management';
+                    }
+                }
+
                 $('#content-title').text(title);
                 $('#content-iframe').attr('src', url);
                 $('#dashboard-view').hide();
@@ -369,7 +466,7 @@ $recentOrders = [
                 sidebar.toggleClass('collapsed');
                 var isNowCollapsed = sidebar.hasClass('collapsed');
                 localStorage.setItem('sidebarCollapsed', isNowCollapsed);
-                
+
                 // Update icon
                 if (isNowCollapsed) {
                     sidebarToggle.find('.material-symbols-outlined').text('menu_open');
@@ -380,5 +477,5 @@ $recentOrders = [
         });
     </script>
 </body>
-</html>
 
+</html>

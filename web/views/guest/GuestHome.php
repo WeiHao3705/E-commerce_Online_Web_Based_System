@@ -31,7 +31,7 @@ $heroWidth = $placement['width'] ?? '40%';
             <h2>ONLINE SHOPPING</h2>
             <p>Explore our wide selection of sports equipment and accessories. Sign up or log in to get the best deals and faster checkout.</p>
             <div class="hero-actions">
-                <a href="<?php echo $prefix; ?>products.php" class="btn-primary">Sign up</a>
+                <a href="<?php echo $prefix; ?>views/member_management/MemberRegisterForm.php" class="btn-primary">Sign up</a>
                 <a href="<?php echo $prefix; ?>account.php" class="btn-ghost">Login</a>
             </div>
         </div>

@@ -3,19 +3,11 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// // Check if user is logged in
-// if (!isset($_SESSION['user'])) {
-//     // Not logged in, redirect to login page
-//     header('Location: ../views/LoginForm.php');
-//     exit;
-// }
-
-// // Check if user role is admin
-// if ($_SESSION['user']['role'] !== 'admin') {
-//     // Logged in but not admin, redirect to 403 Forbidden page or homepage
-//     header('Location: ../views/403.php');
-//     exit;
-// }
+// Check if user is logged in and is admin
+if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
+    header('Location: ../../views/security/LoginForm.php');
+    exit;
+}
 
 $prefix = '../../';
 
