@@ -160,19 +160,19 @@ class VoucherRepository
     /**
      * Get count of active vouchers
      * Active vouchers are those with status = 'active' and current date between start_date and end_date
+     * Uses CURDATE() to ensure accurate date comparison at database level
      */
     public function getActiveVouchersCount(): int
     {
         try {
-            $currentDate = date('Y-m-d');
             $sql = "SELECT COUNT(*) as total 
                     FROM voucher 
                     WHERE status = 'active' 
-                    AND start_date <= ? 
-                    AND end_date >= ?";
+                    AND start_date <= CURDATE() 
+                    AND end_date >= CURDATE()";
             
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$currentDate, $currentDate]);
+            $stmt->execute();
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
             return (int) $result['total'];
@@ -185,22 +185,20 @@ class VoucherRepository
     /**
      * Get count of active vouchers that started recently (in the last 7 days)
      * This represents new active vouchers added recently
+     * Uses CURDATE() to ensure accurate date comparison at database level
      */
     public function getRecentActiveVouchersCount($days = 7): int
     {
         try {
-            $currentDate = date('Y-m-d');
-            $pastDate = date('Y-m-d', strtotime("-{$days} days"));
-            
             $sql = "SELECT COUNT(*) as total 
                     FROM voucher 
                     WHERE status = 'active' 
-                    AND start_date <= ? 
-                    AND end_date >= ? 
-                    AND start_date >= ?";
+                    AND start_date <= CURDATE() 
+                    AND end_date >= CURDATE() 
+                    AND start_date >= DATE_SUB(CURDATE(), INTERVAL ? DAY)";
             
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$currentDate, $currentDate, $pastDate]);
+            $stmt->execute([$days]);
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
             return (int) $result['total'];
@@ -292,25 +290,25 @@ class VoucherRepository
 
     /**
      * Automatically check and update expired vouchers to inactive status
-     * Updates vouchers where end_date < current_date and status is 'active'
+     * Updates vouchers where end_date < CURDATE() and status is 'active'
+     * Uses CURDATE() to ensure accurate date comparison at database level
      * Returns the number of vouchers updated
      */
     public function autoExpireVouchers(): int
     {
         try {
-            $currentDate = date('Y-m-d');
-            
             $sql = "UPDATE voucher 
                     SET status = 'inactive' 
                     WHERE status = 'active' 
-                    AND end_date < ?";
+                    AND end_date < CURDATE()";
             
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$currentDate]);
+            $stmt->execute();
             
             $updatedCount = $stmt->rowCount();
             
             if ($updatedCount > 0) {
+                $currentDate = date('Y-m-d');
                 error_log("Auto-expired {$updatedCount} voucher(s) on {$currentDate}");
             }
             
