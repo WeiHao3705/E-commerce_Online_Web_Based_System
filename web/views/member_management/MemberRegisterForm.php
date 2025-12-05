@@ -51,6 +51,9 @@ if ($errorField) {
 if (!empty($_POST)) {
     $formData = array_merge($formData, $_POST);
 }
+
+// Check if user is admin
+$isAdmin = isset($_SESSION['user']) && isset($_SESSION['user']['role']) && $_SESSION['user']['role'] === 'admin';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -73,8 +76,10 @@ if (!empty($_POST)) {
 
 <body>
 
-    <!-- Include Navbar -->
-    <?php include $prefix . 'general/_navbar.php'; ?>
+    <!-- Include Navbar (only if not admin) -->
+    <?php if (!$isAdmin): ?>
+        <?php include __DIR__ . '/../../general/_navbar.php'; ?>
+    <?php endif; ?>
 
     <?php
     if (isset($_SESSION['success_message'])) {
@@ -117,9 +122,6 @@ if (!empty($_POST)) {
             <?php endif; ?>
 
             <form id="registrationForm" action="<?php echo $controllerBasePath; ?>MemberController.php" method="POST" enctype="multipart/form-data">
-                <?php if (isset($_GET['return_to'])): ?>
-                    <input type="hidden" name="return_to" value="<?php echo htmlspecialchars($_GET['return_to']); ?>">
-                <?php endif; ?>
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="username">Username</label>
@@ -176,10 +178,29 @@ if (!empty($_POST)) {
 
                     <div class="form-group">
                         <label for="contact-number">Contact Number</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-phone input-icon"></i>
-                            <input type="tel" id="contact-number" name="contact_no" class="form-control" placeholder="Contact Number" value="<?php echo isset($formData['contact_no']) ? htmlspecialchars($formData['contact_no']) : ''; ?>" required>
+                        <div class="phone-input-group">
+                            <div class="country-code-wrapper">
+                                <select id="country-code" name="country_code" class="country-code-select" required>
+                                    <option value="+60" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+60') ? 'selected' : ''; ?>>🇲🇾 +60 (MY)</option>
+                                    <option value="+1" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+1') ? 'selected' : ''; ?>>🇺🇸 +1 (US)</option>
+                                    <option value="+44" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+44') ? 'selected' : ''; ?>>🇬🇧 +44 (UK)</option>
+                                    <option value="+65" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+65') ? 'selected' : ''; ?>>🇸🇬 +65 (SG)</option>
+                                    <option value="+86" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+86') ? 'selected' : ''; ?>>🇨🇳 +86 (CN)</option>
+                                    <option value="+81" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+81') ? 'selected' : ''; ?>>🇯🇵 +81 (JP)</option>
+                                    <option value="+61" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+61') ? 'selected' : ''; ?>>🇦🇺 +61 (AU)</option>
+                                    <option value="+91" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+91') ? 'selected' : ''; ?>>🇮🇳 +91 (IN)</option>
+                                    <option value="+33" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+33') ? 'selected' : ''; ?>>🇫🇷 +33 (FR)</option>
+                                    <option value="+49" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+49') ? 'selected' : ''; ?>>🇩🇪 +49 (DE)</option>
+                                </select>
+                            </div>
+                            <div class="phone-number-wrapper">
+                                <i class="fas fa-phone input-icon"></i>
+                                <input type="tel" id="contact-number" name="phone_number" class="form-control phone-number-input" placeholder="e.g., 11-5550 5761" value="<?php echo isset($formData['phone_number']) ? htmlspecialchars($formData['phone_number']) : ''; ?>" required>
+                            </div>
                         </div>
+                        <input type="hidden" id="contact_no" name="contact_no" value="<?php echo isset($formData['contact_no']) ? htmlspecialchars($formData['contact_no']) : ''; ?>">
+                        <div id="phoneValidationError" class="phone-validation-error"></div>
+                        <small class="input-hint" id="phoneFormatHint">Enter phone number without country code</small>
                     </div>
 
                     <div class="form-group full-width">
@@ -315,15 +336,19 @@ if (!empty($_POST)) {
 
                 <button type="submit" class="submit-btn">Sign Up</button>
 
+                <?php if (!$isAdmin): ?>
                 <div class="form-footer">
                     <p>Already have an account? <a href="<?php echo $webBasePath; ?>account.php">Sign in</a></p>
                 </div>
+                <?php endif; ?>
             </form>
         </div>
     </div>
 
-    <!-- Include Footer -->
-    <?php include $prefix . 'general/_footer.php'; ?>
+    <!-- Include Footer (only if not admin) -->
+    <?php if (!$isAdmin): ?>
+        <?php include __DIR__ . '/../../general/_footer.php'; ?>
+    <?php endif; ?>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
@@ -818,6 +843,142 @@ if (!empty($_POST)) {
 
             $(window).on('beforeunload', handleBeforeUnload);
 
+            // Phone number validation
+            const $countryCode = $('#country-code');
+            const $phoneNumber = $('#contact-number');
+            const $contactNoHidden = $('#contact_no');
+            const $phoneValidationError = $('#phoneValidationError');
+            const $phoneFormatHint = $('#phoneFormatHint');
+
+            // Phone validation patterns by country code
+            const phonePatterns = {
+                '+60': { // Malaysia
+                    pattern: /^[0-9]{2,3}[- ]?[0-9]{3,4}[- ]?[0-9]{4}$/,
+                    example: '11-5550 5761',
+                    minLength: 9,
+                    maxLength: 12
+                },
+                '+1': { // US/Canada
+                    pattern: /^[0-9]{3}[- ]?[0-9]{3}[- ]?[0-9]{4}$/,
+                    example: '555-123-4567',
+                    minLength: 10,
+                    maxLength: 12
+                },
+                '+44': { // UK
+                    pattern: /^[0-9]{2,4}[- ]?[0-9]{3,4}[- ]?[0-9]{3,4}$/,
+                    example: '20 7946 0958',
+                    minLength: 10,
+                    maxLength: 13
+                },
+                '+65': { // Singapore
+                    pattern: /^[689][0-9]{7}$/,
+                    example: '81234567',
+                    minLength: 8,
+                    maxLength: 8
+                },
+                '+86': { // China
+                    pattern: /^1[3-9][0-9]{9}$/,
+                    example: '13800138000',
+                    minLength: 11,
+                    maxLength: 11
+                },
+                '+81': { // Japan
+                    pattern: /^[0-9]{2,4}[- ]?[0-9]{2,4}[- ]?[0-9]{4}$/,
+                    example: '90-1234-5678',
+                    minLength: 10,
+                    maxLength: 13
+                },
+                '+61': { // Australia
+                    pattern: /^[0-9]{2}[- ]?[0-9]{4}[- ]?[0-9]{4}$/,
+                    example: '04 1234 5678',
+                    minLength: 10,
+                    maxLength: 12
+                },
+                '+91': { // India
+                    pattern: /^[6-9][0-9]{9}$/,
+                    example: '9876543210',
+                    minLength: 10,
+                    maxLength: 10
+                },
+                '+33': { // France
+                    pattern: /^[0-9]{2}[- ]?[0-9]{2}[- ]?[0-9]{2}[- ]?[0-9]{2}[- ]?[0-9]{2}$/,
+                    example: '06 12 34 56 78',
+                    minLength: 10,
+                    maxLength: 14
+                },
+                '+49': { // Germany
+                    pattern: /^[0-9]{3,4}[- ]?[0-9]{3,8}$/,
+                    example: '151 23456789',
+                    minLength: 10,
+                    maxLength: 13
+                }
+            };
+
+            function validatePhoneNumber() {
+                const countryCode = $countryCode.val();
+                const phoneNumber = $phoneNumber.val().replace(/\s+/g, ' ').trim();
+                const config = phonePatterns[countryCode];
+
+                if (!phoneNumber) {
+                    $phoneNumber.removeClass('input-error input-success');
+                    $phoneValidationError.text('').hide();
+                    $contactNoHidden.val('');
+                    return false;
+                }
+
+                // Remove spaces and dashes for validation
+                const cleanPhone = phoneNumber.replace(/[- ]/g, '');
+                
+                // Check length
+                if (cleanPhone.length < config.minLength || cleanPhone.length > config.maxLength) {
+                    $phoneNumber.addClass('input-error').removeClass('input-success');
+                    $phoneValidationError.text(`Phone number must be ${config.minLength}-${config.maxLength} digits. Example: ${config.example}`).show();
+                    $contactNoHidden.val('');
+                    return false;
+                }
+
+                // Check pattern
+                if (!config.pattern.test(phoneNumber)) {
+                    $phoneNumber.addClass('input-error').removeClass('input-success');
+                    $phoneValidationError.text(`Invalid phone format. Example: ${config.example}`).show();
+                    $contactNoHidden.val('');
+                    return false;
+                }
+
+                // Valid phone number
+                $phoneNumber.removeClass('input-error').addClass('input-success');
+                $phoneValidationError.text('').hide();
+                
+                // Combine country code and phone number
+                const fullPhoneNumber = countryCode + ' ' + phoneNumber;
+                $contactNoHidden.val(fullPhoneNumber);
+                
+                return true;
+            }
+
+            function updatePhoneFormatHint() {
+                const countryCode = $countryCode.val();
+                const config = phonePatterns[countryCode];
+                if (config) {
+                    $phoneFormatHint.text(`Format: ${config.example} (${config.minLength}-${config.maxLength} digits)`);
+                    $phoneNumber.attr('placeholder', `e.g., ${config.example}`);
+                }
+            }
+
+            // Update hint when country code changes
+            $countryCode.on('change', function() {
+                updatePhoneFormatHint();
+                validatePhoneNumber();
+            });
+
+            // Validate on input
+            $phoneNumber.on('input', function() {
+                validatePhoneNumber();
+            });
+
+            // Initialize hint
+            updatePhoneFormatHint();
+
             // Form submission validation
             $('#registrationForm').on('submit', function(e) {
                 if (cropper && !$croppedInput.val() && $photoInput[0].files.length > 0) {
@@ -885,6 +1046,14 @@ if (!empty($_POST)) {
                         $dateOfBirth.focus();
                         return false;
                     }
+                }
+
+                // Validate phone number
+                if (!validatePhoneNumber()) {
+                    e.preventDefault();
+                    alert('Please enter a valid phone number.');
+                    $phoneNumber.focus();
+                    return false;
                 }
 
                 return true;

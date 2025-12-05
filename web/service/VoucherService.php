@@ -125,6 +125,15 @@ class VoucherService
     }
 
     /**
+     * Automatically check and update expired vouchers to inactive status
+     * Returns the number of vouchers that were expired
+     */
+    public function autoExpireVouchers(): int
+    {
+        return $this->voucherRepository->autoExpireVouchers();
+    }
+
+    /**
      * Get all active members for voucher assignment
      * Excludes members who already have the voucher assigned
      */

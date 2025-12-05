@@ -18,15 +18,11 @@ $imageBasePath = str_replace('\\', '/', $relativePath) . '/'; // Normalize slash
 $cssBasePath = $imageBasePath . 'css/'; // CSS files are in web/css/
 $viewsBasePath = $imageBasePath . 'views/'; // Views files are in web/views/
 
-// if (!isset($_SESSION['user'])) {
-//     header('Location: ../../views/LoginForm.php');
-//     exit;
-// }
-
-// if ($_SESSION['user']['role'] !== 'admin') {
-//     header('Location: ../../views/403.php'); // or redirect to home
-//     exit;
-// }
+// Check if user is logged in and is admin
+if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
+    header('Location: ../../views/security/LoginForm.php');
+    exit;
+}
 
 $pageTitle = 'All Members - Admin Dashboard';
 
@@ -161,16 +157,6 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                     <span>Search</span>
                                 </button>
                             </form>
-                        </div>
-                        <div class="actions-section">
-                            <?php
-                            // Calculate the path to MemberRegisterForm.php using the same base path calculation
-                            $memberFormUrl = $viewsBasePath . 'member_management/MemberRegisterForm.php?return_to=admin';
-                            ?>
-                            <a href="<?php echo $memberFormUrl; ?>" class="btn btn-primary btn-add">
-                                <span class="material-symbols-outlined">add</span>
-                                Add new member
-                            </a>
                         </div>
                     </div>
                 </div>

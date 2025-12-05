@@ -3,6 +3,12 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Check if user is logged in and is admin
+if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
+    header('Location: ../../views/security/LoginForm.php');
+    exit;
+}
+
 // Define base path
 $current_dir = dirname($_SERVER['PHP_SELF']);
 $is_in_views = (strpos($current_dir, '/views') !== false);

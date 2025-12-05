@@ -291,6 +291,37 @@ class VoucherRepository
     }
 
     /**
+     * Automatically check and update expired vouchers to inactive status
+     * Updates vouchers where end_date < current_date and status is 'active'
+     * Returns the number of vouchers updated
+     */
+    public function autoExpireVouchers(): int
+    {
+        try {
+            $currentDate = date('Y-m-d');
+            
+            $sql = "UPDATE voucher 
+                    SET status = 'inactive' 
+                    WHERE status = 'active' 
+                    AND end_date < ?";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$currentDate]);
+            
+            $updatedCount = $stmt->rowCount();
+            
+            if ($updatedCount > 0) {
+                error_log("Auto-expired {$updatedCount} voucher(s) on {$currentDate}");
+            }
+            
+            return $updatedCount;
+        } catch (PDOException $e) {
+            error_log("Database error in autoExpireVouchers: " . $e->getMessage());
+            throw new Exception("Error auto-expiring vouchers");
+        }
+    }
+
+    /**
      * Get all active members (for voucher assignment)
      * Includes a flag indicating if the member already has the voucher assigned
      */
