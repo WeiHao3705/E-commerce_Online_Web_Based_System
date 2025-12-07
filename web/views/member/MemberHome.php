@@ -7,8 +7,8 @@ $prefix = $is_in_views ? '../' : '';
 
 $pageTitle = 'Home';
 
-// Gather images from web/images/home
-$imgDir = __DIR__ . '/../../images/home';
+// Gather slide images from web/images/home/slide
+$imgDir = __DIR__ . '/../../images/home/slide';
 $images = [];
 if (is_dir($imgDir)) {
     $images = glob($imgDir . '/*.{jpg,jpeg,png,gif,webp}', GLOB_BRACE);
@@ -27,11 +27,11 @@ if (is_dir($imgDir)) {
                         $active = $idx === 0 ? ' active' : '';
                     ?>
                         <div class="slide<?php echo $active; ?>">
-                            <img src="<?php echo $prefix; ?>images/home/<?php echo htmlspecialchars($file); ?>" alt="Banner <?php echo $idx + 1; ?>">
+                            <img src="<?php echo $prefix; ?>images/home/slide/<?php echo htmlspecialchars($file); ?>" alt="Banner <?php echo $idx + 1; ?>">
                         </div>
                     <?php endforeach; ?>
                 <?php else: ?>
-                    <div class="slide active"><div class="slide-fallback">No banner images found. Add files to <code>images/home/</code></div></div>
+                    <div class="slide active"><div class="slide-fallback">No banner images found. Add files to <code>images/home/slide/</code></div></div>
                 <?php endif; ?>
             </div>
 
@@ -89,3 +89,52 @@ if (is_dir($imgDir)) {
         start();
     })();
 </script>
+
+<section class="product-intro">
+    <div class="intro-grid">
+        <!-- Sport Shoes -->
+        <article class="intro-card">
+            <div class="intro-media">
+                <img src="<?php echo $prefix; ?>images/home/intro/intro_shoes.jpg" alt="Sport Shoes" onerror="this.style.display='none'">
+            </div>
+            <div class="intro-content">
+                <h2 class="intro-title">Step Into Performance</h2>
+                <p class="intro-text">Engineered sport shoes built for speed, stability, and comfort. Train harder with breathable uppers and responsive cushioning.</p>
+                <div class="intro-actions">
+                    <a class="btn primary" href="<?php echo $prefix; ?>views/product/ProductPage.php">Shop sport shoes</a>
+                    <a class="btn link" href="<?php echo $prefix; ?>views/product/ProductPage.php#shoes">Learn more</a>
+                </div>
+            </div>
+        </article>
+
+        <!-- Pants -->
+        <article class="intro-card">
+            <div class="intro-content">
+                <h2 class="intro-title">Move With Ease</h2>
+                <p class="intro-text">Performance pants with stretch, moisture-wicking fabrics, and streamlined fits for workouts and daily wear.</p>
+                <div class="intro-actions">
+                    <a class="btn primary" href="<?php echo $prefix; ?>views/product/ProductPage.php">Browse pants</a>
+                    <a class="btn link" href="<?php echo $prefix; ?>views/product/ProductPage.php#pants">Learn more</a>
+                </div>
+            </div>
+            <div class="intro-media">
+                <img src="<?php echo $prefix; ?>images/home/intro/intro_pants.jpg" alt="Performance Pants" onerror="this.style.display='none'">
+            </div>
+        </article>
+
+        <!-- Wear (Tops/Jackets) -->
+        <article class="intro-card">
+            <div class="intro-media">
+                <img src="<?php echo $prefix; ?>images/home/intro/intro_shirt.jpg" alt="Sports Wear" onerror="this.style.display='none'">
+            </div>
+            <div class="intro-content">
+                <h2 class="intro-title">Ready For Every Run</h2>
+                <p class="intro-text">Lightweight tops and weather-ready layers designed to keep you cool, dry, and focused on your goals.</p>
+                <div class="intro-actions">
+                    <a class="btn primary" href="<?php echo $prefix; ?>views/product/ProductPage.php">Explore wear</a>
+                    <a class="btn link" href="<?php echo $prefix; ?>views/product/ProductPage.php#wear">Learn more</a>
+                </div>
+            </div>
+        </article>
+    </div>
+</section>
