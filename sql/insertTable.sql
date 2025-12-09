@@ -29,6 +29,14 @@ CREATE TABLE product (
     description TEXT
 );
 
+-- Product size table
+CREATE TABLE product_size (
+    size_id INT AUTO_INCREMENT PRIMARY KEY,
+    size_name VARCHAR(50) NOT NULL UNIQUE,
+    size_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Voucher table
 CREATE TABLE voucher (
     voucher_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -113,14 +121,20 @@ CREATE TABLE product_image (
         ON UPDATE CASCADE
 );
 
--- Product variant table (depends on product)
+-- Product variant table (depends on product and product_size)
 CREATE TABLE product_variant (
     variant_id INT AUTO_INCREMENT PRIMARY KEY,
     product_id INT NOT NULL,
-    size VARCHAR(50) NOT NULL,
+    size_id INT NOT NULL,
     color VARCHAR(50) DEFAULT NULL,
     
     FOREIGN KEY (product_id) REFERENCES product(product_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    
+    FOREIGN KEY (size_id) REFERENCES product_size(size_id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
 );
 
 -- Orders table (depends on users and voucher)
@@ -205,4 +219,48 @@ CREATE TABLE voucher_assignment (
     INDEX idx_user_id (user_id),
     INDEX idx_assigned_at (assigned_at)
 );
+
+-- ============================================
+-- Insert initial product size data
+-- ============================================
+
+-- Common clothing sizes
+INSERT INTO product_size (size_name, size_order) VALUES
+('XS', 1),
+('S', 2),
+('M', 3),
+('L', 4),
+('XL', 5),
+('XXL', 6),
+('XXXL', 7);
+
+-- Common shoe sizes
+INSERT INTO product_size (size_name, size_order) VALUES
+('6', 10),
+('6.5', 11),
+('7', 12),
+('7.5', 13),
+('8', 14),
+('8.5', 15),
+('9', 16),
+('9.5', 17),
+('10', 18),
+('10.5', 19),
+('11', 20),
+('11.5', 21),
+('12', 22);
+
+-- Numeric sizes (for pants, etc.)
+INSERT INTO product_size (size_name, size_order) VALUES
+('28', 30),
+('30', 31),
+('32', 32),
+('34', 33),
+('36', 34),
+('38', 35),
+('40', 36);
+
+-- One-size option
+INSERT INTO product_size (size_name, size_order) VALUES
+('One Size', 100);
 

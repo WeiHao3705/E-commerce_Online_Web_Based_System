@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['product_id'])) {
         // build variant label (color - size) if possible
         $variantLabel = '';
         if ($vid) {
-            $vStmt = $conn->prepare("SELECT color, size FROM product_variant WHERE variant_id = :vid LIMIT 1");
+            $vStmt = $conn->prepare("SELECT pv.color, ps.size_name AS size FROM product_variant pv LEFT JOIN product_size ps ON pv.size_id = ps.size_id WHERE pv.variant_id = :vid LIMIT 1");
             $vStmt->execute([':vid' => $vid]);
             $vRow = $vStmt->fetch(PDO::FETCH_ASSOC);
             if ($vRow) {

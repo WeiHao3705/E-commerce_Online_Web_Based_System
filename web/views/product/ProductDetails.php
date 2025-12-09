@@ -58,13 +58,15 @@ $mainImageRow = $stmtMain->fetch(PDO::FETCH_ASSOC);
 $sql2 = "
     SELECT 
         pv.variant_id,
-        pv.size,
+        ps.size_name AS size,
+        ps.size_order,
         pv.color,
         pi.image_path
     FROM product_variant pv
+    LEFT JOIN product_size ps ON pv.size_id = ps.size_id
     LEFT JOIN product_image pi ON pv.variant_id = pi.variant_id
     WHERE pv.product_id = :id
-    ORDER BY pv.color, pv.size
+    ORDER BY pv.color, ps.size_order
 ";
 
 $stmt2 = $conn->prepare($sql2);
