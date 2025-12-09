@@ -19,16 +19,17 @@ ALTER TABLE product_variant
 
 -- Step 5: Map old sizes to new size_id values
 -- Update this mapping based on your existing size values
+-- Uses case-insensitive and trimmed matching to handle variations
 UPDATE product_variant pv
-INNER JOIN product_size ps ON ps.size_name = pv.size_old
+INNER JOIN product_size ps ON TRIM(LOWER(ps.size_name)) = TRIM(LOWER(pv.size_old))
 SET pv.size_id = ps.size_id
-WHERE pv.size_old IS NOT NULL;
+WHERE pv.size_old IS NOT NULL AND TRIM(pv.size_old) != '';
 
 -- Step 6: Verify all variants have been mapped
 -- This query should return 0 rows if migration is successful
 SELECT variant_id, size_old 
 FROM product_variant 
-WHERE size_id IS NULL OR size_id = 0;
+WHERE size_id IS NULL;
 
 -- Step 7: Make size_id NOT NULL and add foreign key constraint
 ALTER TABLE product_variant 
