@@ -148,7 +148,7 @@ VALUES ('NewSizeName', 50);
 - 30-49: Numeric/pants sizes
 - 50-89: Custom sizes (available range)
 - 90-99: Special sizes
-- 100+: Special categories (e.g., "One Size")
+- 900-999: Special categories (e.g., "One Size" uses 999)
 
 ## Creating Product Variants
 

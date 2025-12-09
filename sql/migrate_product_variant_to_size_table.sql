@@ -30,6 +30,8 @@ ALTER TABLE product_variant
 -- Step 6: Map old sizes from 'size_old' to new 'size_id' values
 -- Uses case-insensitive and whitespace-trimmed matching to handle variations
 -- like 'small' vs 'Small' or ' M ' vs 'M'
+-- NOTE: For large datasets (>100k rows), consider normalizing size_old values first
+-- to improve performance, or create an explicit mapping table
 UPDATE product_variant pv
 INNER JOIN product_size ps ON TRIM(LOWER(ps.size_name)) = TRIM(LOWER(pv.size_old))
 SET pv.size_id = ps.size_id
@@ -38,7 +40,13 @@ WHERE pv.size_old IS NOT NULL AND TRIM(pv.size_old) != '';
 -- Step 7: Verify all variants have been mapped successfully
 -- This query should return 0 rows if migration is successful
 -- If it returns rows, those sizes need to be added to product_size first
-SELECT variant_id, size_old, 'NOT MAPPED - Add this size to product_size table first' AS error_message
+SELECT 
+    variant_id, 
+    size_old,
+    CASE 
+        WHEN size_old IS NULL OR TRIM(size_old) = '' THEN 'EMPTY/NULL SIZE - Set a valid size_id manually'
+        ELSE 'NOT MAPPED - Add this size to product_size table first'
+    END AS error_message
 FROM product_variant 
 WHERE size_id IS NULL;
 

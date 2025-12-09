@@ -41,6 +41,6 @@ INSERT INTO product_size (size_name, size_order) VALUES
 ('38', 35),
 ('40', 36);
 
--- Insert one-size option
+-- Insert one-size option (using 999 to avoid conflicts with future additions)
 INSERT INTO product_size (size_name, size_order) VALUES
-('One Size', 100);
+('One Size', 999);
