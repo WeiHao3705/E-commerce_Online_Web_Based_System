@@ -48,17 +48,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['product_id'])) {
         }
         if (!$imgPath) $imgPath = '../../images/no-image.png'; // adjust placeholder path as needed
 
-        // build variant label (color - size) if possible
+        // build variant label (color - size) if possible (size now lives in inventory)
         $variantLabel = '';
         if ($vid) {
-            $vStmt = $conn->prepare("SELECT color, size FROM product_variant WHERE variant_id = :vid LIMIT 1");
+            // fetch color from product_variant; size comes from the incoming POST or inventory, but we use incoming $size to keep the user's selection
+            $vStmt = $conn->prepare("SELECT color FROM product_variant WHERE variant_id = :vid LIMIT 1");
             $vStmt->execute([':vid' => $vid]);
             $vRow = $vStmt->fetch(PDO::FETCH_ASSOC);
-            if ($vRow) {
-                $variantLabel = trim(($vRow['color'] ?? '') . ($vRow['size'] ? ' - ' . $vRow['size'] : ''));
-            } else {
-                $variantLabel = $size ?: '';
-            }
+            $color = $vRow['color'] ?? '';
+            $variantLabel = trim($color . ($size ? ' - ' . $size : ''));
         } else {
             $variantLabel = $size ?: '';
         }

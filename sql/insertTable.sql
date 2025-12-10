@@ -117,9 +117,7 @@ CREATE TABLE product_image (
 CREATE TABLE product_variant (
     variant_id INT AUTO_INCREMENT PRIMARY KEY,
     product_id INT NOT NULL,
-    size VARCHAR(50) NOT NULL,
     color VARCHAR(50) DEFAULT NULL,
-    
     FOREIGN KEY (product_id) REFERENCES product(product_id)
 );
 
@@ -151,14 +149,26 @@ CREATE TABLE cart_item (
 -- Inventory table (depends on product_variant)
 CREATE TABLE inventory (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    variant_id INT NOT NULL,
-    quantity INT NOT NULL DEFAULT 0,
-    reorder_level INT NOT NULL DEFAULT 10,
+
+    -- Allow stock for products WITHOUT variants
+    product_id INT NULL,
+
+    -- Allow stock for products WITH variants (color)
+    variant_id INT NULL,
+
+    size VARCHAR(20) NOT NULL,
+
+    stock_quantity INT NOT NULL DEFAULT 0,
+
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
                  ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (variant_id) REFERENCES product_variant(variant_id)
-);
 
+    FOREIGN KEY (product_id) REFERENCES product(product_id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (variant_id) REFERENCES product_variant(variant_id)
+        ON DELETE CASCADE
+);
 -- Order item table (depends on orders and product)
 CREATE TABLE order_item (
     order_item_id INT(20) AUTO_INCREMENT PRIMARY KEY,
