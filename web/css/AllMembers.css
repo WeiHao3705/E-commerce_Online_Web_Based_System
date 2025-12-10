@@ -63,14 +63,49 @@
     text-align: left;
 }
 
-/* Members table actions - positioned to the left */
+/* Members table actions - flexible like vouchers table */
 .members-table:not(.vouchers-table) .col-actions {
-    padding-left: 0;
-    padding-right: 0.5rem;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
     box-sizing: border-box;
     max-width: 100%;
-    overflow: hidden;
-    margin-left: -1.5rem;
+    overflow: visible;
+    width: 100%;
+}
+
+.members-table:not(.vouchers-table) td.col-actions {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    gap: 0.125rem;
+    overflow: visible;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+}
+
+.members-table:not(.vouchers-table) th.col-actions {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+}
+
+/* Ensure buttons start at the very left with no margin and stay within table */
+.members-table:not(.vouchers-table) td.col-actions .action-btn {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+.members-table:not(.vouchers-table) td.col-actions .action-btn:first-child {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
 }
 
 /* Profile Photo */

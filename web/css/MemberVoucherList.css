@@ -7,7 +7,7 @@
 
 .voucher-list-container {
     min-height: 100vh;
-    background-color: #f8f6f6;
+    background-color: #ffffff;
     font-family: 'Inter', sans-serif;
     padding: 20px 0;
 }
@@ -617,8 +617,7 @@
     overflow: hidden;
 }
 
-.sort-dropdown:hover .sort-dropdown-menu,
-.sort-dropdown-menu:hover {
+.sort-dropdown-menu.show {
     display: block;
 }
 

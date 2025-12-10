@@ -20,7 +20,7 @@ $viewsBasePath = $imageBasePath . 'views/'; // Views files are in web/views/
 
 // Check if user is logged in and is admin
 if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
-    header('Location: ../../views/security/LoginForm.php');
+    header('Location: ../views/security/LoginForm.php');
     exit;
 }
 
@@ -161,8 +161,8 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                     </div>
                 </div>
 
-                <div class="table-wrapper">
-                    <table class="members-table">
+                <div class="table-wrapper" id="members-table-wrapper">
+                    <table class="members-table" id="members-table">
                         <thead>
                             <tr>
                                 <th class="col-photo">
@@ -450,6 +450,9 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        // Store image base path for JavaScript use
+        const imageBasePath = '<?php echo $imageBasePath; ?>';
+        
         function openEditModal(userId, username, fullName, email, contactNo, gender, dateOfBirth) {
             $('#editUserId').val(userId);
             $('#editUsername').val(username);

@@ -334,14 +334,22 @@ include __DIR__ . '/../../general/_navbar.php';
         if ($sortButton.length && $sortDropdown.length) {
             $sortButton.on('click', function(e) {
                 e.stopPropagation();
-                const isVisible = $sortDropdown.is(':visible');
-                $sortDropdown.toggle();
+                e.preventDefault();
+                $sortDropdown.toggleClass('show');
+            });
+
+            // Prevent dropdown from closing when clicking inside it
+            $sortDropdown.on('click', function(e) {
+                e.stopPropagation();
             });
 
             // Close dropdown when clicking outside
             $(document).on('click', function(e) {
-                if (!$sortButton.is(e.target) && !$sortDropdown.is(e.target) && !$sortButton.find(e.target).length && !$sortDropdown.find(e.target).length) {
-                    $sortDropdown.hide();
+                if (!$sortButton.is(e.target) && 
+                    !$sortDropdown.is(e.target) && 
+                    !$sortButton.find(e.target).length && 
+                    !$sortDropdown.find(e.target).length) {
+                    $sortDropdown.removeClass('show');
                 }
             });
         }
