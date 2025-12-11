@@ -37,14 +37,14 @@ class MemberController
 
                 $userDTO = $this->membershipServices->authenticate($username, $password);
 
-                // Save minimal user info in session
-                $_SESSION['user'] = [
-                    'user_id' => $userDTO->getUserId(),
-                    'username' => $userDTO->getUsername(),
-                    'full_name' => $userDTO->getFullName(),
-                    'email' => $userDTO->getEmail(),
-                    'role' => $userDTO->getRole()
-                ];
+                // Save minimal user info in session as stdClass object
+                $_SESSION['user'] = new stdClass();
+                $_SESSION['user']->user_id = $userDTO->getUserId();
+                $_SESSION['user']->username = $userDTO->getUsername();
+                $_SESSION['user']->full_name = $userDTO->getFullName();
+                $_SESSION['user']->email = $userDTO->getEmail();
+                $_SESSION['user']->role = $userDTO->getRole();
+                $_SESSION['user']->profile_photo = null;
                 
                 // Redirect based on user role
                 if ($userDTO->getRole() === 'admin') {
@@ -163,8 +163,11 @@ class MemberController
             // Include the view
             require_once __DIR__ . '/../views/member_management/AllMembers.php';
         } catch (Exception $e) {
-            $_SESSION['error_message'] = $e->getMessage();
-            // Redirect to error page or show error
+            // Initialize empty variables for the view
+            $members = [];
+            $pagination = [];
+            $currentSort = ['sortBy' => 'created_at', 'sortOrder' => 'DESC'];
+            // Show empty state instead of error message
             require_once __DIR__ . '/../views/member_management/AllMembers.php';
         }
     }

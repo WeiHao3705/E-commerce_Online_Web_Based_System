@@ -4,7 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Check if user is logged in and is admin
-if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
+if (!isset($_SESSION['user']) || $_SESSION['user']->role !== 'admin') {
     header('Location: ../security/LoginForm.php');
     exit;
 }
@@ -33,8 +33,8 @@ require_once __DIR__ . '/../../service/MemberService.php';
 $pageTitle = 'Admin Dashboard';
 
 // Get admin user info
-$adminName = isset($_SESSION['user']['full_name']) ? $_SESSION['user']['full_name'] : 'Admin';
-$adminAvatar = isset($_SESSION['user']['profile_photo']) ? $_SESSION['user']['profile_photo'] : $webBasePath . 'images/defaultUserImage.jpg';
+$adminName = isset($_SESSION['user']->full_name) ? $_SESSION['user']->full_name : 'Admin';
+$adminAvatar = isset($_SESSION['user']->profile_photo) ? $_SESSION['user']->profile_photo : $webBasePath . 'images/defaultUserImage.jpg';
 
 // Get actual stats from database
 try {

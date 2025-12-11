@@ -4,7 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Check if user is logged in and is admin
-if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
+if (!isset($_SESSION['user']) || $_SESSION['user']->role !== 'admin') {
     header('Location: ../../views/security/LoginForm.php');
     exit;
 }

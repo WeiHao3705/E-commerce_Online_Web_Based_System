@@ -394,8 +394,8 @@ include 'general/_navbar.php';
         <!-- Hero Section -->
         <section class="about-hero">
             <div class="about-hero-content">
-                <h1>Driven by Passion for Sport</h1>
-                <p>Crafting the finest equipment for athletes who demand the best. Discover the story behind our gear.</p>
+                <h1>Your Ultimate Brand Marketplace</h1>
+                <p>Discover premium products from all your favorite brands in one convenient place. Explore our diverse collections.</p>
                 <a href="<?php echo $prefix; ?>index.php" class="about-hero-btn">Explore Collections</a>
             </div>
         </section>
@@ -405,19 +405,19 @@ include 'general/_navbar.php';
             <div class="about-section-title">
                 <h2>OUR PROMISE</h2>
                 <h1>Our Mission & Vision</h1>
-                <p>We are dedicated to pushing the boundaries of performance and innovation, empowering every athlete to achieve their personal best.</p>
+                <p>We are committed to bringing customers access to the finest products from all major brands, making quality shopping convenient and affordable.</p>
             </div>
 
             <div class="mission-vision-grid">
                 <div class="mission-vision-card">
                     <span class="material-symbols-outlined">rocket_launch</span>
                     <h3>Our Mission</h3>
-                    <p>To provide athletes with superior-quality sports equipment that enhances performance and inspires greatness.</p>
+                    <p>To be a comprehensive marketplace where customers can find all their favorite brands in one place, offering the best selection and value.</p>
                 </div>
                 <div class="mission-vision-card">
                     <span class="material-symbols-outlined">visibility</span>
                     <h3>Our Vision</h3>
-                    <p>To be the world's most trusted and innovative sports equipment brand, fostering a global community of passionate athletes.</p>
+                    <p>To become the leading destination for multi-brand shopping, connecting customers with diverse products and trusted brands worldwide.</p>
                 </div>
             </div>
         </section>
@@ -435,9 +435,9 @@ include 'general/_navbar.php';
                         <div class="timeline-line"></div>
                     </div>
                     <div class="timeline-content">
-                        <div class="year">2010</div>
-                        <h3>Founded in a Garage</h3>
-                        <p>Our journey began with a single idea and a lot of passion in a humble garage.</p>
+                        <div class="year">2015</div>
+                        <h3>Platform Launch</h3>
+                        <p>Started as a vision to connect customers with multiple brand products in one convenient online marketplace.</p>
                     </div>
                 </div>
 
@@ -448,9 +448,9 @@ include 'general/_navbar.php';
                         <div class="timeline-line"></div>
                     </div>
                     <div class="timeline-content">
-                        <div class="year">2014</div>
-                        <h3>First Pro Partnership</h3>
-                        <p>Teamed up with our first professional athlete, validating our product's performance at the highest level.</p>
+                        <div class="year">2017</div>
+                        <h3>Brand Partnerships Begin</h3>
+                        <p>Started partnering with leading brands to bring diverse product selections to our customers.</p>
                     </div>
                 </div>
 
@@ -461,9 +461,9 @@ include 'general/_navbar.php';
                         <div class="timeline-line"></div>
                     </div>
                     <div class="timeline-content">
-                        <div class="year">2018</div>
-                        <h3>International Expansion</h3>
-                        <p>ProGear Sports goes global, making our equipment available to athletes worldwide.</p>
+                        <div class="year">2020</div>
+                        <h3>Massive Growth</h3>
+                        <p>Expanded to showcase hundreds of brands, becoming a trusted destination for multi-brand shopping.</p>
                     </div>
                 </div>
 
@@ -473,9 +473,9 @@ include 'general/_navbar.php';
                         <span class="material-symbols-outlined">lightbulb</span>
                     </div>
                     <div class="timeline-content">
-                        <div class="year">2022</div>
-                        <h3>Innovation Lab Launch</h3>
-                        <p>Opened our state-of-the-art R&D lab to pioneer the next generation of sports technology.</p>
+                        <div class="year">2024</div>
+                        <h3>Premium Features</h3>
+                        <p>Launched enhanced features to help customers easily discover and compare all brands available in our marketplace.</p>
                     </div>
                 </div>
             </div>

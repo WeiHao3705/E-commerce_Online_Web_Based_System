@@ -52,8 +52,11 @@ class VoucherController
             // Include the view
             require_once __DIR__ . '/../views/voucher_management/AllVoucher.php';
         } catch (Exception $e) {
-            $_SESSION['error_message'] = $e->getMessage();
-            // Redirect to error page or show error
+            // Initialize empty variables for the view
+            $vouchers = [];
+            $pagination = [];
+            $currentSort = ['sortBy' => 'voucher_id', 'sortOrder' => 'DESC'];
+            // Show empty state instead of error message
             require_once __DIR__ . '/../views/voucher_management/AllVoucher.php';
         }
     }
