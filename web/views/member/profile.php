@@ -24,9 +24,9 @@ $db = new Database();
 $repo = new MembershipRepository($db);
 $service = new MembershipServices($repo);
 
-$userId = (int)$_SESSION['user_id'];
+$userId = (int)$_SESSION['user']->user_id;
 $user = $service->getMemberById($userId);
-
+ 
 if (!$user) {
     $_SESSION['error_message'] = 'Unable to load your profile.';
     header('Location: ../../index.php');
