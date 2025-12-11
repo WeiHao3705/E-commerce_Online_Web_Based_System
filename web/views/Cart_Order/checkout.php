@@ -3,10 +3,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
 // Get user_id from session (login stores it in $_SESSION['user']['user_id'])
 $userId = null;
-if (isset($_SESSION['users']) && isset($_SESSION['users']['user_id'])) {
-    $userId = $_SESSION['users']['user_id'];
-    // Also set $_SESSION['user_id'] for backward compatibility
-    $_SESSION['user_id'] = $userId;
+if (isset($_SESSION['user']) && isset($_SESSION['user']->user_id)) {
+    $_SESSION['user_id'] = $_SESSION['user']->user_id;
 } elseif (isset($_SESSION['user_id'])) {
     $userId = $_SESSION['user_id'];
 }

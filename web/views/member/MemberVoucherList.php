@@ -1,5 +1,10 @@
 <?php
 // Note: Session and authentication checks are handled in the controller
+// Ensure session is started if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 $current_dir = dirname($_SERVER['PHP_SELF']);
 $is_in_views = (strpos($current_dir, '/views') !== false);
 $prefix = $is_in_views ? '../' : '';
@@ -20,9 +25,13 @@ if (!in_array($filter, $allowedFilters)) {
     $filter = 'all';
 }
 
-// Check if user is logged in
-$isLoggedIn = isset($_SESSION['user']) && !empty($_SESSION['user']);
-$isMember = $isLoggedIn && isset($_SESSION['user']->role) && $_SESSION['user']->role === 'member';
+// Check if user is logged in - use controller's variables if set, otherwise check session
+if (!isset($isLoggedIn)) {
+    $isLoggedIn = isset($_SESSION['user']) && !empty($_SESSION['user']);
+}
+if (!isset($isMember)) {
+    $isMember = $isLoggedIn && isset($_SESSION['user']->role) && $_SESSION['user']->role === 'member';
+}
 
 // Helper function to format discount value
 function formatDiscountValue($type, $discountValue, $maxDiscount = null)

@@ -5,8 +5,8 @@ $db = new Database();
 $conn = $db->getConnection();
 
 // Get user_id from session first
-if (isset($_SESSION['users']) && isset($_SESSION['users']['user_id'])) {
-    $_SESSION['user_id'] = $_SESSION['users']['user_id'];
+if (isset($_SESSION['user']) && isset($_SESSION['user']->user_id)) {
+    $_SESSION['user_id'] = $_SESSION['user']->user_id;
 } elseif (!isset($_SESSION['user_id'])) {
     header('Location: ../member/login.php');
     exit;
