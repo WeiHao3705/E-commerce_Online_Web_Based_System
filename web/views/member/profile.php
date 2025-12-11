@@ -166,60 +166,76 @@ include __DIR__ . '/../../general/_navbar.php';
   
 </div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-(function(){
-  var openBtn = document.getElementById('btnOpenUpdate');
-  var modal = document.getElementById('updateModal');
-  var cancelBtn = document.getElementById('btnCancelUpdate');
-  var saveBtn = document.getElementById('btnSaveUpdate');
-  var contact = document.getElementById('contact_no');
+$(document).ready(function(){
+  var $openBtn = $('#btnOpenUpdate');
+  var $modal = $('#updateModal');
+  var $cancelBtn = $('#btnCancelUpdate');
+  var $saveBtn = $('#btnSaveUpdate');
+  var $contact = $('#contact_no');
 
   // Simple input masking: auto-insert dashes and space for 000-000 0000
-  if(contact){
-    contact.addEventListener('input', function(){
-      var d = contact.value.replace(/\D+/g,'').slice(0,10);
+  if($contact.length){
+    $contact.on('input', function(){
+      var d = $(this).val().replace(/\D+/g,'').slice(0,10);
       var out = d;
       if(d.length >= 4 && d.length <= 6){ out = d.slice(0,3) + '-' + d.slice(3); }
       else if(d.length >= 7){ out = d.slice(0,3) + '-' + d.slice(3,6) + ' ' + d.slice(6); }
-      contact.value = out;
+      $(this).val(out);
     });
   }
 
   function validateForm(){
     var ok = true;
-    var full = document.getElementById('full_name');
-    var email = document.getElementById('email');
-    var gender = document.getElementById('gender');
-    var contact = document.getElementById('contact_no');
+    var $full = $('#full_name');
+    var $email = $('#email');
+    var $gender = $('#gender');
+    var $contact = $('#contact_no');
     // Reset
-    ['err_full_name','err_email','err_gender','err_contact'].forEach(function(id){ var el=document.getElementById(id); if(el) el.style.display='none'; });
+    $('#err_full_name, #err_email, #err_gender, #err_contact').hide();
     // Full name
-    if(!full.value.trim()){ document.getElementById('err_full_name').style.display='block'; ok=false; }
+    if(!$full.val().trim()){ $('#err_full_name').show(); ok=false; }
     // Email format
-    var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim());
-    if(!emailOk){ document.getElementById('err_email').style.display='block'; ok=false; }
+    var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($email.val().trim());
+    if(!emailOk){ $('#err_email').show(); ok=false; }
     // Gender not empty
-    if(!gender.value){ document.getElementById('err_gender').style.display='block'; ok=false; }
+    if(!$gender.val()){ $('#err_gender').show(); ok=false; }
     // Phone format
-    var phoneOk = /^\d{3}-\d{3} \d{4}$/.test(contact.value.trim());
-    if(!phoneOk){ document.getElementById('err_contact').style.display='block'; ok=false; }
+    var phoneOk = /^\d{3}-\d{3} \d{4}$/.test($contact.val().trim());
+    if(!phoneOk){ $('#err_contact').show(); ok=false; }
     return ok;
   }
 
-  function openModal(e){ if(e) e.preventDefault(); modal.classList.add('open'); modal.setAttribute('aria-hidden','false'); }
-  function closeModal(e){ if(e) e.preventDefault(); modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); }
-
-  if(openBtn) openBtn.addEventListener('click', openModal);
-  if(cancelBtn) cancelBtn.addEventListener('click', closeModal);
-  if(modal) modal.addEventListener('click', function(e){ if(e.target === modal){ closeModal(e); } });
-  document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && modal.classList.contains('open')){ closeModal(e); } });
-  if(saveBtn){
-    saveBtn.addEventListener('click', function(e){
-      var ok = validateForm();
-      if(!ok){ e.preventDefault(); }
-    });
+  function openModal(e){ 
+    if(e) e.preventDefault(); 
+    $modal.addClass('open').attr('aria-hidden','false'); 
   }
-})();
+  
+  function closeModal(e){ 
+    if(e) e.preventDefault(); 
+    $modal.removeClass('open').attr('aria-hidden','true'); 
+  }
+
+  $openBtn.on('click', openModal);
+  $cancelBtn.on('click', closeModal);
+  $modal.on('click', function(e){ 
+    if($(e.target).is($modal)){ 
+      closeModal(e); 
+    } 
+  });
+  
+  $(document).on('keydown', function(e){ 
+    if(e.key === 'Escape' && $modal.hasClass('open')){ 
+      closeModal(e); 
+    } 
+  });
+  
+  $saveBtn.on('click', function(e){
+    var ok = validateForm();
+    if(!ok){ e.preventDefault(); }
+  });
+});
 </script>
 
 <?php include __DIR__ . '/../../general/_footer.php'; ?>

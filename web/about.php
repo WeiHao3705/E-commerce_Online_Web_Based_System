@@ -16,6 +16,10 @@ include 'general/_navbar.php';
 <!-- About Us Page Styles -->
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
 <style>
+    body {
+        background-color: #f8f6f6;
+    }
+    
     .about-page {
         min-height: 100vh;
         background-color: #f8f6f6;
@@ -129,7 +133,7 @@ include 'general/_navbar.php';
     }
 
     .mission-vision-card {
-        background: #fcf8f8;
+        background: #f8f6f6;
         border: 1px solid #f3e7e7;
         border-radius: 12px;
         padding: 40px;
@@ -186,7 +190,7 @@ include 'general/_navbar.php';
     .timeline-icon .material-symbols-outlined {
         font-size: 36px;
         color: #FF5252;
-        background: white;
+        background: #f8f6f6;
         padding: 10px;
         border-radius: 50%;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -290,7 +294,7 @@ include 'general/_navbar.php';
     }
 
     .about-cta-card {
-        background: #fcf8f8;
+        background: #f8f6f6;
         border: 1px solid #f3e7e7;
         border-radius: 12px;
         padding: 60px 40px;

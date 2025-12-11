@@ -131,6 +131,16 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
 
                     <!-- Search and Actions Bar -->
                     <div class="toolbar">
+                        <div class="bulk-actions-section" style="margin-bottom: 1rem; display: none;" id="bulkActionsSection">
+                            <button type="button" class="btn btn-danger" id="bulkDeleteBtn" style="margin-right: 0.5rem;">
+                                <span class="material-symbols-outlined">delete</span>
+                                <span>Delete Selected (<span id="selectedCount">0</span>)</span>
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="clearSelectionBtn">
+                                <span class="material-symbols-outlined">close</span>
+                                <span>Clear Selection</span>
+                            </button>
+                        </div>
                         <div class="search-section">
                             <form method="GET" action="VoucherController.php" class="search-form">
                                 <input type="hidden" name="action" value="showAll">
@@ -173,6 +183,9 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                     <table class="members-table vouchers-table" id="vouchers-table">
                         <thead>
                             <tr>
+                                <th class="col-checkbox" style="width: 40px;">
+                                    <input type="checkbox" id="selectAllCheckbox" title="Select all">
+                                </th>
                                 <th class="col-sortable">
                                     <a href="<?php echo getSortUrl('code', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
                                         <span>Code</span>
@@ -233,6 +246,9 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                             <?php if (!empty($vouchers)): ?>
                                 <?php foreach ($vouchers as $voucher): ?>
                                     <tr class="table-row">
+                                        <td class="col-checkbox">
+                                            <input type="checkbox" class="voucher-checkbox" name="voucher_ids[]" value="<?php echo $voucher['voucher_id']; ?>" data-voucher-code="<?php echo htmlspecialchars($voucher['code'], ENT_QUOTES); ?>">
+                                        </td>
                                         <td class="col-username">
                                             <strong><?php echo htmlspecialchars($voucher['code']); ?></strong>
                                         </td>
@@ -381,7 +397,7 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr class="table-row table-row-empty">
-                                    <td colspan="10" class="col-empty">
+                                    <td colspan="11" class="col-empty">
                                         No vouchers found. <?php echo !empty($_GET['search']) ? 'Try a different search term.' : ''; ?>
                                     </td>
                                 </tr>
@@ -478,6 +494,11 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
         <input type="hidden" name="voucher_id" id="deleteVoucherId">
     </form>
 
+    <!-- Bulk Delete Form (Hidden) -->
+    <form id="bulkDeleteForm" method="POST" action="VoucherController.php" style="display: none;">
+        <input type="hidden" name="action" value="bulkDelete">
+    </form>
+
     <!-- Assign Voucher Form (Hidden) -->
     <form id="assignForm" method="POST" action="VoucherController.php" style="display: none;">
         <input type="hidden" name="action" value="assign">
@@ -554,13 +575,18 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
             const tbody = $('#vouchers-table tbody');
             tbody.empty();
             
+            // Clear selection when table updates
+            selectedVouchers.clear();
+            $('#selectAllCheckbox').prop('checked', false);
+            updateBulkActions();
+            
             if (response.vouchers && response.vouchers.length > 0) {
                 response.vouchers.forEach(function(voucher) {
                     const row = buildVoucherRow(voucher);
                     tbody.append(row);
                 });
             } else {
-                tbody.append('<tr class="table-row table-row-empty"><td colspan="10" class="col-empty">No vouchers found. Try a different search term.</td></tr>');
+                tbody.append('<tr class="table-row table-row-empty"><td colspan="11" class="col-empty">No vouchers found. Try a different search term.</td></tr>');
             }
         }
 
@@ -612,6 +638,9 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
             
             const row = `
                 <tr class="table-row">
+                    <td class="col-checkbox">
+                        <input type="checkbox" class="voucher-checkbox" name="voucher_ids[]" value="${voucher.voucher_id}" data-voucher-code="${escapeHtml(voucher.code)}">
+                    </td>
                     <td class="col-username"><strong>${escapeHtml(voucher.code)}</strong></td>
                     <td class="col-name">${escapeHtml(voucher.description || '-')}</td>
                     <td class="col-gender">${typeLabels[voucher.type] || voucher.type}</td>
@@ -990,6 +1019,78 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                     closeAssignModal();
                 }
             });
+        });
+
+        // Bulk selection functionality
+        let selectedVouchers = new Set();
+
+        // Select all checkbox
+        $('#selectAllCheckbox').on('change', function() {
+            const isChecked = $(this).is(':checked');
+            $('.voucher-checkbox').prop('checked', isChecked);
+            
+            if (isChecked) {
+                $('.voucher-checkbox').each(function() {
+                    selectedVouchers.add($(this).val());
+                });
+            } else {
+                selectedVouchers.clear();
+            }
+            
+            updateBulkActions();
+        });
+
+        // Individual checkbox change
+        $(document).on('change', '.voucher-checkbox', function() {
+            const voucherId = $(this).val();
+            if ($(this).is(':checked')) {
+                selectedVouchers.add(voucherId);
+            } else {
+                selectedVouchers.delete(voucherId);
+                $('#selectAllCheckbox').prop('checked', false);
+            }
+            updateBulkActions();
+        });
+
+        // Update bulk actions visibility and count
+        function updateBulkActions() {
+            const count = selectedVouchers.size;
+            $('#selectedCount').text(count);
+            
+            if (count > 0) {
+                $('#bulkActionsSection').show();
+            } else {
+                $('#bulkActionsSection').hide();
+            }
+        }
+
+        // Clear selection
+        $('#clearSelectionBtn').on('click', function() {
+            $('.voucher-checkbox').prop('checked', false);
+            $('#selectAllCheckbox').prop('checked', false);
+            selectedVouchers.clear();
+            updateBulkActions();
+        });
+
+        // Bulk delete
+        $('#bulkDeleteBtn').on('click', function() {
+            const count = selectedVouchers.size;
+            if (count === 0) {
+                alert('Please select at least one voucher to delete.');
+                return;
+            }
+
+            if (confirm(`Are you sure you want to delete ${count} voucher(s)?\n\nThis action cannot be undone.`)) {
+                // Clear existing hidden inputs
+                $('#bulkDeleteForm input[name="voucher_ids[]"]').remove();
+                
+                // Add selected voucher IDs
+                selectedVouchers.forEach(function(voucherId) {
+                    $('#bulkDeleteForm').append(`<input type="hidden" name="voucher_ids[]" value="${voucherId}">`);
+                });
+                
+                $('#bulkDeleteForm').submit();
+            }
         });
     </script>
 

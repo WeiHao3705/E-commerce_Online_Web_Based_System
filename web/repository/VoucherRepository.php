@@ -289,6 +289,49 @@ class VoucherRepository
     }
 
     /**
+     * Bulk delete vouchers by array of voucher IDs
+     */
+    public function bulkDeleteVouchers(array $voucherIds): array
+    {
+        try {
+            if (empty($voucherIds)) {
+                return ['success' => false, 'message' => 'No vouchers selected for deletion'];
+            }
+
+            // Validate and sanitize voucher IDs
+            $validVoucherIds = [];
+            foreach ($voucherIds as $voucherId) {
+                $voucherId = (int)$voucherId;
+                if ($voucherId > 0) {
+                    $validVoucherIds[] = $voucherId;
+                }
+            }
+
+            if (empty($validVoucherIds)) {
+                return ['success' => false, 'message' => 'No valid voucher IDs provided'];
+            }
+
+            // Create placeholders for IN clause
+            $placeholders = str_repeat('?,', count($validVoucherIds) - 1) . '?';
+            
+            $sql = "DELETE FROM voucher WHERE voucher_id IN ($placeholders)";
+            $stmt = $this->db->prepare($sql);
+            $result = $stmt->execute($validVoucherIds);
+
+            $deletedCount = $stmt->rowCount();
+
+            return [
+                'success' => true,
+                'deleted_count' => $deletedCount,
+                'message' => "Successfully deleted $deletedCount voucher(s)."
+            ];
+        } catch (PDOException $e) {
+            error_log("Database error in bulkDeleteVouchers: " . $e->getMessage());
+            throw new Exception("Error bulk deleting vouchers: " . $e->getMessage());
+        }
+    }
+
+    /**
      * Automatically check and update expired vouchers to inactive status
      * Updates vouchers where end_date < CURDATE() and status is 'active'
      * Uses CURDATE() to ensure accurate date comparison at database level

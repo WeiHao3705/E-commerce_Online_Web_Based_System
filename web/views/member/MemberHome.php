@@ -50,25 +50,26 @@ if (is_dir($imgDir)) {
         </div>
     </section>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    (function(){
-        var carousel = document.getElementById('homeCarousel');
-        if (!carousel) return;
-        var slides = carousel.querySelectorAll('.slide');
-        var indicators = carousel.querySelectorAll('.indicator');
-        var prev = carousel.querySelector('.prev');
-        var next = carousel.querySelector('.next');
+    $(document).ready(function(){
+        var $carousel = $('#homeCarousel');
+        if (!$carousel.length) return;
+        var $slides = $carousel.find('.slide');
+        var $indicators = $carousel.find('.indicator');
+        var $prev = $carousel.find('.prev');
+        var $next = $carousel.find('.next');
         var current = 0;
         var interval = null;
         var delay = 3000; // 3 seconds
 
         function show(n) {
-            if (!slides.length) return;
-            slides[current].classList.remove('active');
-            if (indicators[current]) indicators[current].classList.remove('active');
-            current = (n + slides.length) % slides.length;
-            slides[current].classList.add('active');
-            if (indicators[current]) indicators[current].classList.add('active');
+            if (!$slides.length) return;
+            $slides.eq(current).removeClass('active');
+            $indicators.eq(current).removeClass('active');
+            current = (n + $slides.length) % $slides.length;
+            $slides.eq(current).addClass('active');
+            $indicators.eq(current).addClass('active');
         }
 
         function nextSlide(){ show(current + 1); }
@@ -77,17 +78,22 @@ if (is_dir($imgDir)) {
         function start(){ if (interval) clearInterval(interval); interval = setInterval(nextSlide, delay); }
         function stop(){ if (interval) { clearInterval(interval); interval = null; } }
 
-        if (next) next.addEventListener('click', function(e){ e.preventDefault(); nextSlide(); stop(); start(); });
-        if (prev) prev.addEventListener('click', function(e){ e.preventDefault(); prevSlide(); stop(); start(); });
+        $next.on('click', function(e){ e.preventDefault(); nextSlide(); stop(); start(); });
+        $prev.on('click', function(e){ e.preventDefault(); prevSlide(); stop(); start(); });
 
-        indicators.forEach(function(btn){ btn.addEventListener('click', function(){ var idx = parseInt(this.getAttribute('data-index')) || 0; show(idx); stop(); start(); }); });
+        $indicators.on('click', function(){ 
+            var idx = parseInt($(this).attr('data-index')) || 0; 
+            show(idx); 
+            stop(); 
+            start(); 
+        });
 
-        carousel.addEventListener('mouseenter', stop);
-        carousel.addEventListener('mouseleave', start);
+        $carousel.on('mouseenter', stop);
+        $carousel.on('mouseleave', start);
 
         // Start autoplay
         start();
-    })();
+    });
 </script>
 
 <section class="product-intro">

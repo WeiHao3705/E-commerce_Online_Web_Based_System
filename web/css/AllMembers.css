@@ -3,25 +3,18 @@
 .col-username {
     font-weight: 500;
     color: var(--gray-900);
-    max-width: 160px;
+    min-width: 130px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .col-photo {
-    width: 140px;
     min-width: 140px;
-    max-width: 140px;
-}
-
-.col-username {
-    width: 12%;
-    min-width: 130px;
+    width: 140px;
 }
 
 .col-name {
-    width: 12%;
     min-width: 150px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -29,7 +22,6 @@
 }
 
 .col-email {
-    width: 15%;
     min-width: 180px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -37,7 +29,6 @@
 }
 
 .col-contact {
-    width: 10%;
     min-width: 140px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -45,17 +36,14 @@
 }
 
 .col-gender {
-    width: 8%;
     min-width: 100px;
 }
 
 .col-dob {
-    width: 10%;
     min-width: 130px;
 }
 
 .col-date {
-    width: 10%;
     min-width: 130px;
 }
 

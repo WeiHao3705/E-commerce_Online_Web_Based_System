@@ -512,6 +512,38 @@ class MemberController
         }
     }
 
+    public function bulkDeleteMembers()
+    {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                // Validate required fields
+                if (!isset($_POST['user_ids']) || empty($_POST['user_ids'])) {
+                    throw new Exception("Please select at least one member to delete");
+                }
+
+                $userIds = $_POST['user_ids'];
+                if (!is_array($userIds)) {
+                    $userIds = [$userIds];
+                }
+
+                $result = $this->membershipServices->bulkDeleteMembers($userIds);
+
+                if ($result['success']) {
+                    $_SESSION['success_message'] = $result['message'];
+                } else {
+                    throw new Exception($result['message']);
+                }
+
+                header('Location: ../controller/MemberController.php?action=showAll');
+                exit;
+            }
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
+            header('Location: ../controller/MemberController.php?action=showAll');
+            exit;
+        }
+    }
+
 }
 
 // Handle the request
@@ -528,6 +560,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $controller->updateMemberStatus();
     } elseif ($action === 'delete') {
         $controller->deleteMember();
+    } elseif ($action === 'bulkDelete') {
+        $controller->bulkDeleteMembers();
     }elseif ($action === 'login') {
         $controller->login();
         $action = $_POST['action'] ?? $_GET['action'] ?? 'register';

@@ -184,6 +184,14 @@ class MembershipServices
     }
 
     /**
+     * Bulk delete members
+     */
+    public function bulkDeleteMembers(array $userIds): array
+    {
+        return $this->membershipRepository->bulkDeleteMembers($userIds);
+    }
+
+    /**
      * Fetch member by email (pass-through to repository)
      */
     public function getMemberByEmail($email)

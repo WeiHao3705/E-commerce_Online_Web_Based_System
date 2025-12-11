@@ -385,5 +385,48 @@ class MembershipRepository
             throw new Exception("Error deleting member");
         }
     }
+
+    /**
+     * Bulk delete members by array of user IDs
+     */
+    public function bulkDeleteMembers(array $userIds): array
+    {
+        try {
+            if (empty($userIds)) {
+                return ['success' => false, 'message' => 'No members selected for deletion'];
+            }
+
+            // Validate and sanitize user IDs
+            $validUserIds = [];
+            foreach ($userIds as $userId) {
+                $userId = (int)$userId;
+                if ($userId > 0) {
+                    $validUserIds[] = $userId;
+                }
+            }
+
+            if (empty($validUserIds)) {
+                return ['success' => false, 'message' => 'No valid member IDs provided'];
+            }
+
+            // Create placeholders for IN clause
+            $placeholders = str_repeat('?,', count($validUserIds) - 1) . '?';
+            
+            $sql = "DELETE FROM users WHERE user_id IN ($placeholders) AND role = 'member'";
+            $stmt = $this->db->prepare($sql);
+            $result = $stmt->execute($validUserIds);
+
+            $deletedCount = $stmt->rowCount();
+
+            return [
+                'success' => true,
+                'deleted_count' => $deletedCount,
+                'message' => "Successfully deleted $deletedCount member(s)."
+            ];
+        } catch (PDOException $e) {
+            error_log("Database error in bulkDeleteMembers: " . $e->getMessage());
+            throw new Exception("Error bulk deleting members: " . $e->getMessage());
+        }
+    }
     
 }

@@ -22,7 +22,7 @@ if (!in_array($filter, $allowedFilters)) {
 
 // Check if user is logged in
 $isLoggedIn = isset($_SESSION['user']) && !empty($_SESSION['user']);
-$isMember = $isLoggedIn && isset($_SESSION['user']['role']) && $_SESSION['user']['role'] === 'member';
+$isMember = $isLoggedIn && isset($_SESSION['user']->role) && $_SESSION['user']->role === 'member';
 
 // Helper function to format discount value
 function formatDiscountValue($type, $discountValue, $maxDiscount = null)
@@ -317,6 +317,7 @@ include __DIR__ . '/../../general/_navbar.php';
             top: '-9999px'
         });
         $('body').append($textarea);
+        // Use native select() method for textarea (required for clipboard)
         $textarea[0].select();
         try {
             document.execCommand('copy');

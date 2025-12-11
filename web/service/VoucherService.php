@@ -125,6 +125,14 @@ class VoucherService
     }
 
     /**
+     * Bulk delete vouchers
+     */
+    public function bulkDeleteVouchers(array $voucherIds): array
+    {
+        return $this->voucherRepository->bulkDeleteVouchers($voucherIds);
+    }
+
+    /**
      * Automatically check and update expired vouchers to inactive status
      * Returns the number of vouchers that were expired
      */

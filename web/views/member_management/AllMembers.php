@@ -133,6 +133,16 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
 
                     <!-- Search and Actions Bar -->
                     <div class="toolbar">
+                        <div class="bulk-actions-section" style="margin-bottom: 1rem; display: none;" id="bulkActionsSection">
+                            <button type="button" class="btn btn-danger" id="bulkDeleteBtn" style="margin-right: 0.5rem;">
+                                <span class="material-symbols-outlined">delete</span>
+                                <span>Delete Selected (<span id="selectedCount">0</span>)</span>
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="clearSelectionBtn">
+                                <span class="material-symbols-outlined">close</span>
+                                <span>Clear Selection</span>
+                            </button>
+                        </div>
                         <div class="search-section">
                             <form method="GET" action="MemberController.php" class="search-form">
                                 <input type="hidden" name="action" value="showAll">
@@ -165,6 +175,9 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                     <table class="members-table" id="members-table">
                         <thead>
                             <tr>
+                                <th class="col-checkbox" style="width: 40px;">
+                                    <input type="checkbox" id="selectAllCheckbox" title="Select all">
+                                </th>
                                 <th class="col-photo">
                                     <span>Photo</span>
                                 </th>
@@ -225,6 +238,9 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                             <?php if (!empty($members)): ?>
                                 <?php foreach ($members as $member): ?>
                                     <tr class="table-row">
+                                        <td class="col-checkbox">
+                                            <input type="checkbox" class="member-checkbox" name="member_ids[]" value="<?php echo $member['user_id']; ?>" data-member-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>">
+                                        </td>
                                         <td class="col-photo">
                                             <?php
                                             $photoUrl = getProfilePhotoUrl($member['profile_photo'] ?? '', $imageBasePath);
@@ -350,7 +366,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr class="table-row table-row-empty">
-                                    <td colspan="10" class="col-empty">
+                                    <td colspan="11" class="col-empty">
                                         No members found. <?php echo !empty($_GET['search']) ? 'Try a different search term.' : ''; ?>
                                     </td>
                                 </tr>
@@ -447,6 +463,11 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
         <input type="hidden" name="user_id" id="deleteUserId">
     </form>
 
+    <!-- Bulk Delete Form (Hidden) -->
+    <form id="bulkDeleteForm" method="POST" action="MemberController.php" style="display: none;">
+        <input type="hidden" name="action" value="bulkDelete">
+    </form>
+
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
@@ -528,13 +549,18 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
             const tbody = $('#members-table tbody');
             tbody.empty();
             
+            // Clear selection when table updates
+            selectedMembers.clear();
+            $('#selectAllCheckbox').prop('checked', false);
+            updateBulkActions();
+            
             if (response.members && response.members.length > 0) {
                 response.members.forEach(function(member) {
                     const row = buildMemberRow(member);
                     tbody.append(row);
                 });
             } else {
-                tbody.append('<tr class="table-row table-row-empty"><td colspan="10" class="col-empty">No members found. Try a different search term.</td></tr>');
+                tbody.append('<tr class="table-row table-row-empty"><td colspan="11" class="col-empty">No members found. Try a different search term.</td></tr>');
             }
         }
 
@@ -595,6 +621,9 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
             
             const row = `
                 <tr class="table-row">
+                    <td class="col-checkbox">
+                        <input type="checkbox" class="member-checkbox" name="member_ids[]" value="${member.user_id}" data-member-name="${escapeHtml(member.full_name)}">
+                    </td>
                     <td class="col-photo">
                         <img src="${escapeHtml(photoUrl)}" 
                              alt="Profile photo"
@@ -818,6 +847,80 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                 $img.data('member-name')
             );
         });
+
+        // Bulk selection functionality
+        let selectedMembers = new Set();
+
+        // Select all checkbox
+        $('#selectAllCheckbox').on('change', function() {
+            const isChecked = $(this).is(':checked');
+            $('.member-checkbox').prop('checked', isChecked);
+            
+            if (isChecked) {
+                $('.member-checkbox').each(function() {
+                    selectedMembers.add($(this).val());
+                });
+            } else {
+                selectedMembers.clear();
+            }
+            
+            updateBulkActions();
+        });
+
+        // Individual checkbox change
+        $(document).on('change', '.member-checkbox', function() {
+            const memberId = $(this).val();
+            if ($(this).is(':checked')) {
+                selectedMembers.add(memberId);
+            } else {
+                selectedMembers.delete(memberId);
+                $('#selectAllCheckbox').prop('checked', false);
+            }
+            updateBulkActions();
+        });
+
+        // Update bulk actions visibility and count
+        function updateBulkActions() {
+            const count = selectedMembers.size;
+            $('#selectedCount').text(count);
+            
+            if (count > 0) {
+                $('#bulkActionsSection').show();
+            } else {
+                $('#bulkActionsSection').hide();
+            }
+        }
+
+        // Clear selection
+        $('#clearSelectionBtn').on('click', function() {
+            $('.member-checkbox').prop('checked', false);
+            $('#selectAllCheckbox').prop('checked', false);
+            selectedMembers.clear();
+            updateBulkActions();
+        });
+
+        // Bulk delete
+        $('#bulkDeleteBtn').on('click', function() {
+            const count = selectedMembers.size;
+            if (count === 0) {
+                alert('Please select at least one member to delete.');
+                return;
+            }
+
+            if (confirm(`Are you sure you want to delete ${count} member(s)?\n\nThis action cannot be undone.`)) {
+                // Clear existing hidden inputs
+                $('#bulkDeleteForm input[name="user_ids[]"]').remove();
+                
+                // Add selected member IDs
+                selectedMembers.forEach(function(memberId) {
+                    $('#bulkDeleteForm').append(`<input type="hidden" name="user_ids[]" value="${memberId}">`);
+                });
+                
+                $('#bulkDeleteForm').submit();
+            }
+        });
+
+        // Update bulk actions when table is updated via AJAX
     </script>
 
     <!-- Edit Modal -->
@@ -834,22 +937,22 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                         <label class="form-label">Username</label>
                         <input type="text" name="username" id="editUsername" readonly
                             class="form-input form-input-readonly"
-                            title="Username cannot be changed">
+                            title="Username cannot be changed"/>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Full Name</label>
-                        <input type="text" name="full_name" id="editFullName" class="form-input">
+                        <input type="text" name="full_name" id="editFullName" class="form-input"/>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Email</label>
-                        <input type="email" name="email" id="editEmail" class="form-input">
+                        <input type="email" name="email" id="editEmail" class="form-input"/>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Contact Number</label>
-                        <input type="text" name="contact_no" id="editContactNo" class="form-input">
+                        <input type="text" name="contact_no" id="editContactNo" class="form-input"/>
                     </div>
 
                     <div class="form-group">
@@ -863,7 +966,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
 
                     <div class="form-group">
                         <label class="form-label">Date of Birth</label>
-                        <input type="date" name="DateOfBirth" id="editDateOfBirth" class="form-input">
+                        <input type="date" name="DateOfBirth" id="editDateOfBirth" class="form-input"/>
                     </div>
 
                     <div class="form-actions">

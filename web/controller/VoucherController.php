@@ -270,6 +270,38 @@ class VoucherController
         }
     }
 
+    public function bulkDeleteVouchers()
+    {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                // Validate required fields
+                if (!isset($_POST['voucher_ids']) || empty($_POST['voucher_ids'])) {
+                    throw new Exception("Please select at least one voucher to delete");
+                }
+
+                $voucherIds = $_POST['voucher_ids'];
+                if (!is_array($voucherIds)) {
+                    $voucherIds = [$voucherIds];
+                }
+
+                $result = $this->voucherService->bulkDeleteVouchers($voucherIds);
+
+                if ($result['success']) {
+                    $_SESSION['success_message'] = $result['message'];
+                } else {
+                    throw new Exception($result['message']);
+                }
+
+                header('Location: ../controller/VoucherController.php?action=showAll');
+                exit;
+            }
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
+            header('Location: ../controller/VoucherController.php?action=showAll');
+            exit;
+        }
+    }
+
     public function assignVoucher()
     {
         try {
@@ -285,7 +317,7 @@ class VoucherController
 
                 $voucherId = (int)$_POST['voucher_id'];
                 $assignmentType = $_POST['assignment_type']; // 'all' or 'specific'
-                $assignedBy = isset($_SESSION['user']['user_id']) ? (int)$_SESSION['user']['user_id'] : null;
+                $assignedBy = isset($_SESSION['user']->user_id) ? (int)$_SESSION['user']->user_id : null;
 
                 if ($assignmentType === 'all') {
                     // Assign to all active members
@@ -493,7 +525,7 @@ class VoucherController
         try {
             $vouchers = [];
             $isLoggedIn = isset($_SESSION['user']) && !empty($_SESSION['user']);
-            $isMember = $isLoggedIn && $_SESSION['user']['role'] === 'member';
+            $isMember = $isLoggedIn && isset($_SESSION['user']->role) && $_SESSION['user']->role === 'member';
             $userId = null;
             $filter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
             
@@ -520,7 +552,7 @@ class VoucherController
 
             // Only fetch vouchers if user is logged in and is a member
             if ($isMember) {
-                $userId = $_SESSION['user']['user_id'];
+                $userId = $_SESSION['user']->user_id;
                 $vouchers = $this->voucherService->getMemberVouchers($userId, $filter, $sortBy, $sortOrder);
             }
 
@@ -537,7 +569,7 @@ class VoucherController
     {
         try {
             // Check if user is logged in and is a member
-            if (!isset($_SESSION['user']) || empty($_SESSION['user']) || $_SESSION['user']['role'] !== 'member') {
+            if (!isset($_SESSION['user']) || empty($_SESSION['user']) || !isset($_SESSION['user']->role) || $_SESSION['user']->role !== 'member') {
                 $_SESSION['error_message'] = 'Please login as a member to redeem vouchers.';
                 header('Location: ../controller/VoucherController.php?action=showMemberVouchers');
                 exit;
@@ -551,7 +583,7 @@ class VoucherController
                     exit;
                 }
 
-                $userId = $_SESSION['user']['user_id'];
+                $userId = $_SESSION['user']->user_id;
                 $voucherCode = trim($_POST['voucher_code']);
 
                 // Redeem voucher
@@ -588,6 +620,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $controller->updateVoucherStatus();
     } elseif ($action === 'delete') {
         $controller->deleteVoucher();
+    } elseif ($action === 'bulkDelete') {
+        $controller->bulkDeleteVouchers();
     } elseif ($action === 'assign') {
         $controller->assignVoucher();
     } elseif ($action === 'previewBulkImport') {
