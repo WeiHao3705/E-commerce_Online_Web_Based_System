@@ -631,13 +631,13 @@ include __DIR__ . '/../../general/_navbar.php';
   var btnClosePhotoCropper = document.getElementById('btnClosePhotoCropper');
 
   // Simple input masking: auto-insert dashes and space for 000-000 0000
-  if($contact.length){
-    $contact.on('input', function(){
-      var d = $(this).val().replace(/\D+/g,'').slice(0,10);
+  if(contact){
+    contact.addEventListener('input', function(){
+      var d = contact.value.replace(/\D+/g,'').slice(0,10);
       var out = d;
       if(d.length >= 4 && d.length <= 6){ out = d.slice(0,3) + '-' + d.slice(3); }
       else if(d.length >= 7){ out = d.slice(0,3) + '-' + d.slice(3,6) + ' ' + d.slice(6); }
-      $(this).val(out);
+      contact.value = out;
     });
   }
 
@@ -714,13 +714,13 @@ include __DIR__ . '/../../general/_navbar.php';
     // Reset
     ['err_full_name','err_email','err_contact'].forEach(function(id){ var el=document.getElementById(id); if(el) el.style.display='none'; });
     // Full name
-    if(!$full.val().trim()){ $('#err_full_name').show(); ok=false; }
+    if(!full.value.trim()){ document.getElementById('err_full_name').style.display='block'; ok=false; }
     // Email format
     var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim());
     if(!emailOk){ document.getElementById('err_email').style.display='block'; ok=false; }
     // Phone format
-    var phoneOk = /^\d{3}-\d{3} \d{4}$/.test($contact.val().trim());
-    if(!phoneOk){ $('#err_contact').show(); ok=false; }
+    var phoneOk = /^\d{3}-\d{3} \d{4}$/.test(contact.value.trim());
+    if(!phoneOk){ document.getElementById('err_contact').style.display='block'; ok=false; }
     return ok;
   }
 
@@ -752,31 +752,7 @@ include __DIR__ . '/../../general/_navbar.php';
       if(!ok){ e.preventDefault(); }
     });
   }
-  
-  function closeModal(e){ 
-    if(e) e.preventDefault(); 
-    $modal.removeClass('open').attr('aria-hidden','true'); 
-  }
-
-  $openBtn.on('click', openModal);
-  $cancelBtn.on('click', closeModal);
-  $modal.on('click', function(e){ 
-    if($(e.target).is($modal)){ 
-      closeModal(e); 
-    } 
-  });
-  
-  $(document).on('keydown', function(e){ 
-    if(e.key === 'Escape' && $modal.hasClass('open')){ 
-      closeModal(e); 
-    } 
-  });
-  
-  $saveBtn.on('click', function(e){
-    var ok = validateForm();
-    if(!ok){ e.preventDefault(); }
-  });
-});
+})();
 </script>
 
 <?php include __DIR__ . '/../../general/_footer.php'; ?>
