@@ -6,6 +6,8 @@ CREATE TABLE address (
     city VARCHAR(20) NOT NULL,
     postcode VARCHAR(5) NOT NULL,
     state VARCHAR(20) NOT NULL,
+    label ENUM('Home', 'Work', 'Other') NOT NULL DEFAULT 'Home',
+    is_default TINYINT(1) NOT NULL DEFAULT 0,
     
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );

@@ -227,11 +227,11 @@ class MemberController
                 $username = isset($_POST['username']) ? trim($_POST['username']) : '';
                 $full_name = isset($_POST['full_name']) ? trim($_POST['full_name']) : '';
                 $email = isset($_POST['email']) ? trim($_POST['email']) : '';
-                $gender = isset($_POST['gender']) ? trim($_POST['gender']) : '';
                 $contact_no = isset($_POST['contact_no']) ? trim($_POST['contact_no']) : '';
+                $selected_address_id = isset($_POST['selected_address_id']) ? (int)$_POST['selected_address_id'] : 0;
 
                 // Server-side constraints: no empty fields
-                if ($full_name === '' || $email === '' || $gender === '' || $contact_no === '') {
+                if ($full_name === '' || $email === '' || $contact_no === '') {
                     throw new Exception("All fields are required.");
                 }
 
@@ -247,6 +247,13 @@ class MemberController
                 }
                 $contact_no = $contact_digits;
 
+                // Get current user data to preserve gender
+                $currentUser = $this->membershipServices->getMemberById((int)$_POST['user_id']);
+                if (!$currentUser) {
+                    throw new Exception("User not found.");
+                }
+                $gender = $currentUser['gender'];
+
                 $memberDTO = new MemberUpdateDTO(
                     (int)$_POST['user_id'],
                     $username,
@@ -257,6 +264,20 @@ class MemberController
                 );
 
                 $result = $this->membershipServices->updateMember($memberDTO);
+
+                // Update default address if selected
+                if ($result && $selected_address_id > 0) {
+                    $db = new Database();
+                    $conn = $db->getConnection();
+                    
+                    // Remove default from all user addresses
+                    $stmtReset = $conn->prepare("UPDATE address SET is_default = 0 WHERE user_id = ?");
+                    $stmtReset->execute([(int)$_POST['user_id']]);
+                    
+                    // Set new default
+                    $stmtSet = $conn->prepare("UPDATE address SET is_default = 1 WHERE id = ? AND user_id = ?");
+                    $stmtSet->execute([$selected_address_id, (int)$_POST['user_id']]);
+                }
 
                 if ($result) {
                     $_SESSION['success_message'] = "Member updated successfully!";
@@ -438,6 +459,186 @@ class MemberController
         }
     }
 
+    public function updateProfilePhoto()
+    {
+        header('Content-Type: application/json');
+        
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception("Invalid request method");
+            }
+
+            if (empty($_SESSION['user'])) {
+                throw new Exception("User not authenticated");
+            }
+
+            $userId = isset($_POST['user_id']) ? (int)$_POST['user_id'] : 0;
+            
+            if ($userId !== (int)$_SESSION['user']['user_id']) {
+                throw new Exception("Unauthorized access");
+            }
+
+            if (!isset($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception("No file uploaded or upload error");
+            }
+
+            $file = $_FILES['photo'];
+            $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+            $maxSize = 5 * 1024 * 1024; // 5MB
+
+            // Validate file type
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mimeType = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+
+            if (!in_array($mimeType, $allowedTypes)) {
+                throw new Exception("Invalid file type. Only JPG, PNG, and GIF are allowed.");
+            }
+
+            // Validate file size
+            if ($file['size'] > $maxSize) {
+                throw new Exception("File size exceeds 5MB limit.");
+            }
+
+            // Get username for filename
+            $username = $_SESSION['user']['username'];
+            $safeUsername = preg_replace('/[^a-zA-Z0-9_-]/', '', $username);
+
+            // Create upload directory if it doesn't exist
+            $uploadDir = __DIR__ . '/../images/profiles/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            // Remove old profile photos
+            $oldFiles = glob($uploadDir . $safeUsername . '.*');
+            foreach ($oldFiles as $oldFile) {
+                if (is_file($oldFile)) {
+                    unlink($oldFile);
+                }
+            }
+
+            // Generate new filename
+            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+            if (empty($extension)) {
+                $extension = 'jpg';
+            }
+            $newFilename = $safeUsername . '.' . $extension;
+            $targetPath = $uploadDir . $newFilename;
+
+            // Move uploaded file
+            if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+                throw new Exception("Failed to save uploaded file.");
+            }
+
+            // Update database with new photo path
+            $photoPath = 'web/images/profiles/' . $newFilename;
+            $db = new Database();
+            $conn = $db->getConnection();
+            
+            $stmt = $conn->prepare("UPDATE users SET profile_photo = ? WHERE user_id = ?");
+            $stmt->execute([$photoPath, $userId]);
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Profile photo updated successfully',
+                'photoUrl' => '../images/profiles/' . $newFilename
+            ]);
+            exit;
+
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+            exit;
+        }
+    }
+
+    public function addAddress()
+    {
+        header('Content-Type: application/json');
+        
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception("Invalid request method");
+            }
+
+            if (empty($_SESSION['user'])) {
+                throw new Exception("User not authenticated");
+            }
+
+            $userId = isset($_POST['user_id']) ? (int)$_POST['user_id'] : 0;
+            
+            if ($userId !== (int)$_SESSION['user']['user_id']) {
+                throw new Exception("Unauthorized access");
+            }
+
+            // Validate required fields
+            $address1 = isset($_POST['address1']) ? trim($_POST['address1']) : '';
+            $address2 = isset($_POST['address2']) ? trim($_POST['address2']) : '';
+            $city = isset($_POST['city']) ? trim($_POST['city']) : '';
+            $state = isset($_POST['state']) ? trim($_POST['state']) : '';
+            $postcode = isset($_POST['postcode']) ? trim($_POST['postcode']) : '';
+            $label = isset($_POST['label']) ? trim($_POST['label']) : 'home';
+
+            if (empty($address1) || empty($city) || empty($state) || empty($postcode)) {
+                throw new Exception("All required fields must be filled");
+            }
+
+            // Validate postcode (5 digits)
+            if (!preg_match('/^\d{5}$/', $postcode)) {
+                throw new Exception("Invalid postcode format");
+            }
+
+            // Validate label
+            if (!in_array($label, ['home', 'work', 'other'])) {
+                $label = 'home';
+            }
+
+            $db = new Database();
+            $conn = $db->getConnection();
+            
+            // Check if this is the first address for the user
+            $stmtCount = $conn->prepare("SELECT COUNT(*) FROM address WHERE user_id = ?");
+            $stmtCount->execute([$userId]);
+            $addressCount = $stmtCount->fetchColumn();
+            
+            // If first address, set as default
+            $isDefault = ($addressCount == 0) ? 1 : 0;
+
+            // Insert new address
+            $stmt = $conn->prepare("
+                INSERT INTO address (user_id, address1, address2, city, postcode, state, label, is_default) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            
+            $stmt->execute([
+                $userId,
+                $address1,
+                $address2,
+                $city,
+                $postcode,
+                $state,
+                $label,
+                $isDefault
+            ]);
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Address added successfully'
+            ]);
+            exit;
+
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+            exit;
+        }
+    }
+
     public function updateMemberStatus()
     {
         try {
@@ -524,6 +725,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $controller->registerMember();
     } elseif ($action === 'update') {
         $controller->updateMember();
+    } elseif ($action === 'update_photo') {
+        $controller->updateProfilePhoto();
+    } elseif ($action === 'add_address') {
+        $controller->addAddress();
     } elseif ($action === 'updateStatus') {
         $controller->updateMemberStatus();
     } elseif ($action === 'delete') {

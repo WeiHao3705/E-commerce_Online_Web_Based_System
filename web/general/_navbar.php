@@ -34,7 +34,7 @@ $prefix = $webBasePath;
                         <li><a href="<?php echo $prefix; ?>account.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'account.php' ? 'active' : ''; ?>">Login</a></li>
                     <?php else: ?>
                         <li class="dropdown">
-                            <a href="#" class="<?php echo (basename($_SERVER['PHP_SELF']) == 'index.php' || basename($_SERVER['PHP_SELF']) == 'account.php') ? 'active' : ''; ?> account-trigger" role="button" aria-haspopup="true" aria-expanded="false">
+                            <a href="javascript:void(0);" class="<?php echo (basename($_SERVER['PHP_SELF']) == 'index.php' || basename($_SERVER['PHP_SELF']) == 'account.php') ? 'active' : ''; ?> account-trigger" role="button" aria-haspopup="true" aria-expanded="false">
                                 Account <i class="fas fa-caret-down"></i>
                             </a>
                             <ul class="dropdown-menu">
@@ -102,6 +102,9 @@ $prefix = $webBasePath;
         $('.dropdown > a').on('click', function(e) {
             e.preventDefault();
             if (isMobileView()) {
+                $(this).parent().toggleClass('active');
+            } else {
+                // On desktop, toggle dropdown on click
                 $(this).parent().toggleClass('active');
             }
         });

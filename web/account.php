@@ -5,7 +5,7 @@ session_start();
 // If user is already logged in, redirect to appropriate page
 if (!empty($_SESSION['user'])) {
     // Check user role and redirect accordingly
-    if ($_SESSION['user']['role'] === 'admin') {
+    if ($_SESSION['user']->role === 'admin') {
         header('Location: views/admin/AdminDashboard.php');
     } else {
         // Redirect members to home page (shows MemberHome when logged in)
