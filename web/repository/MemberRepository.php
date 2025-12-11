@@ -75,6 +75,9 @@ class MembershipRepository
             // Ensure limit and offset are integers
             $limit = (int)$limit;
             $offset = (int)$offset;
+            
+            // Trim and normalize search term
+            $searchTerm = trim($searchTerm);
 
             // Validate sort column to prevent SQL injection
             $allowedSortColumns = ['username', 'full_name', 'email', 'contact_no', 'gender', 'created_at'];
@@ -105,7 +108,7 @@ class MembershipRepository
 
             $params = [];
 
-            // Add search filter if provided
+            // Add search filter if provided (after trimming)
             if (!empty($searchTerm)) {
                 $sql .= " AND (
                         username LIKE :search OR
@@ -142,6 +145,9 @@ class MembershipRepository
     public function getTotalMembersCount($searchTerm = '')
     {
         try {
+            // Trim and normalize search term
+            $searchTerm = trim($searchTerm);
+            
             $sql = "SELECT COUNT(*) as total FROM users WHERE role ='member'";
             $params = [];
 

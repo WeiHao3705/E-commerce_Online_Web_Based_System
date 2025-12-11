@@ -130,10 +130,16 @@ class MemberController
     public function showAllMembers()
     {
         try {
+            // Check if this is an AJAX request
+            if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
+                $this->getMembersAjax();
+                return;
+            }
+
             // Get pagination, search, and sort parameters
             $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
             $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
-            $searchTerm = isset($_GET['search']) ? $_GET['search'] : '';
+            $searchTerm = isset($_GET['search']) ? trim($_GET['search']) : '';
             $sortBy = isset($_GET['sortBy']) ? $_GET['sortBy'] : 'created_at';
             $sortOrder = isset($_GET['sortOrder']) ? strtoupper($_GET['sortOrder']) : 'DESC';
 
@@ -160,6 +166,48 @@ class MemberController
             $_SESSION['error_message'] = $e->getMessage();
             // Redirect to error page or show error
             require_once __DIR__ . '/../views/member_management/AllMembers.php';
+        }
+    }
+
+    private function getMembersAjax()
+    {
+        try {
+            // Get pagination, search, and sort parameters
+            $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+            $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+            $searchTerm = isset($_GET['search']) ? trim($_GET['search']) : '';
+            $sortBy = isset($_GET['sortBy']) ? $_GET['sortBy'] : 'created_at';
+            $sortOrder = isset($_GET['sortOrder']) ? strtoupper($_GET['sortOrder']) : 'DESC';
+
+            // Validate page number
+            if ($page < 1) $page = 1;
+            if ($limit < 1) $limit = 10;
+
+            // Validate sort order
+            if ($sortOrder !== 'ASC' && $sortOrder !== 'DESC') {
+                $sortOrder = 'DESC';
+            }
+
+            // Get members data from service
+            $data = $this->membershipServices->getAllMembers($page, $limit, $searchTerm, $sortBy, $sortOrder);
+
+            // Return JSON response
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'members' => $data['members'],
+                'pagination' => $data['pagination'],
+                'sortBy' => $sortBy,
+                'sortOrder' => $sortOrder
+            ]);
+            exit;
+        } catch (Exception $e) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+            exit;
         }
     }
 

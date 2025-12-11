@@ -453,6 +453,254 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
         // Store image base path for JavaScript use
         const imageBasePath = '<?php echo $imageBasePath; ?>';
         
+        // AJAX Search functionality
+        let searchTimeout;
+        const searchInput = $('#simple-search');
+        const searchForm = $('.search-form');
+        
+        // Prevent form submission on Enter key
+        searchForm.on('submit', function(e) {
+            e.preventDefault();
+            performSearch();
+        });
+
+        // AJAX search on input with debouncing
+        searchInput.on('input', function() {
+            clearTimeout(searchTimeout);
+            const searchTerm = $(this).val();
+            
+            // If search is cleared (empty), search immediately to show all members
+            if (!searchTerm || searchTerm.trim() === '') {
+                performSearch();
+            } else {
+                // Debounce: wait 500ms after user stops typing
+                searchTimeout = setTimeout(function() {
+                    performSearch();
+                }, 500);
+            }
+        });
+
+        function performSearch() {
+            const searchTerm = searchInput.val() || ''; // Ensure empty string if null/undefined
+            const trimmedSearch = searchTerm.trim();
+            const sortBy = $('input[name="sortBy"]').val() || 'created_at';
+            const sortOrder = $('input[name="sortOrder"]').val() || 'DESC';
+            
+            // Show loading indicator
+            const tableWrapper = $('#members-table-wrapper');
+            tableWrapper.css('opacity', '0.6');
+            
+            // Build request data - always include search parameter, even if empty
+            const requestData = {
+                action: 'showAll',
+                ajax: '1',
+                search: trimmedSearch, // Empty string will show all members
+                sortBy: sortBy,
+                sortOrder: sortOrder,
+                page: 1
+            };
+            
+            // Make AJAX request
+            $.ajax({
+                url: 'MemberController.php',
+                method: 'GET',
+                data: requestData,
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        updateTable(response);
+                        updatePagination(response);
+                    } else {
+                        alert('Error: ' + response.error);
+                    }
+                    tableWrapper.css('opacity', '1');
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX Error:', error);
+                    console.error('Response:', xhr.responseText);
+                    alert('An error occurred while searching. Please try again.');
+                    tableWrapper.css('opacity', '1');
+                }
+            });
+        }
+
+        function updateTable(response) {
+            const tbody = $('#members-table tbody');
+            tbody.empty();
+            
+            if (response.members && response.members.length > 0) {
+                response.members.forEach(function(member) {
+                    const row = buildMemberRow(member);
+                    tbody.append(row);
+                });
+            } else {
+                tbody.append('<tr class="table-row table-row-empty"><td colspan="10" class="col-empty">No members found. Try a different search term.</td></tr>');
+            }
+        }
+
+        function buildMemberRow(member) {
+            // Get profile photo URL
+            let photoUrl = '';
+            if (member.profile_photo && member.profile_photo.trim() !== '') {
+                // Remove 'web/' prefix if present
+                let photoPath = member.profile_photo;
+                if (photoPath.indexOf('web/') === 0) {
+                    photoPath = photoPath.substring(4);
+                }
+                photoPath = photoPath.replace(/^\/+/, ''); // Remove leading slashes
+                photoUrl = imageBasePath + photoPath;
+            } else {
+                photoUrl = imageBasePath + 'images/defaultUserImage.jpg';
+            }
+            const defaultPhotoUrl = imageBasePath + 'images/defaultUserImage.jpg';
+            
+            // Format date of birth
+            let dobDisplay = '-';
+            if (member.DateOfBirth) {
+                const dob = new Date(member.DateOfBirth);
+                if (!isNaN(dob.getTime())) {
+                    dobDisplay = dob.toISOString().split('T')[0];
+                }
+            }
+            
+            // Format created date
+            let createdDateDisplay = '-';
+            if (member.created_at) {
+                const createdDate = new Date(member.created_at);
+                if (!isNaN(createdDate.getTime())) {
+                    createdDateDisplay = createdDate.toISOString().split('T')[0];
+                }
+            }
+            
+            // Status badge
+            const status = member.status || 'active';
+            const statusLabels = {
+                'active': { class: 'status-active', text: 'Active' },
+                'inactive': { class: 'status-inactive', text: 'Inactive' },
+                'banned': { class: 'status-banned', text: 'Banned' }
+            };
+            const statusInfo = statusLabels[status] || statusLabels['active'];
+            
+            // Build status buttons
+            let statusButtons = '';
+            if (status !== 'banned') {
+                statusButtons += '<button class="action-btn ban-btn" data-action="status" data-user-id="' + member.user_id + '" data-user-name="' + escapeHtml(member.full_name) + '" data-status="banned" title="Ban member"><span class="material-symbols-outlined">block</span></button>';
+            }
+            if (status !== 'inactive') {
+                statusButtons += '<button class="action-btn inactive-btn" data-action="status" data-user-id="' + member.user_id + '" data-user-name="' + escapeHtml(member.full_name) + '" data-status="inactive" title="Set to inactive"><span class="material-symbols-outlined">pause_circle</span></button>';
+            }
+            if (status !== 'active') {
+                statusButtons += '<button class="action-btn activate-btn" data-action="status" data-user-id="' + member.user_id + '" data-user-name="' + escapeHtml(member.full_name) + '" data-status="active" title="Activate member"><span class="material-symbols-outlined">check_circle</span></button>';
+            }
+            
+            const row = `
+                <tr class="table-row">
+                    <td class="col-photo">
+                        <img src="${escapeHtml(photoUrl)}" 
+                             alt="Profile photo"
+                             class="member-profile-photo clickable-image"
+                             data-image-url="${escapeHtml(photoUrl)}"
+                             data-member-name="${escapeHtml(member.full_name)}"
+                             onerror="this.onerror=null; this.src='${escapeHtml(defaultPhotoUrl)}';"
+                             style="cursor: pointer;"
+                             title="Click to view full size">
+                    </td>
+                    <td class="col-username">${escapeHtml(member.username)}</td>
+                    <td class="col-name">${escapeHtml(member.full_name)}</td>
+                    <td class="col-email">${escapeHtml(member.email)}</td>
+                    <td class="col-contact">${escapeHtml(member.contact_no)}</td>
+                    <td class="col-gender">${escapeHtml(member.gender)}</td>
+                    <td class="col-dob">${dobDisplay}</td>
+                    <td class="col-date">${createdDateDisplay}</td>
+                    <td class="col-status">
+                        <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
+                    </td>
+                    <td class="col-actions">
+                        <button class="action-btn edit-btn" data-user-id="${member.user_id}" data-username="${escapeHtml(member.username)}" data-full-name="${escapeHtml(member.full_name)}" data-email="${escapeHtml(member.email)}" data-contact-no="${escapeHtml(member.contact_no)}" data-gender="${escapeHtml(member.gender)}" data-date-of-birth="${escapeHtml(member.DateOfBirth || '')}" title="Edit member">
+                            <span class="material-symbols-outlined">edit</span>
+                        </button>
+                        ${statusButtons}
+                        <button class="action-btn delete-btn" data-action="delete" data-user-id="${member.user_id}" data-user-name="${escapeHtml(member.full_name)}" title="Delete member">
+                            <span class="material-symbols-outlined">delete</span>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            return row;
+        }
+
+        function updatePagination(response) {
+            const pagination = response.pagination;
+            const paginationNav = $('.pagination');
+            
+            if (pagination.total_members > 0) {
+                // Update pagination info
+                $('.pagination-info').html(`
+                    Showing <span class="pagination-number">${pagination.showing_from}-${pagination.showing_to}</span> of <span class="pagination-number">${pagination.total_members}</span>
+                `);
+                
+                // Update pagination links
+                const paginationList = $('.pagination-list');
+                paginationList.empty();
+                
+                // Previous button
+                const prevUrl = pagination.current_page > 1 ? 
+                    `MemberController.php?action=showAll&page=${pagination.current_page - 1}&search=${encodeURIComponent($('#simple-search').val())}&sortBy=${response.sortBy}&sortOrder=${response.sortOrder}` : '#';
+                paginationList.append(`
+                    <li>
+                        ${pagination.current_page > 1 ? 
+                            `<a href="${prevUrl}" class="pagination-link pagination-prev"><span class="material-symbols-outlined">chevron_left</span></a>` :
+                            `<span class="pagination-link pagination-prev pagination-disabled"><span class="material-symbols-outlined">chevron_left</span></span>`
+                        }
+                    </li>
+                `);
+                
+                // Page numbers
+                const startPage = Math.max(1, pagination.current_page - 2);
+                const endPage = Math.min(pagination.total_pages, pagination.current_page + 2);
+                
+                for (let i = startPage; i <= endPage; i++) {
+                    const activeClass = i === pagination.current_page ? 'pagination-active' : '';
+                    const pageUrl = `MemberController.php?action=showAll&page=${i}&search=${encodeURIComponent($('#simple-search').val())}&sortBy=${response.sortBy}&sortOrder=${response.sortOrder}`;
+                    paginationList.append(`
+                        <li>
+                            <a href="${pageUrl}" class="pagination-link ${activeClass}">${i}</a>
+                        </li>
+                    `);
+                }
+                
+                // Next button
+                const nextUrl = pagination.current_page < pagination.total_pages ? 
+                    `MemberController.php?action=showAll&page=${pagination.current_page + 1}&search=${encodeURIComponent($('#simple-search').val())}&sortBy=${response.sortBy}&sortOrder=${response.sortOrder}` : '#';
+                paginationList.append(`
+                    <li>
+                        ${pagination.current_page < pagination.total_pages ? 
+                            `<a href="${nextUrl}" class="pagination-link pagination-next"><span class="material-symbols-outlined">chevron_right</span></a>` :
+                            `<span class="pagination-link pagination-next pagination-disabled"><span class="material-symbols-outlined">chevron_right</span></span>`
+                        }
+                    </li>
+                `);
+                
+                paginationNav.show();
+            } else {
+                paginationNav.hide();
+            }
+        }
+
+        function escapeHtml(text) {
+            if (text === null || text === undefined) {
+                return '';
+            }
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+        
         function openEditModal(userId, username, fullName, email, contactNo, gender, dateOfBirth) {
             $('#editUserId').val(userId);
             $('#editUsername').val(username);
