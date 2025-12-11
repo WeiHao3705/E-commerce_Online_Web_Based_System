@@ -96,7 +96,15 @@ CREATE TABLE product_price (
     UNIQUE (product_id)
 );
 
--- Product image table (depends on product)
+-- Product variant table (depends on product) - MOVED UP
+CREATE TABLE product_variant (
+    variant_id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    color VARCHAR(50) DEFAULT NULL,
+    FOREIGN KEY (product_id) REFERENCES product(product_id)
+);
+
+-- Product image table (depends on product and product_variant)
 CREATE TABLE product_image (
     id INT AUTO_INCREMENT PRIMARY KEY,
     product_id INT NOT NULL,
@@ -111,14 +119,6 @@ CREATE TABLE product_image (
     FOREIGN KEY (variant_id) REFERENCES product_variant(variant_id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
-);
-
--- Product variant table (depends on product)
-CREATE TABLE product_variant (
-    variant_id INT AUTO_INCREMENT PRIMARY KEY,
-    product_id INT NOT NULL,
-    color VARCHAR(50) DEFAULT NULL,
-    FOREIGN KEY (product_id) REFERENCES product(product_id)
 );
 
 -- Orders table (depends on users and voucher)

@@ -3,9 +3,78 @@ session_start();
 require __DIR__ . '/../../database/connection.php';
 $db = new Database();
 $conn = $db->getConnection();
+
+// Get user_id from session first
+if (isset($_SESSION['users']) && isset($_SESSION['users']['user_id'])) {
+    $_SESSION['user_id'] = $_SESSION['users']['user_id'];
+} elseif (!isset($_SESSION['user_id'])) {
+    header('Location: ../member/login.php');
+    exit;
+}
+
+// Handle AJAX delete request
+if (isset($_POST['cart_item_id']) && !isset($_POST['quantity'])) {
+    header('Content-Type: application/json');
+    
+    $cartItemId = (int) $_POST['cart_item_id'];
+    $userId = $_SESSION['user_id'];
+    
+    $deleteQuery = "DELETE ci FROM cart_item ci 
+                    JOIN shopping_cart sc ON ci.cart_id = sc.cart_id 
+                    WHERE ci.cart_item_id = :cart_item_id 
+                    AND sc.user_id = :user_id";
+    
+    $stmt = $conn->prepare($deleteQuery);
+    $stmt->execute([
+        ':cart_item_id' => $cartItemId,
+        ':user_id' => $userId
+    ]);
+    
+    echo json_encode(['success' => $stmt->rowCount() > 0]);
+    exit;
+}
+
+// Handle AJAX update quantity request
+if (isset($_POST['cart_item_id']) && isset($_POST['quantity'])) {
+    header('Content-Type: application/json');
+    
+    $cartItemId = (int) $_POST['cart_item_id'];
+    $quantity = max(1, min(99, (int) $_POST['quantity']));
+    $userId = $_SESSION['user_id'];
+    
+    $updateQuery = "UPDATE cart_item ci
+                    JOIN shopping_cart sc ON ci.cart_id = sc.cart_id
+                    SET ci.quantity = :quantity
+                    WHERE ci.cart_item_id = :cart_item_id
+                    AND sc.user_id = :user_id";
+    
+    $stmt = $conn->prepare($updateQuery);
+    $stmt->execute([
+        ':quantity' => $quantity,
+        ':cart_item_id' => $cartItemId,
+        ':user_id' => $userId
+    ]);
+    
+    echo json_encode(['success' => $stmt->rowCount() > 0]);
+    exit;
+}
+
 $pageTitle = "Shopping Cart";
 include '../../general/_header.php'; 
-include '../../general/_navbar.php'; 
+include '../../general/_navbar.php';
+?>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<?php 
+
+// Get user_id from session (login stores it in $_SESSION['user']['user_id'])
+$userId = null;
+if (isset($_SESSION['users']) && isset($_SESSION['users']['user_id'])) {
+    $userId = $_SESSION['users']['user_id'];
+    // Also set $_SESSION['user_id'] for backward compatibility
+    $_SESSION['user_id'] = $userId;
+} elseif (isset($_SESSION['user_id'])) {
+    $userId = $_SESSION['user_id'];
+}
 
 // query of fetching vouchers from db
 $voucherQuery = "SELECT * FROM voucher 
@@ -72,25 +141,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['product_id'])) {
     }
 }
 
-// Sample cart data - replace with actual database/session data later
-$cartItems = [
-    [
-        'id' => 1,
-        'image' => '../../images/products/AJ1.png',
-        'name' => 'Air Jordan 1',
-        'variant' => 'Black/Red - Size 9',
-        'price' => 299.90,
-        'quantity' => 1
-    ],
-    [
-        'id' => 2,
-        'image' => '../../images/products/Dunk_Panda.png',
-        'name' => 'Nike Dunk Panda',
-        'variant' => 'White/Black - Size 10',
-        'price' => 155.50,
-        'quantity' => 2
-    ]
-];
+// Fetch cart items from database
+$cartItems = [];
+if (isset($_SESSION['user_id'])) {
+    $userId = $_SESSION['user_id'];
+    
+    // Query to fetch cart items with product details
+    $cartQuery = "
+        SELECT 
+            ci.cart_item_id,
+            ci.product_id,
+            ci.quantity,
+            p.product_name,
+            p.description,
+            pp.original_price,
+            pi.image_path
+        FROM cart_item ci
+        JOIN shopping_cart sc ON ci.cart_id = sc.cart_id
+        JOIN product p ON ci.product_id = p.product_id
+        LEFT JOIN product_price pp ON p.product_id = pp.product_id
+        LEFT JOIN product_image pi ON p.product_id = pi.product_id
+        WHERE sc.user_id = :user_id
+        GROUP BY ci.cart_item_id
+        ORDER BY ci.cart_item_id DESC
+    ";
+    
+    $cartStmt = $conn->prepare($cartQuery);
+    $cartStmt->execute([':user_id' => $userId]);
+    $dbCartItems = $cartStmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Format cart items for display
+    foreach ($dbCartItems as $item) {
+        $cartItems[] = [
+            'id' => $item['cart_item_id'], 
+            'image' => $item['image_path'] ?? '../../images/products/default.png',
+            'name' => $item['product_name'],
+            'variant' => $item['description'] ?? 'Standard',
+            'price' => (float) ($item['original_price'] ?? 0),
+            'quantity' => (int) $item['quantity']
+        ];
+    }
+}
 
 // if an incoming item exists, add it to the top of cart items
 if ($incomingItem) {
@@ -168,7 +259,7 @@ $grandTotal = $subtotal + $shippingFee + $tax;
                         <td class="item-total">RM <?= number_format($item['price'] * $item['quantity'], 2) ?></td>
                         <td class="item-action">
                             <button class="remove-btn" data-item-id="<?= $item['id'] ?>" title="Remove item">
-                                🗑️
+                                <span class="material-symbols-outlined">delete</span>
                             </button>
                         </td>
                     </tr>
@@ -238,10 +329,8 @@ $grandTotal = $subtotal + $shippingFee + $tax;
                     </div>
                 </div>
                 
-                <button class="checkout-btn" id="checkout-btn">
-                    <a href="checkout.php" style="color: white; text-decoration: none;">
-                        Proceed to Checkout
-                    </a>
+                <button type="button" class="checkout-btn" id="checkout-btn">
+                    Proceed to Checkout
                 </button>
             </div>
         </div>
@@ -300,6 +389,13 @@ $grandTotal = $subtotal + $shippingFee + $tax;
         </div>
     </div>
 </div>
+<script>
+    <?php if(isset($_SESSION['user_id'])): ?>
+        console.log('User is logged in with user_id: <?= $_SESSION['user_id'] ?>');
+    <?php else: ?>
+        console.log('User is not logged in.');
+    <?php endif; ?>
+</script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="../../js/cart.js"></script>

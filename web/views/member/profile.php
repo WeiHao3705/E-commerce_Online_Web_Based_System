@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-if (empty($_SESSION['user'])) {
+if (!isset($_SESSION['user_id'])) {
     header('Location: ../../account.php');
     exit;
 }
@@ -24,7 +24,7 @@ $db = new Database();
 $repo = new MembershipRepository($db);
 $service = new MembershipServices($repo);
 
-$userId = (int)$_SESSION['user']['user_id'];
+$userId = (int)$_SESSION['user_id'];
 $user = $service->getMemberById($userId);
 
 if (!$user) {

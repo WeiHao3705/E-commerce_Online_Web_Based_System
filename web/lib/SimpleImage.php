@@ -2199,17 +2199,22 @@ class SimpleImage
     public function extractColors(int $count = 5, string|array $backgroundColor = null): array
     {
         // Check for required library
-        if (! class_exists('\\'.ColorExtractor::class)) {
+        if (! class_exists('\\League\\ColorExtractor\\ColorExtractor')) {
             throw new Exception(
                 'Required library \League\ColorExtractor is missing.',
                 self::ERR_LIB_NOT_LOADED
             );
         }
 
+        // Use dynamic class loading to avoid type errors when library is not installed
+        $colorClass = '\\League\\ColorExtractor\\Color';
+        $paletteClass = '\\League\\ColorExtractor\\Palette';
+        $extractorClass = '\\League\\ColorExtractor\\ColorExtractor';
+
         // Convert background color to an integer value
         if ($backgroundColor) {
             $backgroundColor = self::normalizeColor($backgroundColor);
-            $backgroundColor = Color::fromRgbToInt([
+            $backgroundColor = call_user_func([$colorClass, 'fromRgbToInt'], [
                 'r' => $backgroundColor['red'],
                 'g' => $backgroundColor['green'],
                 'b' => $backgroundColor['blue'],
@@ -2217,13 +2222,13 @@ class SimpleImage
         }
 
         // Extract colors from the image
-        $palette = Palette::fromGD($this->image, $backgroundColor);
-        $extractor = new ColorExtractor($palette);
+        $palette = call_user_func([$paletteClass, 'fromGD'], $this->image, $backgroundColor);
+        $extractor = new $extractorClass($palette);
         $colors = $extractor->extract($count);
 
         // Convert colors to an RGBA color array
         foreach ($colors as $key => $value) {
-            $colors[$key] = self::normalizeColor(Color::fromIntToHex($value));
+            $colors[$key] = self::normalizeColor(call_user_func([$colorClass, 'fromIntToHex'], $value));
         }
 
         return $colors;

@@ -1,40 +1,93 @@
 <?php 
-session_start();
+if (session_status() === PHP_SESSION_NONE) session_start();
 
-// Debug: Check session
-echo "<!-- Session Debug: ";
-echo "user_id = " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'NOT SET');
-echo ", All session vars: ";
-print_r($_SESSION);
-echo " -->";
+// Get user_id from session (login stores it in $_SESSION['user']['user_id'])
+$userId = null;
+if (isset($_SESSION['users']) && isset($_SESSION['users']['user_id'])) {
+    $userId = $_SESSION['users']['user_id'];
+    // Also set $_SESSION['user_id'] for backward compatibility
+    $_SESSION['user_id'] = $userId;
+} elseif (isset($_SESSION['user_id'])) {
+    $userId = $_SESSION['user_id'];
+}
 
 require __DIR__ . '/../../database/connection.php';
 $db = new Database();
 $conn = $db->getConnection();
 $pageTitle = "Checkout";
 include '../../general/_header.php'; 
-include '../../general/_navbar.php'; 
+// include '../../general/_navbar.php'; 
 
-// Get cart items from session (you can modify this to get from database)
-// For now, using sample data - replace with actual cart data
-$cartItems = [
-    [
-        'id' => 1,
-        'image' => '../../images/products/AJ1.png',
-        'name' => 'Air Jordan 1',
-        'variant' => 'Black/Red - Size 9',
-        'price' => 299.90,
-        'quantity' => 1
-    ],
-    [
-        'id' => 2,
-        'image' => '../../images/products/Dunk_Panda.png',
-        'name' => 'Nike Dunk Panda',
-        'variant' => 'White/Black - Size 10',
-        'price' => 155.50,
-        'quantity' => 2
-    ]
-];
+// Get selected item IDs from GET parameter
+$selectedItemIds = [];
+if (isset($_GET['items']) && !empty($_GET['items'])) {
+    $selectedItemIds = explode(',', $_GET['items']);
+    $selectedItemIds = array_map('intval', $selectedItemIds);
+    $_SESSION['checkout_items'] = $selectedItemIds;
+} elseif (isset($_SESSION['checkout_items'])) {
+    $selectedItemIds = $_SESSION['checkout_items'];
+}
+
+// Debug output
+echo "<!-- DEBUG: Selected Item IDs: " . print_r($selectedItemIds, true) . " -->";
+echo "<!-- DEBUG: GET data: " . print_r($_GET, true) . " -->";
+echo "<!-- DEBUG: User ID: " . ($_SESSION['user_id'] ?? 'not set') . " -->";
+
+// Fetch only selected cart items from database
+$cartItems = [];
+if (isset($_SESSION['user_id']) && !empty($selectedItemIds)) {
+    $userId = $_SESSION['user_id'];
+    
+    // Create placeholders for IN clause
+    $placeholders = implode(',', array_fill(0, count($selectedItemIds), '?'));
+    
+    // Query to fetch only selected cart items with product details
+    $cartQuery = "
+        SELECT 
+            ci.cart_item_id,
+            ci.product_id,
+            ci.quantity,
+            p.product_name,
+            p.description,
+            pp.selling_price,
+            pi.image_path
+        FROM cart_item ci
+        JOIN shopping_cart sc ON ci.cart_id = sc.cart_id
+        JOIN product p ON ci.product_id = p.product_id
+        LEFT JOIN product_price pp ON p.product_id = pp.product_id
+        LEFT JOIN product_image pi ON p.product_id = pi.product_id
+        WHERE sc.user_id = ? AND ci.cart_item_id IN ($placeholders)
+        GROUP BY ci.cart_item_id
+        ORDER BY ci.cart_item_id DESC
+    ";
+    
+    echo "<!-- DEBUG: Query: " . $cartQuery . " -->";
+    
+    $cartStmt = $conn->prepare($cartQuery);
+    // Bind user_id first, then selected item IDs
+    $params = array_merge([$userId], $selectedItemIds);
+    echo "<!-- DEBUG: Query params: " . print_r($params, true) . " -->";
+    
+    $cartStmt->execute($params);
+    $dbCartItems = $cartStmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    echo "<!-- DEBUG: Fetched items count: " . count($dbCartItems) . " -->";
+    echo "<!-- DEBUG: Fetched items: " . print_r($dbCartItems, true) . " -->";
+    
+    // Format cart items for display
+    foreach ($dbCartItems as $item) {
+        $cartItems[] = [
+            'id' => $item['cart_item_id'],
+            'image' => $item['image_path'] ?? '../../images/products/default.png',
+            'name' => $item['product_name'],
+            'variant' => $item['description'] ?? 'Standard',
+            'price' => (float) ($item['selling_price'] ?? 0),
+            'quantity' => (int) $item['quantity']
+        ];
+    }
+}
+
+echo "<!-- DEBUG: Final cart items count: " . count($cartItems) . " -->";
 
 // Calculate totals
 $subtotal = 0;
@@ -49,7 +102,15 @@ $grandTotal = $subtotal + $shippingFee + $tax;
 <link rel="stylesheet" href="../../css/checkout.css">
 
 <div class="checkout-container">
-    <h1>Checkout</h1>
+    <!-- Header with Logo and Title -->
+    <div class="checkout-header">
+        <div class="checkout-logo">
+            <a href="../../index.php">
+                <img src="../../images/logo/logo1.png" alt="NGEAR Logo">
+            </a>
+        </div>
+        <h1 class="checkout-title">Checkout</h1>
+    </div>
     
     <!-- Progress Steps -->
     <div class="progress-steps">
@@ -159,7 +220,7 @@ $grandTotal = $subtotal + $shippingFee + $tax;
             
             <!-- Payment Method Section -->
             <div class="checkout-section">
-                <h2>2. Payment Method</h2>
+                <h2>2. Payment Method</h2><br>
                 <div class="payment-methods">
                     <label class="payment-option">
                         <input type="radio" name="payment" value="card" checked>
@@ -197,7 +258,6 @@ $grandTotal = $subtotal + $shippingFee + $tax;
                 <div class="summary-items">
                     <?php foreach ($cartItems as $item): ?>
                     <div class="summary-item">
-                        <img src="<?= $item['image'] ?>" alt="<?= $item['name'] ?>">
                         <div class="item-details">
                             <h4><?= htmlspecialchars($item['name']) ?></h4>
                             <p><?= htmlspecialchars($item['variant']) ?></p>
@@ -230,20 +290,22 @@ $grandTotal = $subtotal + $shippingFee + $tax;
                         <span><strong>Total:</strong></span>
                         <span><strong>RM <?= number_format($grandTotal, 2) ?></strong></span>
                     </div>
-                </div>
+                </div>  
                 
                 <button class="place-order-btn" id="placeOrderBtn">
                     Place Order
                 </button>
-                
-                <a href="cart.php" class="back-to-cart">
-                    ← Back to Cart
-                </a>
             </div>
         </div>
     </div>
 </div>
-
+<script>
+    <?php if(isset($_SESSION['user_id'])): ?>
+        console.log('User is logged in with user_id: <?= $_SESSION['user_id'] ?>');
+    <?php else: ?>
+        console.log('User is not logged in.');
+    <?php endif; ?>
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="../../js/checkout.js"></script>
 

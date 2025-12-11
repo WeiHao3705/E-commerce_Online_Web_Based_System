@@ -91,7 +91,6 @@ $(document).ready(function() {
                     console.log('Success status:', response.success);
                     console.log('Error message:', response.error);
                     console.log('Full Name:', response.fullName);
-                    console.log('Address1:', response.address1);
                     console.log('==============================');
                     
                     if(response.success) {

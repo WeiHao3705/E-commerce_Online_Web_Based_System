@@ -5,6 +5,146 @@
     padding: 20px;
 }
 
+/* Header with Logo */
+.checkout-header {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    margin-bottom: 10px;
+}
+
+.checkout-logo {
+    flex-shrink:calc();
+}
+
+.checkout-logo a {
+    display: block;
+    text-decoration: none;
+}
+
+.checkout-logo img {
+    height: 60px;
+    width: auto;
+    object-fit: contain;
+}
+
+.checkout-title {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 600;
+    color: #333;
+}
+
+.checkout-layout {
+    display: flex;
+    gap: 100px;
+    margin-top: 50px;
+}
+
+.checkout-main {
+    flex: 1;
+}
+
+.checkout-sidebar {
+    top: 100px;
+    flex: 1;
+    position: sticky;
+    margin-top: 2%;
+    align-self: flex-start;
+    max-width: 450px;
+}
+
+.order-summary-checkout > h2 {
+    text-align: center;
+    border-bottom: 5px solid #0e0e0e;
+    margin-bottom: 20px;
+    padding-bottom: 10px
+}
+
+.order-summary-checkout {
+    background: #ececec;
+    padding: 20px;
+    border-radius: 40px;
+    border: 2px solid #bebebe;
+}
+
+@media (max-width: 968px) {
+    .checkout-layout {
+        flex-direction: column;
+    }
+
+    .checkout-sidebar {
+        position: static;
+        max-width: 100%;
+    }
+}
+
+.place-order-btn {
+    display: block;
+    background: #4dac63;
+    color: white;
+    padding: 15px 25px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 18px;
+    margin-top: 20px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2);
+}
+
+.place-order-btn:hover {
+    background: #56c26f;
+    transform: scale(1.2);
+}
+
+.payment-methods {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.payment-option {
+    flex: 1;
+    min-width: 150px;
+    cursor: pointer;
+}
+ .payment-option input[type="radio"] {
+    display: none;
+}
+
+.payment-card {
+    padding: 20px;
+    border: 2px solid #c5c5c5;
+    border-radius: 16px;
+    text-align: center;
+    transition: all 0.3s ease;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.payment-card:hover {
+    border-color: #007bff;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.1);
+    transform: translateY(-4px);
+}
+
+.payment-option input[type='radio']:checked + .payment-card, .payment-card.selected {
+    border-color: #006bdd;
+    background: #eff3ff;
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.1);
+}
+
+.payment-card i {
+    display: block;
+    font-weight: 600;
+    color: #333;
+}
+
 /* Progress Steps */
 .progress-steps {
     display: flex;

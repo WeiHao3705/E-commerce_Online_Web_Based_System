@@ -2,6 +2,16 @@
 var appliedVoucher = null;
 
 $(document).ready(function() {
+
+    // mainly handle about every time user reload the page
+    //clear all checkbox states first
+    $('.item-checkbox').prop('checked', false);
+    $('#select-all').prop('checked', false);
+
+    // Restore checkbox states from localStorage (don't clear it)
+    // This allows checked items to remain checked when user returns from checkout
+    restoreCheckboxStates();
+
     // run initial calculation to set up the totals
     updateOrderSummary();
     
@@ -9,12 +19,28 @@ $(document).ready(function() {
     // when user clicks the main checkbox, all item checkboxes follow
     $('#select-all').change(function() {
         $('.item-checkbox').prop('checked', this.checked); // set all item status to checked/unchecked
+        
+        // Save state to localStorage
+        let checkedItem = [];
+        $('.item-checkbox:checked').each(function() {
+            checkedItem.push($(this).data('item-id'));
+        });
+        localStorage.setItem('checkedItem', JSON.stringify(checkedItem));
+        
         updateOrderSummary(); // Recalculate totals after selection change
     });
     
     // handle individual item checkbox changes
     // when user selects/deselects individual items
     $('.item-checkbox').change(function() {
+        // save state to local storage
+        let checkedItem = [];
+        $('.item-checkbox:checked').each(function() {
+            checkedItem.push($(this).data('item-id'));
+        });
+        // save to local storage
+        localStorage.setItem('checkedItem', JSON.stringify(checkedItem));
+
         if (!this.checked) {
             // if any item is unchecked, uncheck "Select All"
             $('#select-all').prop('checked', false);
@@ -27,39 +53,100 @@ $(document).ready(function() {
         
     // handle quantity increase button
     // when user clicks the increase button, increase the amount of relative item by 1
-    $('.plus-btn').click(function() {
-        var display = $(this).siblings('.qty-display'); // Find the quantity display
+    $(document).on('click', '.plus-btn', function() {
+        var $button = $(this);
+        var display = $button.siblings('.qty-display'); // Find the quantity display
         var currentVal = parseInt(display.text()); // Get quantity of item in the cart
+        var cartItemId = $button.attr('data-item-id');
+        
         if (currentVal < 99) { // set the max available item to purchase to 99
-            display.text(currentVal + 1); // Increase by 1
-            updateItemTotal($(this).closest('tr')); // Recalculate this row's total
+            var newQty = currentVal + 1;
+            display.text(newQty); // Increase by 1
+            updateItemTotal($button.closest('tr')); // Recalculate this row's total
+            
+            // Update database
+            $.ajax({
+                url: window.location.href,
+                type: 'POST',
+                data: { 
+                    cart_item_id: cartItemId,
+                    quantity: newQty 
+                }
+            });
         }
     });
     
     // handle quantity decrease button
     // when user clicks the decrease button, decrease the amount of relative item by 1
-    $('.minus-btn').click(function() {
-        var display = $(this).siblings('.qty-display'); // Find the quantity display
+    $(document).on('click', '.minus-btn', function() {
+        var $button = $(this);
+        var display = $button.siblings('.qty-display'); // Find the quantity display
         var currentVal = parseInt(display.text()); // Get quantity of item in the cart
+        var cartItemId = $button.attr('data-item-id');
+        
         if (currentVal > 1) {
             // If quantity > 1, just decrease it
-            display.text(currentVal - 1); // Decrease by 1
-            updateItemTotal($(this).closest('tr')); // Recalculate this row's total
+            var newQty = currentVal - 1;
+            display.text(newQty); // Decrease by 1
+            updateItemTotal($button.closest('tr')); // Recalculate this row's total
+            
+            // Update database
+            $.ajax({
+                url: window.location.href,
+                type: 'POST',
+                data: { 
+                    cart_item_id: cartItemId,
+                    quantity: newQty 
+                }
+            });
         } else if (currentVal === 1) {
             // If quantity = 1, ask user if they want to remove item completely
             if(confirm("Are you sure want to remove the item from your cart?")) {
-                $(this).closest('tr').remove(); // Remove the entire row
-                updateOrderSummary(); // Recalculate all totals
+                var $row = $button.closest('tr');
+                
+                // Delete from database
+                $.ajax({
+                    url: window.location.href,
+                    type: 'POST',
+                    data: { cart_item_id: cartItemId },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            $row.remove(); // Remove the row from table
+                            updateOrderSummary(); // Recalculate all totals
+                        }
+                    }
+                });
             }
         }
     });
         
     // handle remove button
     // when user clicks the trash icon to remove an item
-    $('.remove-btn').click(function() {
+    $(document).on('click', '.remove-btn', function() {
         if (confirm('Are you sure you want to remove this item?')) {
-            $(this).closest('tr').remove(); // Remove the entire row from table
-            updateOrderSummary(); // Recalculate all totals
+            var $button = $(this);
+            var $row = $button.closest('tr');
+            var cartItemId = $button.data('itemId');
+            
+            // Send AJAX request to delete from database
+            $.ajax({
+                url: window.location.href,
+                type: 'POST',
+                data: { cart_item_id: cartItemId },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        $row.remove(); // Remove the row from table
+                        updateOrderSummary(); // Recalculate all totals
+                    } else {
+                        alert('Failed to remove item');
+                    }
+                },
+                error: function() {
+                    alert('Failed to remove item. Please try again.');
+                }
+            });
         }
     });
 
@@ -139,8 +226,6 @@ $(document).ready(function() {
         // change the button to unuse
         $button.text('Unuse').removeClass('use-voucher-btn').addClass('unuse-voucher-btn');
         voucherCard.addClass('selected-voucher');
-        
-        console.log('Voucher applied:', appliedVoucher); // Debug: check if this runs
 
         // update order summary
         updateOrderSummary();
@@ -169,17 +254,19 @@ $(document).ready(function() {
 
         updateOrderSummary();
     });
-    
-    // handle promo code application
-    // when user enters a promo code and clicks Apply
-    $('.applyBtn').click(function() {
-        var promoCode = $('#promo-code').val(); // Get the entered promo code
-        if (promoCode) {
-            // TODO: Add actual promo code validation logic here
-            alert('Promo code functionality would be implemented here');
-        }
-    });
+
+    updateCheckoutButtonState();
 });
+
+// function to enable/disable checkout button based on selected items
+function updateCheckoutButtonState(enable) {
+    var checkedCount = $('.item-checkbox:checked').length;
+    if (enable === true || checkedCount > 0) {
+        $('#checkout-btn').prop('disabled', false).removeClass('disabled');
+    } else {
+        $('#checkout-btn').prop('disabled', true).addClass('disabled');
+    }
+}
 
 // function to update individual item total
 // This calculates price × quantity for one specific row
@@ -248,7 +335,6 @@ function updateOrderSummary() {
             voucherDiscount = shippingFee;
             shippingFee = 0;
         }
-        console.log('Discount calculated:', voucherDiscount); // Debug
     };
 
     if(voucherDiscount > 0) {
@@ -299,3 +385,51 @@ function updateOrderSummary() {
     $('#cart-item-count').text(totalItems); // Update the number
     $('#item-plural').text(totalItems !== 1 ? 's' : ''); // Update plural form
 }
+
+function restoreCheckboxStates() {
+
+    // restore checkbox states from localstorage
+    let savedItems = JSON.parse(localStorage.getItem('checkedItem')) || [];
+    savedItems.forEach(function(itemId) {
+        $(`.item-checkbox[data-item-id='${itemId}']`).prop('checked', true);
+    });
+
+    // check whether any checkbox is checked
+    let checkedCount = $('.item-checkbox:checked').length;
+    let totalCount = $('.item-checkbox').length;        
+    
+    // update select-all checkbox state
+    if (checkedCount === totalCount && totalCount > 0) {
+        $('#select-all').prop('checked', true);
+    }
+
+    // trigger update of selected item
+    if(checkedCount > 0) {
+        updateCheckoutButtonState(true)
+        updateOrderSummary();
+    }
+
+    if (checkedCount === 0) {
+        $('#voucherBtn').addClass('disabled').prop('disabled', true);
+    } else {
+        $('#voucherBtn').removeClass('disabled').prop('disabled', false);
+    }
+}
+
+// Handle checkout button click - pass selected items via URL
+$('#checkout-btn').click(function(e) {
+    // Get all checked item IDs
+    var selectedItems = [];
+    $('.item-checkbox:checked').each(function() {
+        selectedItems.push($(this).data('item-id'));
+    });
+    
+    // Check if any items are selected
+    if (selectedItems.length === 0) {
+        alert('Please select at least one item to checkout');
+        return false;
+    }
+    
+    // Navigate to checkout with selected items as URL parameter
+    window.location.href = 'checkout.php?items=' + selectedItems.join(',');
+});
