@@ -196,10 +196,19 @@ $recentOrders = [
                     <span class="material-symbols-outlined">sell</span>
                     <p>Vouchers</p>
                 </a>
-                <a href="#" class="admin-nav-item">
-                    <span class="material-symbols-outlined">settings</span>
-                    <p>Settings</p>
-                </a>
+                <div class="admin-nav-dropdown">
+                    <a href="#" class="admin-nav-item" id="settingsToggle">
+                        <span class="material-symbols-outlined">settings</span>
+                        <p>Settings</p>
+                        <span class="material-symbols-outlined dropdown-arrow">expand_more</span>
+                    </a>
+                    <div class="admin-nav-submenu" id="settingsSubmenu">
+                        <a href="#" data-view="profile" data-url="<?php echo $viewsBasePath; ?>admin/AdminProfile.php" class="admin-nav-subitem">
+                            <span class="material-symbols-outlined">account_circle</span>
+                            <p>Profile</p>
+                        </a>
+                    </div>
+                </div>
             </nav>
 
             <div class="admin-sidebar-footer">
@@ -349,12 +358,45 @@ $recentOrders = [
 
                 // Update active state
                 $('.admin-nav-item').removeClass('active');
+                $('.admin-nav-subitem').removeClass('active');
                 $(this).addClass('active');
 
                 if (view === 'dashboard') {
                     showDashboard();
                 } else if (url) {
                     showContentView(view, url);
+                }
+            });
+
+            // Navigation subitem click handlers
+            $('.admin-nav-subitem[data-view]').on('click', function(e) {
+                e.preventDefault();
+                var view = $(this).data('view');
+                var url = $(this).data('url');
+
+                // Update active state
+                $('.admin-nav-item').removeClass('active');
+                $('.admin-nav-subitem').removeClass('active');
+                $(this).addClass('active');
+
+                if (url) {
+                    showContentView(view, url);
+                }
+            });
+
+            // Settings dropdown toggle
+            $('#settingsToggle').on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var $submenu = $('#settingsSubmenu');
+                var $arrow = $(this).find('.dropdown-arrow');
+                
+                if ($submenu.hasClass('open')) {
+                    $submenu.removeClass('open');
+                    $arrow.text('expand_more');
+                } else {
+                    $submenu.addClass('open');
+                    $arrow.text('expand_less');
                 }
             });
 
@@ -434,6 +476,8 @@ $recentOrders = [
                     } else {
                         title = 'Vouchers Management';
                     }
+                } else if (view === 'profile') {
+                    title = 'Admin Profile';
                 }
 
                 $('#content-title').text(title);
@@ -478,17 +522,32 @@ $recentOrders = [
                 var view = parts[0];
                 var url = parts.length > 1 ? decodeURIComponent(parts[1]) : null;
 
-                if (view === 'members' || view === 'vouchers') {
-                    // Get URL from navigation item if not in hash
+                if (view === 'members' || view === 'vouchers' || view === 'profile') {
+                    // Get URL from navigation item or subitem if not in hash
                     if (!url) {
                         var navItem = $('.admin-nav-item[data-view="' + view + '"]');
+                        if (navItem.length === 0) {
+                            navItem = $('.admin-nav-subitem[data-view="' + view + '"]');
+                        }
                         url = navItem.data('url');
                     }
 
                     if (url) {
                         // Update navigation active state
                         $('.admin-nav-item').removeClass('active');
-                        $('.admin-nav-item[data-view="' + view + '"]').addClass('active');
+                        $('.admin-nav-subitem').removeClass('active');
+                        var targetItem = $('.admin-nav-item[data-view="' + view + '"]');
+                        if (targetItem.length === 0) {
+                            targetItem = $('.admin-nav-subitem[data-view="' + view + '"]');
+                        }
+                        targetItem.addClass('active');
+                        
+                        // Open settings submenu if profile view
+                        if (view === 'profile') {
+                            $('#settingsSubmenu').addClass('open');
+                            $('#settingsToggle .dropdown-arrow').text('expand_less');
+                        }
+                        
                         showContentView(view, url);
                     } else {
                         showDashboard();

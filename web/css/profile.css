@@ -74,14 +74,14 @@
 .section-title { font-size: 11px; font-weight: 700; color: #9ca3af; letter-spacing: 0.8px; margin-bottom: 8px; margin-top: 8px; }
 .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
 .form-row-full { grid-column: 1 / -1; }
-.modal-body .form-row { display: grid; grid-template-columns: 1fr; gap: 8px; width: 100%; }
+.modal-body .form-row { display: flex; flex-direction: column; gap: 8px; width: 100%; min-width: 0; }
 .modal-body label { font-size: 14px; color: #374151; font-weight: 600; }
-.modal-body input, .modal-body select { padding: 12px 14px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 14px; transition: all 0.2s; width: 100%; }
+.modal-body input, .modal-body select { padding: 12px 14px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 14px; transition: all 0.2s; width: 100%; box-sizing: border-box; }
 .modal-body input:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
 .modal-body input:focus, .modal-body select:focus { outline: none; border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1); }
-.input-with-icon { position: relative; width: 100%; }
-.input-with-icon i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 14px; }
-.input-with-icon input { padding-left: 42px; width: 100%; }
+.input-with-icon { position: relative; width: 100%; min-width: 0; }
+.input-with-icon i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 14px; pointer-events: none; }
+.input-with-icon input { padding-left: 42px; width: 100%; box-sizing: border-box; }
 .required { color: #ef4444; }
 .optional { color: #9ca3af; font-weight: 400; font-size: 12px; }
 .label-buttons { display: flex; gap: 8px; }
@@ -105,7 +105,7 @@
 .btn-cancel:hover { background: #d1d5db; }
 .btn-save { background: #ef4444; color: #fff; text-decoration: none; font-weight: 600; padding: 10px 20px; border-radius: 10px; display: inline-flex; align-items: center; gap: 8px; border: 0; cursor: pointer; transition: all 0.2s; }
 .btn-save:hover { background: #dc2626; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
-.form-error { color: #dc2626; font-size: 13px; margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+.form-error { color: #dc2626; font-size: 13px; margin-top: 4px; display: flex; align-items: center; gap: 6px; word-break: break-word; }
 .form-error::before { content: "⚠"; }
 
 /* Responsive Design */
