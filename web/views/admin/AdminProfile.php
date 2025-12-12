@@ -250,15 +250,6 @@ $pageTitle = 'Admin Profile';
                                 </p>
                             </div>
                         </div>
-                        <div class="detail-item">
-                            <div class="detail-icon">
-                                <i class="fas fa-user-shield"></i>
-                            </div>
-                            <div class="detail-info">
-                                <label>ROLE</label>
-                                <p style="color: #ef4444; font-weight: 700;">Administrator</p>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

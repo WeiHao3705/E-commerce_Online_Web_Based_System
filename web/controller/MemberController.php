@@ -599,7 +599,10 @@ class MemberController
 
             $userId = isset($_POST['user_id']) ? (int)$_POST['user_id'] : 0;
 
-            if ($userId !== (int)$_SESSION['user']['user_id']) {
+            // Handle both object and array session user
+            $sessionUserId = isset($_SESSION['user']->user_id) ? (int)$_SESSION['user']->user_id : (isset($_SESSION['user']['user_id']) ? (int)$_SESSION['user']['user_id'] : 0);
+
+            if ($userId !== $sessionUserId) {
                 throw new Exception("Unauthorized access");
             }
 
@@ -625,8 +628,8 @@ class MemberController
                 throw new Exception("File size exceeds 5MB limit.");
             }
 
-            // Get username for filename
-            $username = $_SESSION['user']['username'];
+            // Get username for filename (handle both object and array)
+            $username = isset($_SESSION['user']->username) ? $_SESSION['user']->username : (isset($_SESSION['user']['username']) ? $_SESSION['user']['username'] : '');
             $safeUsername = preg_replace('/[^a-zA-Z0-9_-]/', '', $username);
 
             // Create upload directory if it doesn't exist
