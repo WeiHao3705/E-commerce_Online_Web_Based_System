@@ -177,9 +177,19 @@ $prefix = $webBasePath;
         }
     });
 
+    // get the item amount in the cart and update the cart count
     function updateCartCount() {
-        var cartCount = localStorage.getItem('cartCount') || 0;
-        $('#cartCount').text(cartCount);
+        $.ajax({
+            url: '<?php echo $prefix; ?>views/Cart_Order/get_cart_count.php',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                $('#cartCount').text(response.count);
+            },
+            error: function() {
+                $('#cartCount').text(0);
+            }
+        });
     }
     
     // Handle browser back/forward navigation

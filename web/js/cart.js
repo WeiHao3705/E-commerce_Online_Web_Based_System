@@ -371,19 +371,6 @@ function updateOrderSummary() {
     $('.summary-line').eq(1).find('span:last').text('RM ' + shippingFee.toFixed(2)); // Shipping
     $('.summary-line').eq(2).find('span:last').text('RM ' + tax.toFixed(2)); // Tax
     $('.summary-line.total').find('span:last').text('RM ' + grandTotal.toFixed(2)); // Grand Total
-    
-    // update cart count in navbar
-    var totalItems = 0;
-    $('.item-checkbox:checked').each(function() {
-        var row = $(this).closest('tr');
-        var quantity = parseInt(row.find('.qty-display').text());
-        totalItems += quantity; // Add quantity of each checked item
-    });
-    $('#cartCount').text(totalItems); // Update navbar cart badge
-    
-    // update the cart message dynamically
-    $('#cart-item-count').text(totalItems); // Update the number
-    $('#item-plural').text(totalItems !== 1 ? 's' : ''); // Update plural form
 }
 
 function restoreCheckboxStates() {
