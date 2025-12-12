@@ -37,6 +37,15 @@ class MemberController
 
                 $userDTO = $this->membershipServices->authenticate($username, $password);
 
+                // Check if email is verified
+                $user = $this->membershipServices->getMemberByUsername($username);
+                if ($user && !$user['email_verified']) {
+                    $_SESSION['error_message'] = 'Please verify your email before logging in. Check your inbox for the verification link.';
+                    $_SESSION['unverified_email'] = $user['email'];
+                    header('Location: ../views/security/email_verification.php');
+                    exit;
+                }
+
                 // Save minimal user info in session as stdClass object
                 $_SESSION['user'] = new stdClass();
                 $_SESSION['user']->user_id = $userDTO->getUserId();
@@ -45,7 +54,7 @@ class MemberController
                 $_SESSION['user']->email = $userDTO->getEmail();
                 $_SESSION['user']->role = $userDTO->getRole();
                 $_SESSION['user']->profile_photo = null;
-                
+
                 // Redirect based on user role
                 if ($userDTO->getRole() === 'admin') {
                     header('Location: ../views/admin/AdminDashboard.php');
@@ -75,6 +84,19 @@ class MemberController
     {
         try {
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                // Get DateOfBirth - prioritize the hidden date input (YYYY-MM-DD format)
+                // If not available, check the text input and convert from DD/MM/YYYY
+                $dateOfBirth = null;
+                if (isset($_POST['DateOfBirth']) && !empty($_POST['DateOfBirth'])) {
+                    $dateOfBirth = trim($_POST['DateOfBirth']);
+                } elseif (isset($_POST['DateOfBirthText']) && !empty($_POST['DateOfBirthText'])) {
+                    // Convert from DD/MM/YYYY to YYYY-MM-DD
+                    $dateText = trim($_POST['DateOfBirthText']);
+                    if (preg_match('/^(\d{2})\/(\d{2})\/(\d{4})$/', $dateText, $matches)) {
+                        $dateOfBirth = $matches[3] . '-' . $matches[2] . '-' . $matches[1];
+                    }
+                }
+                
                 $memberDTO = new MemberRegistrationDTO(
                     $_POST['username'],
                     $_POST['password'],
@@ -84,7 +106,9 @@ class MemberController
                     $_POST['contact_no'],
                     $_POST['email'],
                     $_POST['security_question'],
-                    $_POST['security_answer']
+                    $_POST['security_answer'],
+                    null, // profile_photo will be set later
+                    $dateOfBirth
                 );
 
                 // Get profile photo data
@@ -94,21 +118,22 @@ class MemberController
                 $result = $this->membershipServices->registerMember($memberDTO, $profilePhotoFile, $croppedPhotoData);
 
                 if ($result) {
-                    $_SESSION['success_message'] = "Member registered successfully!";
-                    
-                    header('Location: ../views/member_management/MemberRegisterForm.php');
+                    $_SESSION['success_message'] = "Registration successful! Please check your email to verify your account before logging in.";
+                    $_SESSION['registered_email'] = $memberDTO->getEmail();
+                    header('Location: ../views/security/email_verification.php');
+                    exit;
                 }
             }
         } catch (Exception $e) {
             $_SESSION['error_message'] = $e->getMessage();
-            
+
             // Preserve POST data for form repopulation
             $_SESSION['form_data'] = $_POST;
-            
+
             // Detect which field caused the error from error message
             $errorField = null;
             $errorMessage = strtolower($e->getMessage());
-            
+
             // Check error message for field indicators
             if (stripos($errorMessage, 'username') !== false && stripos($errorMessage, 'already exists') !== false) {
                 $errorField = 'username';
@@ -117,12 +142,70 @@ class MemberController
             } elseif ((stripos($errorMessage, 'contact') !== false || stripos($errorMessage, 'phone') !== false) && stripos($errorMessage, 'already exists') !== false) {
                 $errorField = 'contact_no';
             }
-            
+
             if ($errorField) {
                 $_SESSION['error_field'] = $errorField;
             }
-            
+
             header('Location: ../views/member_management/MemberRegisterForm.php');
+            exit;
+        }
+    }
+
+    public function verifyEmail()
+    {
+        try {
+            $token = isset($_GET['token']) ? trim($_GET['token']) : '';
+
+            if (empty($token)) {
+                $_SESSION['error_message'] = 'Invalid verification link';
+                header('Location: ../views/security/email_verification.php');
+                exit;
+            }
+
+            $result = $this->membershipServices->verifyEmail($token);
+
+            if ($result['success']) {
+                $_SESSION['success_message'] = 'Email verified successfully! You can now log in.';
+                header('Location: ../views/security/LoginForm.php');
+            } else {
+                $_SESSION['error_message'] = $result['message'];
+                header('Location: ../views/security/email_verification.php');
+            }
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
+            header('Location: ../views/security/email_verification.php');
+            exit;
+        }
+    }
+
+    public function resendVerificationEmail()
+    {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $email = isset($_POST['email']) ? trim($_POST['email']) : '';
+
+                if (empty($email)) {
+                    $_SESSION['error_message'] = 'Email is required';
+                    header('Location: ../views/security/email_verification.php');
+                    exit;
+                }
+
+                $result = $this->membershipServices->resendVerificationEmail($email);
+
+                if ($result['success']) {
+                    $_SESSION['success_message'] = 'Verification email sent! Please check your inbox.';
+                } else {
+                    $_SESSION['error_message'] = $result['message'];
+                }
+
+                header('Location: ../views/security/email_verification.php');
+                exit;
+            }
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
+            header('Location: ../views/security/email_verification.php');
             exit;
         }
     }
@@ -269,11 +352,11 @@ class MemberController
                 if ($result && $selected_address_id > 0) {
                     $db = new Database();
                     $conn = $db->getConnection();
-                    
+
                     // Remove default from all user addresses
                     $stmtReset = $conn->prepare("UPDATE address SET is_default = 0 WHERE user_id = ?");
                     $stmtReset->execute([(int)$_POST['user_id']]);
-                    
+
                     // Set new default
                     $stmtSet = $conn->prepare("UPDATE address SET is_default = 1 WHERE id = ? AND user_id = ?");
                     $stmtSet->execute([$selected_address_id, (int)$_POST['user_id']]);
@@ -462,7 +545,7 @@ class MemberController
     public function updateProfilePhoto()
     {
         header('Content-Type: application/json');
-        
+
         try {
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 throw new Exception("Invalid request method");
@@ -473,7 +556,7 @@ class MemberController
             }
 
             $userId = isset($_POST['user_id']) ? (int)$_POST['user_id'] : 0;
-            
+
             if ($userId !== (int)$_SESSION['user']['user_id']) {
                 throw new Exception("Unauthorized access");
             }
@@ -535,7 +618,7 @@ class MemberController
             $photoPath = 'web/images/profiles/' . $newFilename;
             $db = new Database();
             $conn = $db->getConnection();
-            
+
             $stmt = $conn->prepare("UPDATE users SET profile_photo = ? WHERE user_id = ?");
             $stmt->execute([$photoPath, $userId]);
 
@@ -545,7 +628,6 @@ class MemberController
                 'photoUrl' => '../images/profiles/' . $newFilename
             ]);
             exit;
-
         } catch (Exception $e) {
             echo json_encode([
                 'success' => false,
@@ -558,7 +640,7 @@ class MemberController
     public function addAddress()
     {
         header('Content-Type: application/json');
-        
+
         try {
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 throw new Exception("Invalid request method");
@@ -569,7 +651,7 @@ class MemberController
             }
 
             $userId = isset($_POST['user_id']) ? (int)$_POST['user_id'] : 0;
-            
+
             if ($userId !== (int)$_SESSION['user']['user_id']) {
                 throw new Exception("Unauthorized access");
             }
@@ -598,12 +680,12 @@ class MemberController
 
             $db = new Database();
             $conn = $db->getConnection();
-            
+
             // Check if this is the first address for the user
             $stmtCount = $conn->prepare("SELECT COUNT(*) FROM address WHERE user_id = ?");
             $stmtCount->execute([$userId]);
             $addressCount = $stmtCount->fetchColumn();
-            
+
             // If first address, set as default
             $isDefault = ($addressCount == 0) ? 1 : 0;
 
@@ -612,7 +694,7 @@ class MemberController
                 INSERT INTO address (user_id, address1, address2, city, postcode, state, label, is_default) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ");
-            
+
             $stmt->execute([
                 $userId,
                 $address1,
@@ -629,7 +711,6 @@ class MemberController
                 'message' => 'Address added successfully'
             ]);
             exit;
-
         } catch (Exception $e) {
             echo json_encode([
                 'success' => false,
@@ -744,7 +825,6 @@ class MemberController
             exit;
         }
     }
-
 }
 
 // Handle the request
@@ -767,7 +847,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $controller->deleteMember();
     } elseif ($action === 'bulkDelete') {
         $controller->bulkDeleteMembers();
-    }elseif ($action === 'login') {
+    } elseif ($action === 'login') {
         $controller->login();
         $action = $_POST['action'] ?? $_GET['action'] ?? 'register';
     } elseif ($action === 'send_reset') {
@@ -776,6 +856,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $controller->verifyReset();
     } elseif ($action === 'complete_reset') {
         $controller->completeReset();
+    } elseif ($action === 'resend_verification') {
+        $controller->resendVerificationEmail();
     }
 } else {
     // Handle GET requests
@@ -787,5 +869,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $controller->showLogin();
     } elseif ($action === 'logout') {
         $controller->logout();
+    } elseif ($action === 'verifyEmail') {
+        $controller->verifyEmail();
     }
 }

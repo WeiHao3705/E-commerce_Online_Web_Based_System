@@ -13,9 +13,10 @@ class MembershipServices
         $this->membershipRepository = $membershipRepository;
     }
 
+    // Replace the registerMember method (lines 16-58) with:
+
     public function registerMember(MemberRegistrationDTO $memberDTO, ?array $profilePhoto = null, ?string $croppedPhotoData = null): bool
     {
-
         //Validate existing member
         $existingMember = $this->membershipRepository->checkExistingMember(
             $memberDTO->getUsername(),
@@ -54,7 +55,84 @@ class MembershipServices
 
         $memberDTO->setProfilePhoto($photoPath);
 
-        return $this->membershipRepository->createMember($memberDTO);
+        // Create member with email_verified = false
+        $result = $this->membershipRepository->createMember($memberDTO);
+
+        if ($result) {
+            // Get the newly created user ID
+            $newUser = $this->membershipRepository->getMemberByEmail($memberDTO->getEmail());
+
+            if ($newUser) {
+                // Generate verification token
+                $verificationToken = bin2hex(random_bytes(32)); // 64 character token
+                $expiresAt = date('Y-m-d H:i:s', strtotime('+24 hours')); // Token expires in 24 hours
+
+                // Store verification token
+                $this->membershipRepository->setVerificationToken($newUser['user_id'], $verificationToken, $expiresAt);
+
+                // Send verification email
+                require_once __DIR__ . '/EmailService.php';
+                $emailService = new EmailService();
+                try {
+                    $emailService->sendVerificationEmail(
+                        $memberDTO->getEmail(),
+                        $memberDTO->getFullName(),
+                        $verificationToken
+                    );
+                } catch (Exception $e) {
+                    error_log("Failed to send verification email: " . $e->getMessage());
+                    // Don't fail registration if email fails, but log it
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    // Add new method for resending verification email
+    public function resendVerificationEmail($email): array
+    {
+        $user = $this->membershipRepository->getMemberByEmail($email);
+
+        if (!$user) {
+            return ['success' => false, 'message' => 'Email not found'];
+        }
+
+        if ($user['email_verified']) {
+            return ['success' => false, 'message' => 'Email already verified'];
+        }
+
+        // Generate new verification token
+        $verificationToken = bin2hex(random_bytes(32));
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+24 hours'));
+
+        // Update token
+        $updated = $this->membershipRepository->updateVerificationToken($email, $verificationToken, $expiresAt);
+
+        if (!$updated) {
+            return ['success' => false, 'message' => 'Failed to generate verification token'];
+        }
+
+        // Send verification email
+        require_once __DIR__ . '/EmailService.php';
+        $emailService = new EmailService();
+        try {
+            $emailService->sendVerificationEmail(
+                $email,
+                $user['full_name'],
+                $verificationToken
+            );
+            return ['success' => true, 'message' => 'Verification email sent successfully'];
+        } catch (Exception $e) {
+            error_log("Failed to send verification email: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Failed to send verification email'];
+        }
+    }
+
+    // Add method to verify email
+    public function verifyEmail($token): array
+    {
+        return $this->membershipRepository->verifyEmail($token);
     }
 
     public function getAllMembers($page = 1, $limit = 10, $searchTerm = '', $sortBy = 'created_at', $sortOrder = 'DESC'): array
@@ -133,6 +211,11 @@ class MembershipServices
         // Block login for banned users
         if (isset($user['status']) && strtolower($user['status']) === 'banned') {
             throw new Exception('Your account has been banned. Please contact support.');
+        }
+
+        // Block login if email not verified
+        if (isset($user['email_verified']) && !$user['email_verified']) {
+            throw new Exception('Please verify your email before logging in. Check your inbox for the verification link.');
         }
 
         // Build DTO

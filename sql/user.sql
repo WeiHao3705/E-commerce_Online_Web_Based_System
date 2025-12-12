@@ -13,6 +13,9 @@ CREATE TABLE users (
     role ENUM('member','admin') DEFAULT 'member',
     status ENUM('active','inactive','banned') DEFAULT 'active',
     last_login_at DATETIME NULL,
+    email_verified BOOLEAN DEFAULT FALSE,
+    verification_token VARCHAR(255) NULL,
+    token_expires_at DATETIME NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

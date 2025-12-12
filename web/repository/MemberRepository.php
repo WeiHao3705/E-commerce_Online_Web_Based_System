@@ -12,10 +12,12 @@ class MembershipRepository
         $this->db = $databaseConnection->getConnection();
     }
 
+    // Replace the createMember method (lines 15-35) with:
+
     public function createMember(MemberRegistrationDTO $memberDTO)
     {
-        $sql = "INSERT INTO users (username, password, full_name, gender, contact_no, email, security_question, security_answer, profile_photo) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO users (username, password, full_name, gender, contact_no, email, security_question, security_answer, profile_photo, DateOfBirth, email_verified, status) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE, 'inactive')";
 
         $stmt = $this->db->prepare($sql);
 
@@ -28,16 +30,99 @@ class MembershipRepository
             $memberDTO->getEmail(),
             $memberDTO->getSecurityQuestion(),
             $memberDTO->getSecurityAnswer(),
-            $memberDTO->getProfilePhoto()
+            $memberDTO->getProfilePhoto(),
+            $memberDTO->getDateOfBirth()
         ]);
 
         return $result;
     }
 
+    public function setVerificationToken($userId, $token, $expiredAt)
+    {
+        $sql = "UPDATE users SET verification_token = ?, token_expires_at = ? WHERE user_id = ?";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$token, $expiredAt, $userId]);
+    }
+
+    public function verifyEmail($token)
+    {
+        try {
+            $sql = "SELECT user_id, email, token_expires_at, email_verified 
+                    FROM users 
+                    WHERE verification_token = ? 
+                    LIMIT 1";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$token]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$user) {
+                return ['success' => false, 'message' => 'Invalid verification token'];
+            }
+
+            // Check if already verified
+            if ($user['email_verified']) {
+                return ['success' => false, 'message' => 'Email already verified'];
+            }
+
+            // Check if token expired
+            if ($user['token_expires_at'] && strtotime($user['token_expires_at']) < time()) {
+                return ['success' => false, 'message' => 'Verification token has expired. Please request a new one.'];
+            }
+
+            // Verify the email
+            $sql = "UPDATE users 
+                    SET email_verified = TRUE, 
+                        verification_token = NULL, 
+                        token_expires_at = NULL,
+                        status = 'active'
+                    WHERE user_id = ?";
+            $stmt = $this->db->prepare($sql);
+            $result = $stmt->execute([$user['user_id']]);
+
+            if ($result) {
+                return ['success' => true, 'message' => 'Email verified successfully', 'user_id' => $user['user_id']];
+            }
+
+            return ['success' => false, 'message' => 'Failed to verify email'];
+        } catch (PDOException $e) {
+            error_log("Database error in verifyEmail: " . $e->getMessage());
+            throw new Exception("Error verifying email");
+        }
+    }
+
+    public function getMemberByVerificationToken($token)
+    {
+        try {
+            $sql = "SELECT * FROM users WHERE verification_token = ? LIMIT 1";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$token]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $result ? $result : null;
+        } catch (PDOException $e) {
+            error_log("Database error in getMemberByVerificationToken: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    public function updateVerificationToken($email, $token, $expiresAt)
+    {
+        try {
+            $sql = "UPDATE users 
+                    SET verification_token = ?, 
+                        token_expires_at = ? 
+                    WHERE email = ? AND email_verified = FALSE";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([$token, $expiresAt, $email]);
+        } catch (PDOException $e) {
+            error_log("Database error in updateVerificationToken: " . $e->getMessage());
+            return false;
+        }
+    }
+
     public function checkExistingMember($username, $email, $contactNo): array
     {
-        // Check username
-        $sql = "SELECT COUNT(*) as count FROM users WHERE username = ?";
+        // Check username - only verified usernames block registration
+        $sql = "SELECT COUNT(*) as count FROM users WHERE username = ? AND email_verified = TRUE";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$username]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -46,8 +131,8 @@ class MembershipRepository
             return ['exists' => true, 'field' => 'username', 'message' => 'Username already exists, Try others'];
         }
 
-        // Check email
-        $sql = "SELECT COUNT(*) as count FROM users WHERE email = ?";
+        // Check email - only verified emails block registration
+        $sql = "SELECT COUNT(*) as count FROM users WHERE email = ? AND email_verified = TRUE";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$email]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -55,8 +140,24 @@ class MembershipRepository
         if ($result['count'] > 0) {
             return ['exists' => true, 'field' => 'email', 'message' => 'Email already exists'];
         }
+        
+        // If email exists but is unverified, delete the old unverified record
+        // This allows users to re-register if they didn't verify their email
+        $sql = "SELECT user_id FROM users WHERE email = ? AND email_verified = FALSE";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$email]);
+        $unverifiedUser = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($unverifiedUser) {
+            // Delete the old unverified account to allow fresh registration
+            try {
+                $this->deleteMember($unverifiedUser['user_id']);
+                error_log("Deleted unverified account for email: {$email} (user_id: {$unverifiedUser['user_id']})");
+            } catch (Exception $e) {
+                error_log("Failed to delete unverified account: " . $e->getMessage());
+            }
+        }
 
-        // Check contact number
+        // Check contact number - keep as is (contact numbers are unique regardless of verification status)
         $sql = "SELECT COUNT(*) as count FROM users WHERE contact_no = ?";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$contactNo]);
@@ -75,7 +176,7 @@ class MembershipRepository
             // Ensure limit and offset are integers
             $limit = (int)$limit;
             $offset = (int)$offset;
-            
+
             // Trim and normalize search term
             $searchTerm = trim($searchTerm);
 
@@ -147,7 +248,7 @@ class MembershipRepository
         try {
             // Trim and normalize search term
             $searchTerm = trim($searchTerm);
-            
+
             $sql = "SELECT COUNT(*) as total FROM users WHERE role ='member'";
             $params = [];
 
@@ -184,7 +285,7 @@ class MembershipRepository
                     FROM users 
                     WHERE role = 'member' 
                     AND status = 'active'";
-            
+
             $stmt = $this->db->prepare($sql);
             $stmt->execute();
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -204,13 +305,13 @@ class MembershipRepository
     {
         try {
             $pastDate = date('Y-m-d H:i:s', strtotime("-{$days} days"));
-            
+
             $sql = "SELECT COUNT(*) as total 
                     FROM users 
                     WHERE role = 'member' 
                     AND status = 'active' 
                     AND created_at >= ?";
-            
+
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$pastDate]);
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -240,7 +341,7 @@ class MembershipRepository
             throw new Exception("Error fetching member");
         }
     }
-    
+
     /**
      * Fetch a single user record by email
      */
@@ -411,7 +512,7 @@ class MembershipRepository
 
             // Create placeholders for IN clause
             $placeholders = str_repeat('?,', count($validUserIds) - 1) . '?';
-            
+
             $sql = "DELETE FROM users WHERE user_id IN ($placeholders) AND role = 'member'";
             $stmt = $this->db->prepare($sql);
             $result = $stmt->execute($validUserIds);
@@ -428,5 +529,4 @@ class MembershipRepository
             throw new Exception("Error bulk deleting members: " . $e->getMessage());
         }
     }
-    
 }

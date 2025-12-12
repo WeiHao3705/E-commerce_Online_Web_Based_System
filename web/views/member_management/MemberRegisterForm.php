@@ -220,7 +220,7 @@ $isAdmin = isset($_SESSION['user']) && isset($_SESSION['user']['role']) && $_SES
                         <label for="date-of-birth">Date of Birth</label>
                         <div class="input-wrapper">
                             <i class="fas fa-calendar input-icon"></i>
-                            <input type="text" id="date-of-birth" name="DateOfBirth" class="form-control" placeholder="DD/MM/YYYY (e.g., 15/05/1990)" value="<?php echo isset($formData['DateOfBirth']) ? htmlspecialchars($formData['DateOfBirth']) : ''; ?>" pattern="\d{2}/\d{2}/\d{4}" maxlength="10" required>
+                            <input type="text" id="date-of-birth" name="DateOfBirthText" class="form-control" placeholder="DD/MM/YYYY (e.g., 15/05/1990)" value="<?php echo isset($formData['DateOfBirth']) ? htmlspecialchars($formData['DateOfBirth']) : ''; ?>" pattern="\d{2}/\d{2}/\d{4}" maxlength="10" required>
                             <input type="date" id="date-of-birth-hidden" style="display: none;" name="DateOfBirth" value="<?php echo isset($formData['DateOfBirth']) ? htmlspecialchars($formData['DateOfBirth']) : ''; ?>">
                         </div>
                         <small class="input-hint">Enter your date of birth (DD/MM/YYYY) or click the calendar icon to select</small>
