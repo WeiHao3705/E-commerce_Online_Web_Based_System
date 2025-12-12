@@ -389,6 +389,11 @@ $recentOrders = [
                 // Update navigation
                 $('.admin-nav-item').removeClass('active');
                 $('.admin-nav-item[data-view="dashboard"]').addClass('active');
+                
+                // Update URL hash
+                if (window.location.hash !== '#dashboard') {
+                    window.location.hash = '#dashboard';
+                }
 
                 // Fetch and update statistics
                 $.ajax({
@@ -435,6 +440,16 @@ $recentOrders = [
                 $('#content-iframe').attr('src', url);
                 $('#dashboard-view').hide();
                 $('#content-view').show();
+                
+                // Update URL hash to persist view state
+                var hash = '#' + view;
+                // Include URL in hash for more specific state
+                if (url) {
+                    hash += '|' + encodeURIComponent(url);
+                }
+                if (window.location.hash !== hash) {
+                    window.location.hash = hash;
+                }
             }
 
             // Handle iframe load events
@@ -448,6 +463,47 @@ $recentOrders = [
                 if (event.data && event.data.action === 'showDashboard') {
                     showDashboard();
                 }
+            });
+
+            // Restore view state from URL hash on page load
+            function restoreViewFromHash() {
+                var hash = window.location.hash;
+                if (!hash || hash === '#dashboard' || hash === '#') {
+                    showDashboard();
+                    return;
+                }
+
+                // Parse hash: #view|url
+                var parts = hash.substring(1).split('|');
+                var view = parts[0];
+                var url = parts.length > 1 ? decodeURIComponent(parts[1]) : null;
+
+                if (view === 'members' || view === 'vouchers') {
+                    // Get URL from navigation item if not in hash
+                    if (!url) {
+                        var navItem = $('.admin-nav-item[data-view="' + view + '"]');
+                        url = navItem.data('url');
+                    }
+
+                    if (url) {
+                        // Update navigation active state
+                        $('.admin-nav-item').removeClass('active');
+                        $('.admin-nav-item[data-view="' + view + '"]').addClass('active');
+                        showContentView(view, url);
+                    } else {
+                        showDashboard();
+                    }
+                } else {
+                    showDashboard();
+                }
+            }
+
+            // Restore view on page load
+            restoreViewFromHash();
+
+            // Handle hash changes (browser back/forward)
+            $(window).on('hashchange', function() {
+                restoreViewFromHash();
             });
 
             // Sidebar toggle functionality
