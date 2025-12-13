@@ -196,6 +196,10 @@ $recentOrders = [
                     <span class="material-symbols-outlined">sell</span>
                     <p>Vouchers</p>
                 </a>
+                <a href="#" data-view="admin-maintenance" data-url="<?php echo $controllerBasePath; ?>AdminController.php?action=showAll" class="admin-nav-item">
+                    <span class="material-symbols-outlined">admin_panel_settings</span>
+                    <p>Admin Maintenance</p>
+                </a>
                 <div class="admin-nav-dropdown">
                     <a href="#" class="admin-nav-item" id="settingsToggle">
                         <span class="material-symbols-outlined">settings</span>
@@ -478,6 +482,8 @@ $recentOrders = [
                     }
                 } else if (view === 'profile') {
                     title = 'Admin Profile';
+                } else if (view === 'admin-maintenance') {
+                    title = 'Admin Maintenance';
                 }
 
                 $('#content-title').text(title);
@@ -522,7 +528,7 @@ $recentOrders = [
                 var view = parts[0];
                 var url = parts.length > 1 ? decodeURIComponent(parts[1]) : null;
 
-                if (view === 'members' || view === 'vouchers' || view === 'profile') {
+                    if (view === 'members' || view === 'vouchers' || view === 'profile' || view === 'admin-maintenance') {
                     // Get URL from navigation item or subitem if not in hash
                     if (!url) {
                         var navItem = $('.admin-nav-item[data-view="' + view + '"]');

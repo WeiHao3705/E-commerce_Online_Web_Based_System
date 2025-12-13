@@ -903,7 +903,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $controller->completeReset();
     } elseif ($action === 'resend_verification') {
         $controller->resendVerificationEmail();
-    }
+        }
 } else {
     // Handle GET requests
     $action = $_GET['action'] ?? '';
