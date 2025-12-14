@@ -116,10 +116,9 @@ class AdminController
                     throw new Exception('Invalid email format.');
                 }
 
-                $contactDigits = $contactNo === '' ? '' : preg_replace('/\D+/', '', $contactNo);
-                if ($contactNo !== '' && strlen($contactDigits) !== 10) {
-                    throw new Exception('Invalid phone number format. Use 000-000 0000.');
-                }
+                // Contact number is already validated and formatted by JavaScript (format: "+60 11-5550 5761")
+                // Just trim it, no need to extract digits or validate length since different countries have different formats
+                $contactNo = $contactNo === '' ? '' : trim($contactNo);
 
                 $adminDTO = new AdminRegistrationDTO(
                     $username,
@@ -127,7 +126,7 @@ class AdminController
                     $repeatPassword,
                     $fullName,
                     $gender,
-                    $contactDigits,
+                    $contactNo,
                     $email
                 );
 
@@ -171,10 +170,9 @@ class AdminController
                     throw new Exception('Invalid email format.');
                 }
 
-                $contactDigits = $contactNo === '' ? '' : preg_replace('/\D+/', '', $contactNo);
-                if ($contactNo !== '' && strlen($contactDigits) !== 10) {
-                    throw new Exception('Invalid phone number format. Use 000-000 0000.');
-                }
+                // Contact number is already validated and formatted by JavaScript (format: "+60 11-5550 5761")
+                // Just trim it, no need to extract digits or validate length since different countries have different formats
+                $contactNo = $contactNo === '' ? '' : trim($contactNo);
 
                 $adminDTO = new AdminUpdateDTO(
                     (int)$_POST['user_id'],
@@ -182,7 +180,7 @@ class AdminController
                     $fullName,
                     $email,
                     $gender,
-                    $contactDigits
+                    $contactNo
                 );
 
                 $result = $this->adminService->updateAdmin($adminDTO);

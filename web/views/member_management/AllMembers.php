@@ -103,6 +103,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
     <title><?php echo $pageTitle; ?> - NGear</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AllTables.css">
     <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AllMembers.css">
 </head>
@@ -730,12 +731,39 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
             return String(text).replace(/[&<>"']/g, m => map[m]);
         }
         
+        function parseContactNumber(contactNo) {
+            if (!contactNo) {
+                return { countryCode: '+60', phoneNumber: '' };
+            }
+            
+            // Try to extract country code (format: "+60 11-5550 5761" or "+60 1155505761")
+            const countryCodes = ['+60', '+1', '+44', '+65', '+86', '+81', '+61', '+91', '+33', '+49'];
+            let countryCode = '+60'; // default
+            let phoneNumber = contactNo;
+            
+            for (const code of countryCodes) {
+                if (contactNo.startsWith(code)) {
+                    countryCode = code;
+                    phoneNumber = contactNo.substring(code.length).trim();
+                    break;
+                }
+            }
+            
+            return { countryCode, phoneNumber };
+        }
+
         function openEditModal(userId, username, fullName, email, contactNo, gender, dateOfBirth) {
             $('#editUserId').val(userId);
             $('#editUsername').val(username);
             $('#editFullName').val(fullName);
             $('#editEmail').val(email);
-            $('#editContactNo').val(contactNo);
+            
+            // Parse contact number
+            const parsed = parseContactNumber(contactNo);
+            $('#editCountryCode').val(parsed.countryCode);
+            $('#editPhoneNumber').val(parsed.phoneNumber);
+            updateEditPhoneFormatHint();
+            
             $('#editGender').val(gender);
             $('#editDateOfBirth').val(dateOfBirth || '');
 
@@ -745,6 +773,144 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
         function closeEditModal() {
             $('#editModal').addClass('hidden');
         }
+
+        // Phone validation patterns by country code
+        const phonePatterns = {
+            '+60': { // Malaysia
+                pattern: /^[0-9]{2,3}[- ]?[0-9]{3,4}[- ]?[0-9]{4}$/,
+                example: '11-5550 5761',
+                minLength: 9,
+                maxLength: 12
+            },
+            '+1': { // US/Canada
+                pattern: /^[0-9]{3}[- ]?[0-9]{3}[- ]?[0-9]{4}$/,
+                example: '555-123-4567',
+                minLength: 10,
+                maxLength: 12
+            },
+            '+44': { // UK
+                pattern: /^[0-9]{2,4}[- ]?[0-9]{3,4}[- ]?[0-9]{3,4}$/,
+                example: '20 7946 0958',
+                minLength: 10,
+                maxLength: 13
+            },
+            '+65': { // Singapore
+                pattern: /^[689][0-9]{7}$/,
+                example: '81234567',
+                minLength: 8,
+                maxLength: 8
+            },
+            '+86': { // China
+                pattern: /^1[3-9][0-9]{9}$/,
+                example: '13800138000',
+                minLength: 11,
+                maxLength: 11
+            },
+            '+81': { // Japan
+                pattern: /^[0-9]{2,4}[- ]?[0-9]{2,4}[- ]?[0-9]{4}$/,
+                example: '90-1234-5678',
+                minLength: 10,
+                maxLength: 13
+            },
+            '+61': { // Australia
+                pattern: /^[0-9]{2}[- ]?[0-9]{4}[- ]?[0-9]{4}$/,
+                example: '04 1234 5678',
+                minLength: 10,
+                maxLength: 12
+            },
+            '+91': { // India
+                pattern: /^[6-9][0-9]{9}$/,
+                example: '9876543210',
+                minLength: 10,
+                maxLength: 10
+            },
+            '+33': { // France
+                pattern: /^[0-9]{2}[- ]?[0-9]{2}[- ]?[0-9]{2}[- ]?[0-9]{2}[- ]?[0-9]{2}$/,
+                example: '06 12 34 56 78',
+                minLength: 10,
+                maxLength: 14
+            },
+            '+49': { // Germany
+                pattern: /^[0-9]{3,4}[- ]?[0-9]{3,8}$/,
+                example: '151 23456789',
+                minLength: 10,
+                maxLength: 13
+            }
+        };
+
+        function validateEditPhoneNumber() {
+            const countryCode = $('#editCountryCode').val();
+            const phoneNumber = $('#editPhoneNumber').val().replace(/\s+/g, ' ').trim();
+            const config = phonePatterns[countryCode];
+            const $phoneNumber = $('#editPhoneNumber');
+            const $phoneValidationError = $('#editPhoneValidationError');
+
+            if (!phoneNumber) {
+                $phoneNumber.removeClass('input-error input-success');
+                $phoneValidationError.text('').hide();
+                $('#editContactNo').val('');
+                return false;
+            }
+
+            // Remove spaces and dashes for validation
+            const cleanPhone = phoneNumber.replace(/[- ]/g, '');
+            
+            // Check length
+            if (cleanPhone.length < config.minLength || cleanPhone.length > config.maxLength) {
+                $phoneNumber.addClass('input-error').removeClass('input-success');
+                $phoneValidationError.text(`Phone number must be ${config.minLength}-${config.maxLength} digits. Example: ${config.example}`).show();
+                $('#editContactNo').val('');
+                return false;
+            }
+
+            // Check pattern
+            if (!config.pattern.test(phoneNumber)) {
+                $phoneNumber.addClass('input-error').removeClass('input-success');
+                $phoneValidationError.text(`Invalid phone format. Example: ${config.example}`).show();
+                $('#editContactNo').val('');
+                return false;
+            }
+
+            // Valid phone number
+            $phoneNumber.removeClass('input-error').addClass('input-success');
+            $phoneValidationError.text('').hide();
+            
+            // Combine country code and phone number
+            const fullPhoneNumber = countryCode + ' ' + phoneNumber;
+            $('#editContactNo').val(fullPhoneNumber);
+            
+            return true;
+        }
+
+        function updateEditPhoneFormatHint() {
+            const countryCode = $('#editCountryCode').val();
+            const config = phonePatterns[countryCode];
+            if (config) {
+                $('#editPhoneFormatHint').text(`Format: ${config.example} (${config.minLength}-${config.maxLength} digits)`);
+                $('#editPhoneNumber').attr('placeholder', `e.g., ${config.example}`);
+            }
+        }
+
+        // Phone validation event handlers
+        $(document).on('change', '#editCountryCode', function() {
+            updateEditPhoneFormatHint();
+            validateEditPhoneNumber();
+        });
+
+        $(document).on('input', '#editPhoneNumber', function() {
+            validateEditPhoneNumber();
+        });
+
+        // Form submission validation
+        $(document).on('submit', '#editForm', function(e) {
+            if (!validateEditPhoneNumber()) {
+                e.preventDefault();
+                alert('Please enter a valid phone number.');
+                $('#editPhoneNumber').focus();
+                return false;
+            }
+            return true;
+        });
 
         function confirmStatusChange(userId, userName, newStatus) {
             var statusLabels = {
@@ -952,7 +1118,29 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
 
                     <div class="form-group">
                         <label class="form-label">Contact Number</label>
-                        <input type="text" name="contact_no" id="editContactNo" class="form-input"/>
+                        <div class="phone-input-group">
+                            <div class="country-code-wrapper">
+                                <select id="editCountryCode" name="country_code" class="country-code-select" required>
+                                    <option value="+60">🇲🇾 +60 (MY)</option>
+                                    <option value="+1">🇺🇸 +1 (US)</option>
+                                    <option value="+44">🇬🇧 +44 (UK)</option>
+                                    <option value="+65">🇸🇬 +65 (SG)</option>
+                                    <option value="+86">🇨🇳 +86 (CN)</option>
+                                    <option value="+81">🇯🇵 +81 (JP)</option>
+                                    <option value="+61">🇦🇺 +61 (AU)</option>
+                                    <option value="+91">🇮🇳 +91 (IN)</option>
+                                    <option value="+33">🇫🇷 +33 (FR)</option>
+                                    <option value="+49">🇩🇪 +49 (DE)</option>
+                                </select>
+                            </div>
+                            <div class="phone-number-wrapper">
+                                <i class="fas fa-phone input-icon"></i>
+                                <input type="tel" id="editPhoneNumber" name="phone_number" class="form-input phone-number-input" placeholder="e.g., 11-5550 5761" required>
+                            </div>
+                        </div>
+                        <input type="hidden" name="contact_no" id="editContactNo"/>
+                        <div id="editPhoneValidationError" class="phone-validation-error"></div>
+                        <small class="input-hint" id="editPhoneFormatHint">Enter phone number without country code</small>
                     </div>
 
                     <div class="form-group">

@@ -192,6 +192,10 @@ $recentOrders = [
                     <span class="material-symbols-outlined">group</span>
                     <p>Members</p>
                 </a>
+                <a href="#" data-view="admins" data-url="<?php echo $controllerBasePath; ?>AdminController.php?action=showAll" class="admin-nav-item">
+                    <span class="material-symbols-outlined">admin_panel_settings</span>
+                    <p>Admins</p>
+                </a>
                 <a href="#" data-view="vouchers" data-url="<?php echo $controllerBasePath; ?>VoucherController.php?action=showAll" class="admin-nav-item">
                     <span class="material-symbols-outlined">sell</span>
                     <p>Vouchers</p>
@@ -409,6 +413,8 @@ $recentOrders = [
 
                 if (view === 'members') {
                     title = 'Members Management';
+                } else if (view === 'admins') {
+                    title = 'Admins Management';
                 } else if (view === 'vouchers') {
                     // Check if URL contains VoucherRegisterForm to show "Create Voucher"
                     if (url.indexOf('VoucherRegisterForm') !== -1) {
@@ -460,7 +466,7 @@ $recentOrders = [
                 var view = parts[0];
                 var url = parts.length > 1 ? decodeURIComponent(parts[1]) : null;
 
-                if (view === 'members' || view === 'vouchers') {
+                if (view === 'members' || view === 'admins' || view === 'vouchers') {
                     // Get URL from navigation item if not in hash
                     if (!url) {
                         var navItem = $('.admin-nav-item[data-view="' + view + '"]');
