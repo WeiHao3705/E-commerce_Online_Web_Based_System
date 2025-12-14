@@ -330,44 +330,6 @@ class MemberController
                 }
                 $contact_no = $contact_digits;
 
-                // Handle password update if provided
-                $current_password = isset($_POST['current_password']) ? trim($_POST['current_password']) : '';
-                $new_password = isset($_POST['new_password']) ? trim($_POST['new_password']) : '';
-                $confirm_password = isset($_POST['confirm_password']) ? trim($_POST['confirm_password']) : '';
-
-                if ($current_password !== '' || $new_password !== '' || $confirm_password !== '') {
-                    // Validate all password fields are filled
-                    if ($current_password === '' || $new_password === '' || $confirm_password === '') {
-                        throw new Exception("All password fields must be filled to update password.");
-                    }
-
-                    // Validate new password length
-                    if (strlen($new_password) < 8) {
-                        throw new Exception("New password must be at least 8 characters.");
-                    }
-
-                    // Validate passwords match
-                    if ($new_password !== $confirm_password) {
-                        throw new Exception("New passwords do not match.");
-                    }
-
-                    // Verify current password
-                    $db = new Database();
-                    $conn = $db->getConnection();
-                    $stmt = $conn->prepare("SELECT password FROM users WHERE user_id = ?");
-                    $stmt->execute([(int)$_POST['user_id']]);
-                    $userData = $stmt->fetch(PDO::FETCH_ASSOC);
-
-                    if (!$userData || !password_verify($current_password, $userData['password'])) {
-                        throw new Exception("Current password is incorrect.");
-                    }
-
-                    // Update password
-                    $hashedPassword = password_hash($new_password, PASSWORD_DEFAULT);
-                    $stmtUpdatePwd = $conn->prepare("UPDATE users SET password = ? WHERE user_id = ?");
-                    $stmtUpdatePwd->execute([$hashedPassword, (int)$_POST['user_id']]);
-                }
-
                 // Get current user data to preserve gender
                 $currentUser = $this->membershipServices->getMemberById((int)$_POST['user_id']);
                 if (!$currentUser) {
@@ -406,8 +368,6 @@ class MemberController
                     $returnTo = isset($_POST['return_to']) ? $_POST['return_to'] : (isset($_GET['return_to']) ? $_GET['return_to'] : '');
                     if ($returnTo === 'profile') {
                         header('Location: ../views/member/profile.php');
-                    } elseif ($returnTo === 'admin_profile') {
-                        header('Location: ../views/admin/AdminProfile.php');
                     } else {
                         header('Location: ../controller/MemberController.php?action=showAll');
                     }
@@ -421,8 +381,6 @@ class MemberController
             $returnTo = isset($_POST['return_to']) ? $_POST['return_to'] : (isset($_GET['return_to']) ? $_GET['return_to'] : '');
             if ($returnTo === 'profile') {
                 header('Location: ../views/member/profile.php');
-            } elseif ($returnTo === 'admin_profile') {
-                header('Location: ../views/admin/AdminProfile.php');
             } else {
                 header('Location: ../controller/MemberController.php?action=showAll');
             }
@@ -599,10 +557,7 @@ class MemberController
 
             $userId = isset($_POST['user_id']) ? (int)$_POST['user_id'] : 0;
 
-            // Handle both object and array session user
-            $sessionUserId = isset($_SESSION['user']->user_id) ? (int)$_SESSION['user']->user_id : (isset($_SESSION['user']['user_id']) ? (int)$_SESSION['user']['user_id'] : 0);
-
-            if ($userId !== $sessionUserId) {
+            if ($userId !== (int)$_SESSION['user']->user_id) {
                 throw new Exception("Unauthorized access");
             }
 
@@ -628,8 +583,8 @@ class MemberController
                 throw new Exception("File size exceeds 5MB limit.");
             }
 
-            // Get username for filename (handle both object and array)
-            $username = isset($_SESSION['user']->username) ? $_SESSION['user']->username : (isset($_SESSION['user']['username']) ? $_SESSION['user']['username'] : '');
+            // Get username for filename
+            $username = $_SESSION['user']['username'];
             $safeUsername = preg_replace('/[^a-zA-Z0-9_-]/', '', $username);
 
             // Create upload directory if it doesn't exist
@@ -903,7 +858,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $controller->completeReset();
     } elseif ($action === 'resend_verification') {
         $controller->resendVerificationEmail();
-        }
+    }
 } else {
     // Handle GET requests
     $action = $_GET['action'] ?? '';

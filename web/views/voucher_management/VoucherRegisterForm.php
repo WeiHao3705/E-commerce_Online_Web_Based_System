@@ -3,12 +3,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Check if user is logged in and is admin
-if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
-    header('Location: ../../views/security/LoginForm.php');
-    exit;
-}
-
 // Define base path
 $current_dir = dirname($_SERVER['PHP_SELF']);
 $is_in_views = (strpos($current_dir, '/views') !== false);
@@ -48,7 +42,7 @@ if (!empty($_POST)) {
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title><?php echo isset($pageTitle) ? $pageTitle . ' - NGEAR' : 'NGEAR - Sports & Fitness Store'; ?></title>
+    <title><?php echo isset($pageTitle) ? $pageTitle . ' - REDSTORE' : 'REDSTORE - Sports & Fitness Store'; ?></title>
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -62,8 +56,18 @@ if (!empty($_POST)) {
     <link rel="stylesheet" href="<?php echo $prefix; ?>css/VoucherForm.css">
 </head>
 <body>
+    <!-- Include Navbar -->
+    <?php include __DIR__ . '/../../general/_navbar.php'; ?>
+
     <main class="voucher-main">
         <div class="voucher-container">
+            <div class="mb-6">
+                <a href="<?php echo isset($_GET['return_to']) && $_GET['return_to'] === 'admin' ? $prefix . 'controller/VoucherController.php?action=showAll' : $prefix . 'index.php'; ?>" class="back-link">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                    Back
+                </a>
+            </div>
+            
             <?php if (isset($_SESSION['success_message'])): ?>
                 <div class="message-box message-success mb-4">
                     <?php echo htmlspecialchars($_SESSION['success_message']); unset($_SESSION['success_message']); ?>
@@ -222,28 +226,6 @@ if (!empty($_POST)) {
                     </div>
 
                     <div class="voucher-card-section">
-                        <h3>Redemption Settings</h3>
-                        <div class="form-grid">
-                            <label class="form-label form-grid-full">
-                                <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                    <input 
-                                        type="checkbox" 
-                                        name="is_redeemable" 
-                                        id="is-redeemable" 
-                                        value="1" 
-                                        checked
-                                        style="width: 20px; height: 20px; cursor: pointer;"
-                                    />
-                                    <div>
-                                        <span class="form-label">Allow members to redeem this voucher</span>
-                                        <small style="display: block; margin-top: 0.25rem; color: #6b7280;">If unchecked, only admins can assign this voucher to members. Members won't be able to redeem it using the voucher code.</small>
-                                    </div>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="voucher-card-section">
                         <h3>Initial Status</h3>
                         <div class="toggle-wrapper">
                             <div class="toggle-label">
@@ -325,117 +307,127 @@ if (!empty($_POST)) {
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Include Footer -->
+    <?php include __DIR__ . '/../../general/_footer.php'; ?>
+
     <script>
-        // jQuery event handlers - following conventions (use jQuery instead of plain JavaScript)
-        $(document).ready(function() {
-            // Bulk Import Modal handlers
-            $('#bulk-import-btn').on('click', function() {
-                $('#bulk-import-modal').removeClass('hidden');
-            });
+        // Bulk Import Modal
+        const bulkImportBtn = document.getElementById('bulk-import-btn');
+        const bulkImportModal = document.getElementById('bulk-import-modal');
+        const closeModal = document.getElementById('close-modal');
+        const cancelImport = document.getElementById('cancel-import');
 
-            $('#close-modal, #cancel-import').on('click', function() {
-                $('#bulk-import-modal').addClass('hidden');
-            });
-
-            $('#bulk-import-modal').on('click', function(e) {
-                if ($(e.target).is('#bulk-import-modal')) {
-                    $(this).addClass('hidden');
-                }
-            });
-
-            // Generate random voucher code
-            $('#generate-code').on('click', function() {
-                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-                let code = '';
-                for (let i = 0; i < 8; i++) {
-                    code += chars.charAt(Math.floor(Math.random() * chars.length));
-                }
-                $('#code').val(code);
-            });
-
-            // Update discount prefix and show/hide max discount based on type
-            $('#type').on('change', function() {
-                const type = $(this).val();
-                const $discountPrefix = $('#discount-prefix');
-                const $discountValueInput = $('#discount-value');
-                const $maxDiscountGroup = $('#max-discount-group');
-
-                if (type === 'percent') {
-                    $discountPrefix.text('%');
-                    $discountValueInput.attr('max', '100');
-                    $maxDiscountGroup.show();
-                } else if (type === 'fixed') {
-                    $discountPrefix.text('$');
-                    $discountValueInput.removeAttr('max');
-                    $maxDiscountGroup.hide();
-                } else if (type === 'freeshipping') {
-                    $discountPrefix.text('');
-                    $discountValueInput.val('0').attr('readonly', 'readonly');
-                    $maxDiscountGroup.hide();
-                } else {
-                    $discountValueInput.removeAttr('readonly');
-                    $maxDiscountGroup.hide();
-                }
-            });
-
-            // Validate end date is after start date
-            $('#start-date').on('change', function() {
-                const startDate = new Date($(this).val());
-                const $endDateInput = $('#end-date');
-                const endDate = new Date($endDateInput.val());
-
-                if ($endDateInput.val() && endDate < startDate) {
-                    alert('End date must be after start date!');
-                    $endDateInput.val('');
-                }
-            });
-
-            $('#end-date').on('change', function() {
-                const $startDateInput = $('#start-date');
-                const startDate = new Date($startDateInput.val());
-                const endDate = new Date($(this).val());
-
-                if ($startDateInput.val() && endDate < startDate) {
-                    alert('End date must be after start date!');
-                    $(this).val('');
-                }
-            });
-
-            // Validate discount value based on type
-            $('#discount-value').on('input', function() {
-                const type = $('#type').val();
-                const value = parseFloat($(this).val());
-
-                if (type === 'percent' && (value < 0 || value > 100)) {
-                    $(this).css('border-color', '#ef4444');
-                } else {
-                    $(this).css('border-color', '');
-                }
-            });
-
-            // Toggle switch functionality
-            $('#status-toggle').on('click', function() {
-                const isChecked = $(this).attr('aria-checked') === 'true';
-                $(this).attr('aria-checked', isChecked ? 'false' : 'true');
-            });
-
-            // Trigger type change on page load if type is already selected
-            if ($('#type').val()) {
-                $('#type').trigger('change');
-            }
-
-            // Scroll to error field if exists
-            <?php if ($errorField): ?>
-                var $errorField = $('#<?php echo html_escape($errorField); ?>');
-                if ($errorField.length) {
-                    $('html, body').animate({
-                        scrollTop: $errorField.offset().top - 100
-                    }, 500);
-                    $errorField.focus();
-                }
-            <?php endif; ?>
+        bulkImportBtn.addEventListener('click', function() {
+            bulkImportModal.classList.remove('hidden');
         });
+
+        closeModal.addEventListener('click', function() {
+            bulkImportModal.classList.add('hidden');
+        });
+
+        cancelImport.addEventListener('click', function() {
+            bulkImportModal.classList.add('hidden');
+        });
+
+        bulkImportModal.addEventListener('click', function(e) {
+            if (e.target === bulkImportModal) {
+                bulkImportModal.classList.add('hidden');
+            }
+        });
+
+        // Generate random voucher code
+        document.getElementById('generate-code').addEventListener('click', function() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let code = '';
+            for (let i = 0; i < 8; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('code').value = code;
+        });
+
+        // Update discount prefix and show/hide max discount based on type
+        document.getElementById('type').addEventListener('change', function() {
+            const type = this.value;
+            const discountPrefix = document.getElementById('discount-prefix');
+            const discountValueInput = document.getElementById('discount-value');
+            const maxDiscountGroup = document.getElementById('max-discount-group');
+
+            if (type === 'percent') {
+                discountPrefix.textContent = '%';
+                discountValueInput.setAttribute('max', '100');
+                maxDiscountGroup.style.display = 'block';
+            } else if (type === 'fixed') {
+                discountPrefix.textContent = '$';
+                discountValueInput.removeAttribute('max');
+                maxDiscountGroup.style.display = 'none';
+            } else if (type === 'freeshipping') {
+                discountPrefix.textContent = '';
+                discountValueInput.value = '0';
+                discountValueInput.setAttribute('readonly', 'readonly');
+                maxDiscountGroup.style.display = 'none';
+            } else {
+                discountValueInput.removeAttribute('readonly');
+                maxDiscountGroup.style.display = 'none';
+            }
+        });
+
+        // Validate end date is after start date
+        document.getElementById('start-date').addEventListener('change', function() {
+            const startDate = new Date(this.value);
+            const endDateInput = document.getElementById('end-date');
+            const endDate = new Date(endDateInput.value);
+
+            if (endDateInput.value && endDate < startDate) {
+                alert('End date must be after start date!');
+                endDateInput.value = '';
+            }
+        });
+
+        document.getElementById('end-date').addEventListener('change', function() {
+            const startDateInput = document.getElementById('start-date');
+            const startDate = new Date(startDateInput.value);
+            const endDate = new Date(this.value);
+
+            if (startDateInput.value && endDate < startDate) {
+                alert('End date must be after start date!');
+                this.value = '';
+            }
+        });
+
+        // Validate discount value based on type
+        document.getElementById('discount-value').addEventListener('input', function() {
+            const type = document.getElementById('type').value;
+            const value = parseFloat(this.value);
+
+            if (type === 'percent' && (value < 0 || value > 100)) {
+                this.style.borderColor = '#ef4444';
+            } else {
+                this.style.borderColor = '';
+            }
+        });
+
+        // Toggle switch functionality
+        const statusToggle = document.getElementById('status-toggle');
+        statusToggle.addEventListener('click', function() {
+            const isChecked = this.getAttribute('aria-checked') === 'true';
+            this.setAttribute('aria-checked', isChecked ? 'false' : 'true');
+        });
+
+        // Trigger type change on page load if type is already selected
+        if (document.getElementById('type').value) {
+            document.getElementById('type').dispatchEvent(new Event('change'));
+        }
+
+        // Scroll to error field if exists
+        <?php if ($errorField): ?>
+            document.addEventListener('DOMContentLoaded', function() {
+                const errorField = document.getElementById('<?php echo $errorField; ?>');
+                if (errorField) {
+                    errorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    errorField.focus();
+                }
+            });
+        <?php endif; ?>
     </script>
 </body>
 </html>
