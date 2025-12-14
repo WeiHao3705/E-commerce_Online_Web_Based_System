@@ -584,7 +584,7 @@ class MemberController
             }
 
             // Get username for filename
-            $username = $_SESSION['user']['username'];
+            $username = $_SESSION['user']->username;
             $safeUsername = preg_replace('/[^a-zA-Z0-9_-]/', '', $username);
 
             // Create upload directory if it doesn't exist
@@ -652,7 +652,7 @@ class MemberController
 
             $userId = isset($_POST['user_id']) ? (int)$_POST['user_id'] : 0;
 
-            if ($userId !== (int)$_SESSION['user']['user_id']) {
+            if ($userId !== (int)$_SESSION['user']->user_id) {
                 throw new Exception("Unauthorized access");
             }
 

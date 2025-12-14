@@ -53,7 +53,7 @@ if (!empty($_POST)) {
 }
 
 // Check if user is admin
-$isAdmin = isset($_SESSION['user']) && isset($_SESSION['user']['role']) && $_SESSION['user']['role'] === 'admin';
+$isAdmin = isset($_SESSION['user']) && isset($_SESSION['user']->role) && $_SESSION['user']->role === 'admin';
 ?>
 <!DOCTYPE html>
 <html lang="en">

@@ -217,17 +217,6 @@ $recentOrders = [
                 <!-- Header -->
                 <header class="admin-header">
                     <h1 class="admin-page-title">Dashboard</h1>
-                    <div class="admin-header-actions">
-                        <!-- Search Bar -->
-                        <div class="admin-search-container">
-                            <div class="admin-search-wrapper">
-                                <div class="admin-search-icon">
-                                    <span class="material-symbols-outlined">search</span>
-                                </div>
-                                <input type="text" class="admin-search-input" id="admin-search" placeholder="Search for products, members, etc." value="">
-                            </div>
-                        </div>
-                    </div>
                 </header>
 
                 <!-- Stats -->
@@ -334,13 +323,6 @@ $recentOrders = [
     <script>
         // jQuery event handlers - following conventions (no inline JavaScript)
         $(document).ready(function() {
-            // Search functionality
-            $('#admin-search').on('input', function() {
-                var searchTerm = $(this).val().toLowerCase();
-                // TODO: Implement search functionality
-                console.log('Searching for:', searchTerm);
-            });
-
             // Navigation click handlers
             $('.admin-nav-item[data-view]').on('click', function(e) {
                 e.preventDefault();
