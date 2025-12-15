@@ -184,7 +184,7 @@ $recentOrders = [
                     <span class="material-symbols-outlined">dashboard</span>
                     <p>Dashboard</p>
                 </a>
-                <a href="<?php echo $viewsBasePath; ?>ProductPage.php" class="admin-nav-item" target="_blank">
+                <a href="#" data-view="products" data-url="<?php echo $viewsBasePath; ?>admin/AdminProduct.php" class="admin-nav-item">
                     <span class="material-symbols-outlined">inventory_2</span>
                     <p>Products</p>
                 </a>
@@ -433,6 +433,8 @@ $recentOrders = [
                     title = 'Members Management';
                 } else if (view === 'admins') {
                     title = 'Admins Management';
+                } else if (view === 'products') {
+                    title = 'Products Management';
                 } else if (view === 'vouchers') {
                     // Check if URL contains VoucherRegisterForm to show "Create Voucher"
                     if (url.indexOf('VoucherRegisterForm') !== -1) {
@@ -486,7 +488,7 @@ $recentOrders = [
                 var view = parts[0];
                 var url = parts.length > 1 ? decodeURIComponent(parts[1]) : null;
 
-                if (view === 'members' || view === 'admins' || view === 'vouchers' || view === 'admin_profile') {
+                if (view === 'members' || view === 'admins' || view === 'products' || view === 'vouchers' || view === 'admin_profile') {
                     // Get URL from navigation item if not in hash
                     if (!url) {
                         var navItem = $('.admin-nav-item[data-view="' + view + '"]');
