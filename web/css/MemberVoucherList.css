@@ -181,6 +181,155 @@
     color: #9ca3af;
 }
 
+.redeem-voucher-qr-tools {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.qr-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.qr-main-btn {
+    flex-direction: row;
+    padding-right: 10px;
+}
+
+.qr-main-btn .qr-caret {
+    font-size: 16px;
+}
+
+.qr-dropdown-menu {
+    position: absolute;
+    top: 110%;
+    left: 0;
+    margin-top: 6px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.25);
+    min-width: 190px;
+    padding: 6px 0;
+    z-index: 1000;
+    display: none;
+}
+
+.qr-dropdown-menu.show {
+    display: block;
+}
+
+.qr-dropdown-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    color: #111827;
+    text-align: left;
+    transition: background-color 0.15s ease;
+}
+
+.qr-dropdown-item .material-symbols-outlined {
+    font-size: 18px;
+    color: #ec1313;
+}
+
+.qr-dropdown-item:hover {
+    background-color: #f3f4f6;
+}
+
+/* QR scan modal */
+.qr-scan-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.qr-scan-modal.hidden {
+    display: none;
+}
+
+.qr-scan-backdrop {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(15, 23, 42, 0.6);
+}
+
+.qr-scan-dialog {
+    position: relative;
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 18px 18px 22px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.45);
+    z-index: 1;
+}
+
+.qr-scan-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.qr-scan-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.qr-scan-close {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 999px;
+    padding: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease;
+}
+
+.qr-scan-close .material-symbols-outlined {
+    font-size: 20px;
+    color: #6b7280;
+}
+
+.qr-scan-close:hover {
+    background-color: #f3f4f6;
+}
+
+.qr-scan-body {
+    margin-top: 4px;
+}
+
+.qr-scan-instructions {
+    font-size: 13px;
+    color: #4b5563;
+    margin-bottom: 10px;
+}
+
+.qr-reader-container {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.redeem-confirm-actions {
+    margin-top: 14px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
 .btn-redeem {
     display: flex;
     align-items: center;

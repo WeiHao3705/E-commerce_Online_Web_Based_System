@@ -392,6 +392,13 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                                                 title="Assign voucher">
                                                 <span class="material-symbols-outlined">send</span>
                                             </button>
+
+                                            <a
+                                                class="action-btn qr-btn"
+                                                href="VoucherController.php?action=showVoucherQr&amp;voucher_id=<?php echo $voucher['voucher_id']; ?>&amp;code=<?php echo urlencode($voucher['code']); ?>"
+                                                title="View voucher QR code">
+                                                <span class="material-symbols-outlined">qr_code_2</span>
+                                            </a>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -626,6 +633,7 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
             const isRedeemable = voucher.is_redeemable !== undefined ? (voucher.is_redeemable ? true : false) : true;
             const redeemableText = isRedeemable ? 'Yes' : 'No';
             const redeemableClass = isRedeemable ? 'status-active' : 'status-inactive';
+            const qrUrl = `VoucherController.php?action=showVoucherQr&voucher_id=${voucher.voucher_id}&code=${encodeURIComponent(voucher.code)}`;
             
             // Build status buttons
             let statusButtons = '';
@@ -665,6 +673,9 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                         <button class="action-btn assign-btn" data-action="assign" data-voucher-id="${voucher.voucher_id}" data-code="${escapeHtml(voucher.code)}" title="Assign voucher">
                             <span class="material-symbols-outlined">send</span>
                         </button>
+                        <a href="${qrUrl}" class="action-btn qr-btn" title="View voucher QR code">
+                            <span class="material-symbols-outlined">qr_code_2</span>
+                        </a>
                     </td>
                 </tr>
             `;

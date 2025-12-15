@@ -3,6 +3,19 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// If user is already logged in, prevent showing the login form again.
+// Redirect them to the appropriate page so browser Back/Forward does not
+// silently "reuse" the previous login.
+if (isset($_SESSION['user']) && isset($_SESSION['user']->role)) {
+    if ($_SESSION['user']->role === 'admin') {
+        header('Location: ../admin/AdminDashboard.php');
+        exit;
+    } else {
+        header('Location: ../../index.php');
+        exit;
+    }
+}
+
 // Robust base path to the web folder, regardless of include origin
 $webRoot = realpath(__DIR__ . '/../../');
 $docRoot = isset($_SERVER['DOCUMENT_ROOT']) ? realpath($_SERVER['DOCUMENT_ROOT']) : '';

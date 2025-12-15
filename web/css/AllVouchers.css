@@ -227,6 +227,16 @@
     cursor: not-allowed !important;
 }
 
+/* QR button styling (icon-only button in Actions column) */
+.action-btn.qr-btn {
+    background-color: #4b5563; /* dark gray to contrast white row background */
+    color: #ffffff;
+}
+
+.action-btn.qr-btn:hover {
+    background-color: #374151;
+}
+
 #memberSearchWrapper {
     position: relative;
 }

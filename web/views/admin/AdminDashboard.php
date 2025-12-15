@@ -200,10 +200,27 @@ $recentOrders = [
                     <span class="material-symbols-outlined">sell</span>
                     <p>Vouchers</p>
                 </a>
-                <a href="#" class="admin-nav-item">
-                    <span class="material-symbols-outlined">settings</span>
-                    <p>Settings</p>
-                </a>
+                <!-- Settings dropdown -->
+                <div class="admin-nav-dropdown">
+                    <a href="#"
+                       class="admin-nav-item"
+                       id="settingsToggle"
+                       data-view="admin_profile"
+                       data-url="<?php echo $viewsBasePath; ?>admin/AdminProfile.php">
+                        <span class="material-symbols-outlined">settings</span>
+                        <p>Settings</p>
+                        <span class="material-symbols-outlined dropdown-arrow">expand_more</span>
+                    </a>
+                    <div class="admin-nav-submenu" id="settingsSubmenu">
+                        <a href="#"
+                           data-view="admin_profile"
+                           data-url="<?php echo $viewsBasePath; ?>admin/AdminProfile.php"
+                           class="admin-nav-item admin-nav-subitem">
+                            <span class="material-symbols-outlined">account_circle</span>
+                            <p>User Profile</p>
+                        </a>
+                    </div>
+                </div>
             </nav>
 
             <div class="admin-sidebar-footer">
@@ -311,7 +328,7 @@ $recentOrders = [
                 </section>
             </div>
 
-            <!-- Content View (Members/Vouchers) -->
+            <!-- Content View (Members/Vouchers/Admin Profile) -->
             <div class="admin-content-view" id="content-view" style="display: none;">
                 <div class="admin-content-header">
                     <h1 class="admin-content-title" id="content-title">Content</h1>
@@ -320,6 +337,7 @@ $recentOrders = [
                     <iframe id="content-iframe" class="admin-content-iframe" frameborder="0" allowfullscreen></iframe>
                 </div>
             </div>
+
         </main>
     </div>
 
@@ -327,8 +345,8 @@ $recentOrders = [
     <script>
         // jQuery event handlers - following conventions (no inline JavaScript)
         $(document).ready(function() {
-            // Navigation click handlers
-            $('.admin-nav-item[data-view]').on('click', function(e) {
+            // Navigation click handlers (exclude Settings, it has its own handler)
+            $('.admin-nav-item[data-view]').not('#settingsToggle').on('click', function(e) {
                 e.preventDefault();
                 var view = $(this).data('view');
                 var url = $(this).data('url');
@@ -422,6 +440,8 @@ $recentOrders = [
                     } else {
                         title = 'Vouchers Management';
                     }
+                } else if (view === 'admin_profile') {
+                    title = 'Admin Profile';
                 }
 
                 $('#content-title').text(title);
@@ -466,7 +486,7 @@ $recentOrders = [
                 var view = parts[0];
                 var url = parts.length > 1 ? decodeURIComponent(parts[1]) : null;
 
-                if (view === 'members' || view === 'admins' || view === 'vouchers') {
+                if (view === 'members' || view === 'admins' || view === 'vouchers' || view === 'admin_profile') {
                     // Get URL from navigation item if not in hash
                     if (!url) {
                         var navItem = $('.admin-nav-item[data-view="' + view + '"]');
@@ -516,6 +536,24 @@ $recentOrders = [
                     sidebarToggle.find('.material-symbols-outlined').text('menu_open');
                 } else {
                     sidebarToggle.find('.material-symbols-outlined').text('menu');
+                }
+            });
+
+            // Settings dropdown toggle + redirect to Admin Profile page
+            $('#settingsToggle').on('click', function(e) {
+                e.preventDefault();
+                var $this = $(this);
+                var dropdown = $this.closest('.admin-nav-dropdown');
+                var submenu = $('#settingsSubmenu');
+
+                // Toggle open class for CSS-based animation
+                dropdown.toggleClass('open');
+                submenu.toggleClass('open');
+
+                // Redirect whole page to Admin Profile
+                var url  = $this.data('url');
+                if (url) {
+                    window.location.href = url;
                 }
             });
         });

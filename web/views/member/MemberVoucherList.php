@@ -174,7 +174,7 @@ include __DIR__ . '/../../general/_navbar.php';
                             <span class="material-symbols-outlined">redeem</span>
                             <h2 class="redeem-voucher-title">Redeem Voucher Code</h2>
                         </div>
-                        <form method="POST" action="<?php echo $prefix; ?>controller/VoucherController.php" class="redeem-voucher-form">
+                        <form method="POST" action="<?php echo $prefix; ?>controller/VoucherController.php" class="redeem-voucher-form" id="redeemVoucherForm">
                             <input type="hidden" name="action" value="redeemVoucher">
                             <div class="redeem-voucher-input-group">
                                 <input 
@@ -182,7 +182,7 @@ include __DIR__ . '/../../general/_navbar.php';
                                     name="voucher_code" 
                                     id="voucher_code" 
                                     class="redeem-voucher-input" 
-                                    placeholder="Enter voucher code"
+                                    placeholder="Enter voucher code or scan QR"
                                     required
                                     autocomplete="off"
                                 >
@@ -191,7 +191,76 @@ include __DIR__ . '/../../general/_navbar.php';
                                     <span class="material-symbols-outlined">arrow_forward</span>
                                 </button>
                             </div>
+                            <div class="redeem-voucher-qr-tools">
+                                <div class="qr-dropdown">
+                                    <button type="button" class="btn-secondary qr-main-btn" id="btnQrOptions">
+                                        <span class="material-symbols-outlined">qr_code_2</span>
+                                        <span>Use QR</span>
+                                        <span class="material-symbols-outlined qr-caret">expand_more</span>
+                                    </button>
+                                    <div class="qr-dropdown-menu" id="qrOptionsMenu">
+                                        <button type="button" class="qr-dropdown-item" id="btnScanQrCamera">
+                                            <span class="material-symbols-outlined">qr_code_scanner</span>
+                                            <span>Scan with Camera</span>
+                                        </button>
+                                        <button type="button" class="qr-dropdown-item" id="btnScanQrImage">
+                                            <span class="material-symbols-outlined">image</span>
+                                            <span>Upload QR Image</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <input type="file" id="qrImageInput" accept="image/*" style="display:none">
+                            </div>
                         </form>
+                    </div>
+                </div>
+
+                <!-- QR Scan Modal -->
+                <div id="qrScanModal" class="qr-scan-modal hidden">
+                    <div class="qr-scan-backdrop"></div>
+                    <div class="qr-scan-dialog">
+                        <div class="qr-scan-header">
+                            <h3>Scan Voucher QR Code</h3>
+                            <button type="button" class="qr-scan-close" id="btnCloseQrModal">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div class="qr-scan-body">
+                            <p class="qr-scan-instructions">
+                                Align the QR code within the frame. Once detected, the voucher code will be filled in automatically.
+                            </p>
+                            <div id="qr-reader" class="qr-reader-container"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Redeem Confirmation Modal -->
+                <div id="redeemConfirmModal" class="qr-scan-modal hidden">
+                    <div class="qr-scan-backdrop"></div>
+                    <div class="qr-scan-dialog">
+                        <div class="qr-scan-header">
+                            <h3>Confirm Redeem</h3>
+                            <button type="button" class="qr-scan-close" id="btnCloseRedeemModal">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div class="qr-scan-body">
+                            <p class="qr-scan-instructions">
+                                Are you sure you want to redeem this voucher code?
+                                <br>
+                                <strong id="redeemVoucherCodeLabel"></strong>
+                            </p>
+                            <div class="redeem-confirm-actions">
+                                <button type="button" class="btn-secondary" id="btnRedeemCancel">
+                                    <span class="material-symbols-outlined">close</span>
+                                    <span>Cancel</span>
+                                </button>
+                                <button type="button" class="btn-primary" id="btnRedeemConfirm">
+                                    <span class="material-symbols-outlined">check</span>
+                                    <span>Confirm</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             <?php endif; ?>
@@ -304,6 +373,8 @@ include __DIR__ . '/../../general/_navbar.php';
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- QR scanning library (supports camera and image files) -->
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script>
     function copyVoucherCode(code) {
         if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -364,6 +435,30 @@ include __DIR__ . '/../../general/_navbar.php';
             });
         }
 
+        // QR options dropdown
+        const $qrOptionsBtn = $('#btnQrOptions');
+        const $qrOptionsMenu = $('#qrOptionsMenu');
+
+        if ($qrOptionsBtn.length && $qrOptionsMenu.length) {
+            $qrOptionsBtn.on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $qrOptionsMenu.toggleClass('show');
+            });
+
+            // Close when clicking outside
+            $(document).on('click', function(e) {
+                if (
+                    !$qrOptionsBtn.is(e.target) &&
+                    !$qrOptionsMenu.is(e.target) &&
+                    !$qrOptionsBtn.find(e.target).length &&
+                    !$qrOptionsMenu.find(e.target).length
+                ) {
+                    $qrOptionsMenu.removeClass('show');
+                }
+            });
+        }
+
         // Shop Now button handler
         $(document).on('click', '.btn-shop-now', function() {
             const shopUrl = $(this).data('shop-url');
@@ -378,6 +473,154 @@ include __DIR__ . '/../../general/_navbar.php';
             if (code) {
                 copyVoucherCode(code);
             }
+        });
+
+        // --- QR scan via camera / image upload ---
+        let html5QrCode = null;
+        const $qrModal = $('#qrScanModal');
+        const $voucherInput = $('#voucher_code');
+        const $qrImageInput = $('#qrImageInput');
+        const $redeemModal = $('#redeemConfirmModal');
+        const $redeemCodeLabel = $('#redeemVoucherCodeLabel');
+        let redeemConfirmed = false;
+
+        // Intercept redeem form submit to show custom confirmation UI
+        $('#redeemVoucherForm').on('submit', function(e) {
+            if (redeemConfirmed) {
+                // Allow the submission to proceed once user has confirmed
+                redeemConfirmed = false;
+                return;
+            }
+
+            e.preventDefault();
+
+            const code = ($voucherInput.val() || '').trim();
+            $redeemCodeLabel.text(code || '(no code entered)');
+
+            $redeemModal.removeClass('hidden');
+        });
+
+        $('#btnRedeemCancel, #btnCloseRedeemModal').on('click', function() {
+            $redeemModal.addClass('hidden');
+        });
+
+        // Clicking the backdrop should also close the confirm modal (but not the QR camera)
+        $(document).on('click', '#redeemConfirmModal .qr-scan-backdrop', function() {
+            $redeemModal.addClass('hidden');
+        });
+
+        $('#btnRedeemConfirm').on('click', function() {
+            redeemConfirmed = true;
+            $redeemModal.addClass('hidden');
+            $('#redeemVoucherForm').trigger('submit');
+        });
+
+        function handleQrResult(decodedText) {
+            if (!decodedText) {
+                return;
+            }
+            $voucherInput.val(decodedText.trim());
+
+            // Auto-submit the redeem form once a code is scanned
+            const $form = $('#redeemVoucherForm');
+            if ($form.length) {
+                $form.trigger('submit');
+            }
+
+            // Close camera if open
+            stopCameraScan();
+        }
+
+        function startCameraScan() {
+            if (typeof Html5Qrcode === 'undefined') {
+                alert('QR scanner library failed to load. Please try again or enter the code manually.');
+                return;
+            }
+
+            if (!html5QrCode) {
+                html5QrCode = new Html5Qrcode("qr-reader");
+            }
+
+            $qrModal.removeClass('hidden');
+
+            html5QrCode.start(
+                { facingMode: "environment" },
+                {
+                    fps: 10,
+                    qrbox: 250
+                },
+                function(decodedText, decodedResult) {
+                    handleQrResult(decodedText);
+                },
+                function(errorMessage) {
+                    // Ignore scan errors / no QR in frame
+                }
+            ).catch(function(err) {
+                alert('Unable to access camera: ' + err);
+                $qrModal.addClass('hidden');
+            });
+        }
+
+        function stopCameraScan() {
+            if (html5QrCode && html5QrCode._isScanning) {
+                html5QrCode.stop().then(function() {
+                    $qrModal.addClass('hidden');
+                }).catch(function() {
+                    $qrModal.addClass('hidden');
+                });
+            } else {
+                $qrModal.addClass('hidden');
+            }
+        }
+
+        $('#btnScanQrCamera').on('click', function() {
+            startCameraScan();
+        });
+
+        $('#btnCloseQrModal').on('click', function() {
+            stopCameraScan();
+        });
+
+        // Close modal when clicking on backdrop
+        $(document).on('click', '.qr-scan-backdrop', function() {
+            stopCameraScan();
+        });
+
+        // Image upload QR scan
+        $('#btnScanQrImage').on('click', function() {
+            if (typeof Html5Qrcode === 'undefined') {
+                alert('QR scanner library failed to load. Please try again or enter the code manually.');
+                return;
+            }
+            $qrImageInput.val('');
+            $qrImageInput.trigger('click');
+        });
+
+        $qrImageInput.on('change', function(e) {
+            const file = e.target.files && e.target.files[0];
+            if (!file) {
+                return;
+            }
+
+            const tempReaderId = "qr-reader-file-temp";
+            let $tempDiv = $('#' + tempReaderId);
+            if ($tempDiv.length === 0) {
+                $tempDiv = $('<div>')
+                    .attr('id', tempReaderId)
+                    .css({ width: 0, height: 0, overflow: 'hidden' });
+                $('body').append($tempDiv);
+            }
+
+            const fileScanner = new Html5Qrcode(tempReaderId);
+            fileScanner.scanFile(file, true)
+                .then(function(decodedText) {
+                    handleQrResult(decodedText);
+                    fileScanner.clear();
+                })
+                .catch(function(err) {
+                    alert('Could not read QR code from image. Please try another image or type the code manually.');
+                    fileScanner.clear();
+                });
         });
     });
 </script>

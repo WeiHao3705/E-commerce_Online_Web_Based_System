@@ -5,6 +5,12 @@ require_once __DIR__ . '/../repository/VoucherRepository.php';
 require_once __DIR__ . '/../service/VoucherService.php';
 require_once __DIR__ . '/../DTO/VoucherDTO.php';
 
+// Composer autoload for external libraries (e.g., endroid/qr-code)
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\SvgWriter;
+
 class VoucherController
 {
     private $voucherService;
@@ -604,6 +610,94 @@ class VoucherController
             exit;
         }
     }
+
+    /**
+     * Generate and download a QR code image for a voucher.
+     *
+     * The QR content is simply the voucher code. This can later be changed
+     * to a full URL if you add a scan/redeem endpoint.
+     */
+    public function downloadVoucherQr()
+    {
+        try {
+            if (!isset($_GET['voucher_id']) || empty($_GET['voucher_id'])) {
+                throw new Exception("Voucher ID is required");
+            }
+
+            if (!isset($_GET['code']) || trim($_GET['code']) === '') {
+                throw new Exception("Voucher code is required");
+            }
+
+            $voucherId = (int)$_GET['voucher_id'];
+            if ($voucherId <= 0) {
+                throw new Exception("Invalid voucher ID");
+            }
+
+            $voucherCode = trim($_GET['code']);
+
+            // Build a safe filename for download
+            $safeCode = preg_replace('/[^A-Za-z0-9_\-]/', '_', $voucherCode);
+            $fileName = 'voucher_' . $safeCode . '.svg';
+
+            // Generate QR code as SVG (does not require GD extension)
+            $qrCode = new QrCode($voucherCode);
+
+            $writer = new SvgWriter();
+            $result = $writer->write($qrCode);
+
+            // Send headers for file download
+            header('Content-Type: ' . $result->getMimeType());
+            header('Content-Disposition: attachment; filename="' . $fileName . '"');
+
+            echo $result->getString();
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = 'Failed to generate voucher QR code: ' . $e->getMessage();
+            header('Location: ../controller/VoucherController.php?action=showAll');
+            exit;
+        }
+    }
+
+    /**
+     * Show a preview page with the voucher QR code so the admin can
+     * view it first and then decide to download.
+     */
+    public function showVoucherQr()
+    {
+        try {
+            if (!isset($_GET['voucher_id']) || empty($_GET['voucher_id'])) {
+                throw new Exception("Voucher ID is required");
+            }
+
+            if (!isset($_GET['code']) || trim($_GET['code']) === '') {
+                throw new Exception("Voucher code is required");
+            }
+
+            $voucherId = (int)$_GET['voucher_id'];
+            if ($voucherId <= 0) {
+                throw new Exception("Invalid voucher ID");
+            }
+
+            $voucherCode = trim($_GET['code']);
+
+            // Generate QR code as SVG string for inline display
+            $qrCode = new QrCode($voucherCode);
+            $writer = new SvgWriter();
+            $result = $writer->write($qrCode);
+            $svgContent = $result->getString();
+
+            // Build a safe filename hint for the view (used in title / labels)
+            $safeCode = preg_replace('/[^A-Za-z0-9_\-]/', '_', $voucherCode);
+            $fileName = 'voucher_' . $safeCode . '.svg';
+
+            // Include a simple preview view
+            require __DIR__ . '/../views/voucher_management/VoucherQrPreview.php';
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = 'Failed to generate voucher QR code: ' . $e->getMessage();
+            header('Location: ../controller/VoucherController.php?action=showAll');
+            exit;
+        }
+    }
 }
 
 // Handle the request
@@ -641,6 +735,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $controller->getMembersForAssignment();
     } elseif ($action === 'downloadTemplate') {
         $controller->downloadTemplate();
+    } elseif ($action === 'showVoucherQr') {
+        $controller->showVoucherQr();
+    } elseif ($action === 'downloadVoucherQr') {
+        $controller->downloadVoucherQr();
     } elseif ($action === 'showMemberVouchers') {
         $controller->showMemberVouchers();
     }
