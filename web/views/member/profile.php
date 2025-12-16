@@ -299,10 +299,26 @@ include __DIR__ . '/../../general/_navbar.php';
             <?php
               $rawPhone2 = (string)($user['contact_no'] ?? '');
               $digits2 = preg_replace('/\D+/', '', $rawPhone2);
-              $formatted2 = strlen($digits2) === 10 ? (substr($digits2,0,3) . '-' . substr($digits2,3,3) . ' ' . substr($digits2,6,4)) : $rawPhone2;
+              if (strlen($digits2) === 11 && $digits2[0] === '1') {
+                // US format with country code: +1 xxx-xxx-xxxx
+                $formatted2 = '+1 ' . substr($digits2,1,3) . '-' . substr($digits2,4,3) . '-' . substr($digits2,7,4);
+              } elseif (strlen($digits2) === 10) {
+                // Default 10-digit local format: xxx-xxx xxxx
+                $formatted2 = substr($digits2,0,3) . '-' . substr($digits2,3,3) . ' ' . substr($digits2,6,4);
+              } else {
+                $formatted2 = $rawPhone2;
+              }
             ?>
-            <input type="tel" id="contact_no" name="contact_no" value="<?php echo html_escape($formatted2); ?>" required pattern="^\d{3}-\d{3} \d{4}$" title="Enter phone as 000-000 0000." />
-            <div class="form-error" id="err_contact" style="display:none;">Enter a valid phone number (10-11 digits).</div>
+            <input
+              type="tel"
+              id="contact_no"
+              name="contact_no"
+              value="<?php echo html_escape($formatted2); ?>"
+              required
+              pattern="^[0-9+\s\-\(\)]{10,20}$"
+              title="Enter a valid phone number (10–11 digits, you may include +, spaces, dashes, or parentheses)."
+            />
+            <div class="form-error" id="err_contact" style="display:none;">Enter a valid phone number (10–11 digits, e.g. local MY or US number).</div>
           </div>
         </div>
 

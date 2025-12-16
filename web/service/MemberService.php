@@ -215,7 +215,7 @@ class MembershipServices
 
         // Block login if email not verified
         if (isset($user['email_verified']) && !$user['email_verified']) {
-            throw new Exception('Please verify your email before logging in. Check your inbox for the verification link.');
+            throw new Exception('Please verify your email before logging in.');
         }
 
         // Build DTO
