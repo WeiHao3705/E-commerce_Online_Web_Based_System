@@ -48,6 +48,7 @@ $pageTitle = 'Forgot Password';
         .navbar .search-input { padding-right:48px; }
         .navbar .search-btn { position:absolute; top:0; right:0; height:100%; width:48px; margin:0 !important; border-radius:0 !important; display:flex; align-items:center; justify-content:center; padding:0 !important; }
         .navbar .search-btn i { color:#fff; font-size:16px; line-height:1; display:block; }
+        .back-link:hover { opacity: 1 !important; }
     </style>
 </head>
 <body>
@@ -55,6 +56,17 @@ $pageTitle = 'Forgot Password';
 
 <div class="registration-wrapper">
     <div class="registration-container" style="max-width:560px;padding:36px;">
+        <div style="margin-bottom:16px;">
+            <?php if (!empty($_SESSION['reset_user'])): ?>
+                <a href="?start=1" class="back-link" style="display:inline-flex;align-items:center;gap:8px;color:#fff;text-decoration:none;font-size:14px;opacity:0.8;transition:opacity 0.2s;">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+            <?php else: ?>
+                <a href="<?php echo $prefix; ?>views/security/LoginForm.php" class="back-link" style="display:inline-flex;align-items:center;gap:8px;color:#fff;text-decoration:none;font-size:14px;opacity:0.8;transition:opacity 0.2s;">
+                    <i class="fas fa-arrow-left"></i> Back to Login
+                </a>
+            <?php endif; ?>
+        </div>
         <h2>Reset your password</h2>
         <?php if (empty($_SESSION['reset_user'])): ?>
             <p>Step 1 — enter your username and we'll show your security question.</p>
