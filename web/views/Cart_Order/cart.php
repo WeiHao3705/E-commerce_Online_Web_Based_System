@@ -12,53 +12,6 @@ if (isset($_SESSION['user']) && isset($_SESSION['user']->user_id)) {
     exit;
 }
 
-// Handle AJAX delete request
-if (isset($_POST['cart_item_id']) && !isset($_POST['quantity'])) {
-    header('Content-Type: application/json');
-    
-    $cartItemId = (int) $_POST['cart_item_id'];
-    $userId = $_SESSION['user_id'];
-    
-    $deleteQuery = "DELETE ci FROM cart_item ci 
-                    JOIN shopping_cart sc ON ci.cart_id = sc.cart_id 
-                    WHERE ci.cart_item_id = :cart_item_id 
-                    AND sc.user_id = :user_id";
-    
-    $stmt = $conn->prepare($deleteQuery);
-    $stmt->execute([
-        ':cart_item_id' => $cartItemId,
-        ':user_id' => $userId
-    ]);
-    
-    echo json_encode(['success' => $stmt->rowCount() > 0]);
-    exit;
-}
-
-// Handle AJAX update quantity request
-if (isset($_POST['cart_item_id']) && isset($_POST['quantity'])) {
-    header('Content-Type: application/json');
-    
-    $cartItemId = (int) $_POST['cart_item_id'];
-    $quantity = max(1, min(99, (int) $_POST['quantity']));
-    $userId = $_SESSION['user_id'];
-    
-    $updateQuery = "UPDATE cart_item ci
-                    JOIN shopping_cart sc ON ci.cart_id = sc.cart_id
-                    SET ci.quantity = :quantity
-                    WHERE ci.cart_item_id = :cart_item_id
-                    AND sc.user_id = :user_id";
-    
-    $stmt = $conn->prepare($updateQuery);
-    $stmt->execute([
-        ':quantity' => $quantity,
-        ':cart_item_id' => $cartItemId,
-        ':user_id' => $userId
-    ]);
-    
-    echo json_encode(['success' => $stmt->rowCount() > 0]);
-    exit;
-}
-
 $pageTitle = "Shopping Cart";
 include '../../general/_header.php'; 
 include '../../general/_navbar.php';
@@ -66,15 +19,8 @@ include '../../general/_navbar.php';
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
 <?php 
 
-// Get user_id from session (login stores it in $_SESSION['user']['user_id'])
-$userId = null;
-if (isset($_SESSION['users']) && isset($_SESSION['users']['user_id'])) {
-    $userId = $_SESSION['users']['user_id'];
-    // Also set $_SESSION['user_id'] for backward compatibility
-    $_SESSION['user_id'] = $userId;
-} elseif (isset($_SESSION['user_id'])) {
-    $userId = $_SESSION['user_id'];
-}
+// Get user_id from session
+$userId = $_SESSION['user_id'];
 
 // query of fetching vouchers from db
 $voucherQuery = "SELECT * FROM voucher 

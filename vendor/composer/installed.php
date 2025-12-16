@@ -1,15 +1,24 @@
 <?php return array(
     'root' => array(
+<<<<<<< HEAD
         'name' => '__root__',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
         'reference' => '0717f3c543210bd7788a2ccf2041044f58c340a5',
         'type' => 'library',
+=======
+        'name' => 'ecommerce/online-web-system',
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => '4663f9d46d6893d2921c544214ae491d46f6a661',
+        'type' => 'project',
+>>>>>>> 033e4aec69a67c7b719cd0e1c7a26318915e59bd
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
         'dev' => true,
     ),
     'versions' => array(
+<<<<<<< HEAD
         '__root__' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
@@ -19,6 +28,8 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
+=======
+>>>>>>> 033e4aec69a67c7b719cd0e1c7a26318915e59bd
         'bacon/bacon-qr-code' => array(
             'pretty_version' => 'v3.0.3',
             'version' => '3.0.3.0',
@@ -37,6 +48,18 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
+<<<<<<< HEAD
+=======
+        'ecommerce/online-web-system' => array(
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '4663f9d46d6893d2921c544214ae491d46f6a661',
+            'type' => 'project',
+            'install_path' => __DIR__ . '/../../',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+>>>>>>> 033e4aec69a67c7b719cd0e1c7a26318915e59bd
         'endroid/qr-code' => array(
             'pretty_version' => '6.0.9',
             'version' => '6.0.9.0',
@@ -46,5 +69,17 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
+<<<<<<< HEAD
+=======
+        'stripe/stripe-php' => array(
+            'pretty_version' => 'v13.18.0',
+            'version' => '13.18.0.0',
+            'reference' => '02abb043b103766f4ed920642ae56ffdc58c7467',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../stripe/stripe-php',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+>>>>>>> 033e4aec69a67c7b719cd0e1c7a26318915e59bd
     ),
 );
