@@ -529,6 +529,12 @@ class VoucherController
     public function showMemberVouchers()
     {
         try {
+            // Redirect admins to AdminDashboard - they should not access member pages
+            if (isset($_SESSION['user']) && isset($_SESSION['user']->role) && $_SESSION['user']->role === 'admin') {
+                header('Location: ../views/admin/AdminDashboard.php');
+                exit;
+            }
+            
             $vouchers = [];
             $isLoggedIn = isset($_SESSION['user']) && !empty($_SESSION['user']);
             $isMember = $isLoggedIn && isset($_SESSION['user']->role) && $_SESSION['user']->role === 'member';

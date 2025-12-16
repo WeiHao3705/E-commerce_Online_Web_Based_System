@@ -1,5 +1,12 @@
 <?php 
 session_start();
+
+// Redirect admins to AdminDashboard - they should not access member website
+if (!empty($_SESSION['user']) && isset($_SESSION['user']->role) && $_SESSION['user']->role === 'admin') {
+    header('Location: views/admin/AdminDashboard.php');
+    exit;
+}
+
 require __DIR__ . '/database/connection.php';
 
 $db = new Database();

@@ -3,6 +3,13 @@ error_reporting(0);
 ini_set('display_errors', 0);
 session_start();
 
+// Redirect admins to AdminDashboard - they should not access member pages
+if (isset($_SESSION['user']) && isset($_SESSION['user']->role) && $_SESSION['user']->role === 'admin') {
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Admins cannot access member payment pages']);
+    exit;
+}
+
 header('Content-Type: application/json');
 
 require __DIR__ . '/../../../vendor/autoload.php';

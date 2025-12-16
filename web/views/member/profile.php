@@ -6,6 +6,12 @@ if (empty($_SESSION['user'])) {
     exit;
 }
 
+// Redirect admins to AdminDashboard - they should not access member pages
+if (isset($_SESSION['user']->role) && $_SESSION['user']->role === 'admin') {
+    header('Location: ../../views/admin/AdminDashboard.php');
+    exit;
+}
+
 require_once __DIR__ . '/../../../helpers.php';
 require_once __DIR__ . '/../../database/connection.php';
 require_once __DIR__ . '/../../repository/MemberRepository.php';

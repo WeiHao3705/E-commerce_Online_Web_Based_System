@@ -4,6 +4,12 @@ require __DIR__ . '/../../database/connection.php';
 $db = new Database();
 $conn = $db->getConnection();
 
+// Redirect admins to AdminDashboard - they should not access member pages
+if (isset($_SESSION['user']) && isset($_SESSION['user']->role) && $_SESSION['user']->role === 'admin') {
+    header('Location: ../../views/admin/AdminDashboard.php');
+    exit;
+}
+
 // Get user_id from session first
 if (isset($_SESSION['user']) && isset($_SESSION['user']->user_id)) {
     $_SESSION['user_id'] = $_SESSION['user']->user_id;

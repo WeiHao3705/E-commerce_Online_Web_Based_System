@@ -5,6 +5,12 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Redirect admins to AdminDashboard - they should not access member pages
+if (isset($_SESSION['user']) && isset($_SESSION['user']->role) && $_SESSION['user']->role === 'admin') {
+    header('Location: ../../views/admin/AdminDashboard.php');
+    exit;
+}
+
 $current_dir = dirname($_SERVER['PHP_SELF']);
 $is_in_views = (strpos($current_dir, '/views') !== false);
 $prefix = $is_in_views ? '../' : '';

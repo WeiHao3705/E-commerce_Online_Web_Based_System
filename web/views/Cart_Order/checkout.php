@@ -1,6 +1,12 @@
 <?php 
 if (session_status() === PHP_SESSION_NONE) session_start();
 
+// Redirect admins to AdminDashboard - they should not access member pages
+if (isset($_SESSION['user']) && isset($_SESSION['user']->role) && $_SESSION['user']->role === 'admin') {
+    header('Location: ../../views/admin/AdminDashboard.php');
+    exit;
+}
+
 // Get user_id from session (login stores it in $_SESSION['user']['user_id'])
 $userId = null;
 if (isset($_SESSION['user']) && isset($_SESSION['user']->user_id)) {
