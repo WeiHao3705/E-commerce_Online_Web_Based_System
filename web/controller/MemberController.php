@@ -625,10 +625,16 @@ class MemberController
             $stmt = $conn->prepare("UPDATE users SET profile_photo = ? WHERE user_id = ?");
             $stmt->execute([$photoPath, $userId]);
 
+            // Compute the web-accessible URL
+            $docRoot = $_SERVER['DOCUMENT_ROOT'];
+            $webRootDir = dirname(__DIR__); // /web directory
+            $relativePath = str_replace($docRoot, '', $webRootDir);
+            $webBasePath = str_replace('\\', '/', $relativePath) . '/';
+            
             echo json_encode([
                 'success' => true,
                 'message' => 'Profile photo updated successfully',
-                'photoUrl' => '../images/profiles/' . $newFilename
+                'photoUrl' => $webBasePath . 'images/profiles/' . $newFilename
             ]);
             exit;
         } catch (Exception $e) {
