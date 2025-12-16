@@ -27,6 +27,7 @@
             font-size: 16px;
             -webkit-text-size-adjust: 100%;
             -ms-text-size-adjust: 100%;
+            scrollbar-gutter: stable;
         }
 
         body {
