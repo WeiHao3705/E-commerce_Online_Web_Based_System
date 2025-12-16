@@ -660,6 +660,7 @@ class MemberController
             }
 
             $userId = isset($_POST['user_id']) ? (int)$_POST['user_id'] : 0;
+            $addressId = isset($_POST['address_id']) ? (int)$_POST['address_id'] : 0;
 
             if ($userId !== (int)$_SESSION['user']->user_id) {
                 throw new Exception("Unauthorized access");
@@ -690,34 +691,132 @@ class MemberController
             $db = new Database();
             $conn = $db->getConnection();
 
-            // Check if this is the first address for the user
-            $stmtCount = $conn->prepare("SELECT COUNT(*) FROM address WHERE user_id = ?");
-            $stmtCount->execute([$userId]);
-            $addressCount = $stmtCount->fetchColumn();
+            // Check if this is an update or insert
+            if ($addressId > 0) {
+                // Update existing address
+                $stmtCheck = $conn->prepare("SELECT id FROM address WHERE id = ? AND user_id = ?");
+                $stmtCheck->execute([$addressId, $userId]);
+                if (!$stmtCheck->fetch()) {
+                    throw new Exception("Address not found or unauthorized");
+                }
 
-            // If first address, set as default
-            $isDefault = ($addressCount == 0) ? 1 : 0;
+                $stmt = $conn->prepare("
+                    UPDATE address 
+                    SET address1 = ?, address2 = ?, city = ?, postcode = ?, state = ?, label = ?
+                    WHERE id = ? AND user_id = ?
+                ");
 
-            // Insert new address
-            $stmt = $conn->prepare("
-                INSERT INTO address (user_id, address1, address2, city, postcode, state, label, is_default) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ");
+                $stmt->execute([
+                    $address1,
+                    $address2,
+                    $city,
+                    $postcode,
+                    $state,
+                    $label,
+                    $addressId,
+                    $userId
+                ]);
 
-            $stmt->execute([
-                $userId,
-                $address1,
-                $address2,
-                $city,
-                $postcode,
-                $state,
-                $label,
-                $isDefault
-            ]);
+                $message = 'Address updated successfully';
+            } else {
+                // Insert new address
+                $stmtCount = $conn->prepare("SELECT COUNT(*) FROM address WHERE user_id = ?");
+                $stmtCount->execute([$userId]);
+                $addressCount = $stmtCount->fetchColumn();
+
+                // If first address, set as default
+                $isDefault = ($addressCount == 0) ? 1 : 0;
+
+                $stmt = $conn->prepare("
+                    INSERT INTO address (user_id, address1, address2, city, postcode, state, label, is_default) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ");
+
+                $stmt->execute([
+                    $userId,
+                    $address1,
+                    $address2,
+                    $city,
+                    $postcode,
+                    $state,
+                    $label,
+                    $isDefault
+                ]);
+
+                $message = 'Address added successfully';
+            }
 
             echo json_encode([
                 'success' => true,
-                'message' => 'Address added successfully'
+                'message' => $message
+            ]);
+            exit;
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+            exit;
+        }
+    }
+
+    public function deleteAddress()
+    {
+        header('Content-Type: application/json');
+
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception("Invalid request method");
+            }
+
+            if (empty($_SESSION['user'])) {
+                throw new Exception("User not authenticated");
+            }
+
+            $userId = isset($_POST['user_id']) ? (int)$_POST['user_id'] : 0;
+            $addressId = isset($_POST['address_id']) ? (int)$_POST['address_id'] : 0;
+
+            if ($userId !== (int)$_SESSION['user']->user_id) {
+                throw new Exception("Unauthorized access");
+            }
+
+            if ($addressId <= 0) {
+                throw new Exception("Invalid address ID");
+            }
+
+            $db = new Database();
+            $conn = $db->getConnection();
+
+            // Verify the address belongs to the user
+            $stmtCheck = $conn->prepare("SELECT is_default FROM address WHERE id = ? AND user_id = ?");
+            $stmtCheck->execute([$addressId, $userId]);
+            $address = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$address) {
+                throw new Exception("Address not found or unauthorized");
+            }
+
+            $wasDefault = $address['is_default'];
+
+            // Delete the address
+            $stmt = $conn->prepare("DELETE FROM address WHERE id = ? AND user_id = ?");
+            $stmt->execute([$addressId, $userId]);
+
+            // If deleted address was default, set the first remaining address as default
+            if ($wasDefault) {
+                $stmtFirst = $conn->prepare("SELECT id FROM address WHERE user_id = ? LIMIT 1");
+                $stmtFirst->execute([$userId]);
+                $firstAddress = $stmtFirst->fetch(PDO::FETCH_ASSOC);
+                
+                if ($firstAddress) {
+                    $stmtUpdate = $conn->prepare("UPDATE address SET is_default = 1 WHERE id = ?");
+                    $stmtUpdate->execute([$firstAddress['id']]);
+                }
+            }
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Address deleted successfully'
             ]);
             exit;
         } catch (Exception $e) {
@@ -850,6 +949,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $controller->updateProfilePhoto();
     } elseif ($action === 'add_address') {
         $controller->addAddress();
+    } elseif ($action === 'edit_address') {
+        $controller->addAddress();
+    } elseif ($action === 'delete_address') {
+        $controller->deleteAddress();
     } elseif ($action === 'updateStatus') {
         $controller->updateMemberStatus();
     } elseif ($action === 'delete') {

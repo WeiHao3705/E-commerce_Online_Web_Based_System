@@ -349,6 +349,14 @@ include __DIR__ . '/../../general/_navbar.php';
                     ?>
                   </div>
                 </div>
+                <div class="address-actions">
+                  <button type="button" class="btn-icon btn-edit-address" data-address-id="<?php echo (int)$addr['id']; ?>" data-address='<?php echo html_escape(json_encode($addr)); ?>' title="Edit">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button type="button" class="btn-icon btn-delete-address" data-address-id="<?php echo (int)$addr['id']; ?>" title="Delete">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
               </label>
             <?php endforeach; ?>
           <?php endif; ?>
@@ -366,18 +374,19 @@ include __DIR__ . '/../../general/_navbar.php';
   </div>
 </div>
 
-<!-- Add New Address Modal -->
+<!-- Add/Edit Address Modal -->
 <div class="modal-overlay" id="addAddressModal" aria-hidden="true">
   <div class="modal" role="dialog" aria-modal="true">
     <div class="modal-header">
-      Add New Address
+      <span id="addressModalTitle">Add New Address</span>
       <button type="button" class="modal-close" id="btnCloseAddAddress" aria-label="Close">
         <i class="fas fa-times"></i>
       </button>
     </div>
     <form id="addAddressForm">
-      <input type="hidden" name="action" value="add_address" />
+      <input type="hidden" name="action" value="add_address" id="addressFormAction" />
       <input type="hidden" name="user_id" value="<?php echo (int)$user['user_id']; ?>" />
+      <input type="hidden" name="address_id" value="" id="address_id" />
       
       <div class="modal-body">
         <div class="form-row">
@@ -451,7 +460,7 @@ include __DIR__ . '/../../general/_navbar.php';
       <div class="modal-actions">
         <button type="button" class="btn-cancel" id="btnCancelAddAddress">Cancel</button>
         <button type="submit" class="btn-save" id="btnSaveAddress">
-          <i class="fas fa-plus"></i> Add Address
+          <i class="fas fa-save"></i> <span id="addressSubmitText">Add Address</span>
         </button>
       </div>
     </form>

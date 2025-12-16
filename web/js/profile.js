@@ -200,6 +200,16 @@
   if(btnOpenAddAddress) {
     btnOpenAddAddress.addEventListener('click', function(e) {
       e.preventDefault();
+      // Reset form for adding new address
+      addAddressForm.reset();
+      document.getElementById('address_id').value = '';
+      document.getElementById('addressFormAction').value = 'add_address';
+      document.getElementById('addressModalTitle').textContent = 'Add New Address';
+      document.getElementById('addressSubmitText').textContent = 'Add Address';
+      document.querySelectorAll('.label-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('.label-btn[data-label="home"]').classList.add('active');
+      document.getElementById('address_label').value = 'home';
+      
       addAddressModal.classList.add('open');
       addAddressModal.setAttribute('aria-hidden', 'false');
     });
@@ -212,6 +222,7 @@
       addAddressModal.classList.remove('open');
       addAddressModal.setAttribute('aria-hidden', 'true');
       addAddressForm.reset();
+      document.getElementById('address_id').value = '';
       document.querySelectorAll('.label-btn').forEach(b => b.classList.remove('active'));
       document.querySelector('.label-btn[data-label="home"]').classList.add('active');
     });
@@ -243,6 +254,75 @@
       });
     });
   }
+
+  // Edit Address functionality - reuse add address modal
+  document.addEventListener('click', function(e) {
+    if(e.target.closest('.btn-edit-address')) {
+      e.preventDefault();
+      var btn = e.target.closest('.btn-edit-address');
+      var addressData = JSON.parse(btn.getAttribute('data-address'));
+      
+      // Populate form with existing data
+      document.getElementById('address_id').value = addressData.id;
+      document.getElementById('addressFormAction').value = 'edit_address';
+      document.getElementById('address1').value = addressData.address1;
+      document.getElementById('address2').value = addressData.address2 || '';
+      document.getElementById('city').value = addressData.city;
+      document.getElementById('state').value = addressData.state;
+      document.getElementById('postcode').value = addressData.postcode;
+      
+      // Update modal title and button text
+      document.getElementById('addressModalTitle').textContent = 'Edit Address';
+      document.getElementById('addressSubmitText').textContent = 'Save Changes';
+      
+      // Set active label button based on address label
+      var labelValue = (addressData.label || 'home').toLowerCase();
+      document.querySelectorAll('.label-btn').forEach(function(btn) {
+        btn.classList.remove('active');
+        if(btn.getAttribute('data-label') === labelValue) {
+          btn.classList.add('active');
+        }
+      });
+      document.getElementById('address_label').value = labelValue;
+      
+      // Open modal
+      addAddressModal.classList.add('open');
+      addAddressModal.setAttribute('aria-hidden', 'false');
+    }
+  });
+
+  // Delete Address functionality
+  document.addEventListener('click', function(e) {
+    if(e.target.closest('.btn-delete-address')) {
+      e.preventDefault();
+      var btn = e.target.closest('.btn-delete-address');
+      var addressId = btn.getAttribute('data-address-id');
+      
+      if(confirm('Are you sure you want to delete this address?')) {
+        var formData = new FormData();
+        formData.append('action', 'delete_address');
+        formData.append('user_id', userId);
+        formData.append('address_id', addressId);
+        
+        fetch(controllerUrl, {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          if(data.success) {
+            location.reload();
+          } else {
+            alert('Error: ' + (data.message || 'Failed to delete address'));
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while deleting the address.');
+        });
+      }
+    }
+  });
 
   function validateForm(){
     var ok = true;
@@ -280,8 +360,8 @@
   if(addAddressModal) addAddressModal.addEventListener('click', function(e){ if(e.target === addAddressModal){ btnCancelAddAddress.click(); } });
   document.addEventListener('keydown', function(e){ 
     if(e.key === 'Escape') {
-      if(addAddressModal.classList.contains('open')) { btnCancelAddAddress.click(); }
-      else if(modal.classList.contains('open')) { closeModal(e); }
+      if(addAddressModal && addAddressModal.classList.contains('open')) { btnCancelAddAddress.click(); }
+      else if(modal && modal.classList.contains('open')) { closeModal(e); }
     }
   });
   if(saveBtn){
