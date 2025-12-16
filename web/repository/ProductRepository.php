@@ -107,4 +107,39 @@ class ProductRepository {
         
         return $variantSizes;
     }
+    
+    /**
+     * Get all products with basic info and first image
+     * @return array Array of products with category, price, and image
+     */
+    public function getAllProducts() {
+        $sql = "
+            SELECT 
+                p.product_id,
+                p.product_name,
+                p.category,
+                p.description,
+                pr.original_price,
+                pr.selling_price,
+                COALESCE((
+                    SELECT pi.image_path 
+                    FROM product_image pi 
+                    WHERE pi.product_id = p.product_id
+                    LIMIT 1
+                ), '') AS image_path,
+                COALESCE((
+                    SELECT COUNT(*) FROM product_variant pv 
+                    WHERE pv.product_id = p.product_id
+                ), 0) AS variant_count
+            FROM product p
+            LEFT JOIN product_price pr ON p.product_id = pr.product_id
+            ORDER BY p.category, p.product_name
+        ";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        return $products;
+    }
 }

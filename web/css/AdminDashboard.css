@@ -237,8 +237,17 @@ body {
     padding-left: 2.5rem;
 }
 
+/* Also show submenu when hovering over the Settings dropdown */
+.admin-nav-dropdown:hover .admin-nav-submenu {
+    max-height: 200px;
+}
+
 .admin-nav-submenu.open {
     max-height: 200px;
+}
+
+.admin-nav-dropdown.open .dropdown-arrow {
+    transform: rotate(180deg);
 }
 
 .admin-nav-subitem {
