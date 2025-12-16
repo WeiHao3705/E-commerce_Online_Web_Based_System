@@ -184,28 +184,8 @@ class MembershipServices
         $verify = password_verify($password, $user['password']);
 
         if (!$verify) {
-            $hashLength = is_string($user['password']) ? strlen($user['password']) : 0;
-
-            // Legacy plaintext password migration
-            if ($hashLength > 0 && $hashLength < 20 && $password === $user['password']) {
-                error_log("Auth debug: plaintext match for username='{$username}'; migrating to hashed password");
-
-                $newHash = password_hash($password, PASSWORD_DEFAULT);
-
-                try {
-                    $updated = $this->membershipRepository->updatePasswordHash($user['user_id'], $newHash);
-                    if (!$updated) {
-                        error_log("Auth debug: failed to update password hash for user_id={$user['user_id']}");
-                    }
-                } catch (Exception $e) {
-                    error_log("Auth debug: exception while updating password hash: " . $e->getMessage());
-                }
-
-                $verify = true;
-            } else {
-                error_log("Auth debug: password_verify failed for username='{$username}'; stored_hash_length={$hashLength}");
-                throw new Exception('Invalid username or password');
-            }
+            error_log("Auth debug: password_verify failed for username='{$username}'");
+            throw new Exception('Invalid username or password');
         }
 
         // Block login for banned users
