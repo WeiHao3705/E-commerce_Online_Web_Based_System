@@ -3,6 +3,12 @@ var appliedVoucher = null;
 
 $(document).ready(function() {
 
+    // refresh the amount of items in the cart icon
+    updateCartCount();
+
+    // change the item to unchecked state
+    localStorage.removeItem('checkedItem');
+
     // mainly handle about every time user reload the page
     //clear all checkbox states first
     $('.item-checkbox').prop('checked', false);
@@ -10,7 +16,7 @@ $(document).ready(function() {
 
     // Restore checkbox states from localStorage (don't clear it)
     // This allows checked items to remain checked when user returns from checkout
-    restoreCheckboxStates();
+    // restoreCheckboxStates();
 
     // run initial calculation to set up the totals
     updateOrderSummary();
@@ -72,6 +78,9 @@ $(document).ready(function() {
                     action: 'updateQuantity',
                     cart_item_id: cartItemId,
                     quantity: newQty 
+                },
+                success: function() {
+                    updateCartCount(); // Update navbar count
                 }
             });
         }
@@ -99,6 +108,9 @@ $(document).ready(function() {
                     action: 'updateQuantity',
                     cart_item_id: cartItemId,
                     quantity: newQty 
+                },
+                success: function() {
+                    updateCartCount(); // Update navbar count
                 }
             });
         } else if (currentVal === 1) {
@@ -119,6 +131,7 @@ $(document).ready(function() {
                         if (response.success) {
                             $row.remove(); // Remove the row from table
                             updateOrderSummary(); // Recalculate all totals
+                            updateCartCount(); // Update navbar count
                         }
                     }
                 });
@@ -147,6 +160,7 @@ $(document).ready(function() {
                     if (response.success) {
                         $row.remove(); // Remove the row from table
                         updateOrderSummary(); // Recalculate all totals
+                        updateCartCount(); // Update navbar count
                     } else {
                         alert('Failed to remove item');
                     }
@@ -428,3 +442,21 @@ $('#checkout-btn').click(function(e) {
     // Navigate to checkout with selected items as URL parameter
     window.location.href = 'checkout.php?items=' + selectedItems.join(',');
 });
+
+function updateCartCount() {
+    $.ajax({
+        url: '../../views/Cart_Order/get_cart_count.php',
+        method: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            if (response.count > 0) {
+                $('#cart-count').text(response.count).show();
+            } else {
+                $('#cart-count').hide();
+            }
+        },
+        error: function() {
+            $('#cart-count').hide();
+        }
+    });
+}

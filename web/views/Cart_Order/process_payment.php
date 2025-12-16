@@ -90,10 +90,12 @@ try {
     }
     
     // Delete items from cart
-    $cartItemIds = array_column($orderData['items'], 'cart_item_id');
-    $placeholders = implode(',', array_fill(0, count($cartItemIds), '?'));
-    $deleteStmt = $conn->prepare("DELETE FROM cart_item WHERE cart_item_id IN ($placeholders)");
-    $deleteStmt->execute($cartItemIds);
+    $cartItemIds = array_column($orderData['items'], 'id');
+    if (!empty($cartItemIds)) {
+        $placeholders = implode(',', array_fill(0, count($cartItemIds), '?'));
+        $deleteStmt = $conn->prepare("DELETE FROM cart_item WHERE cart_item_id IN ($placeholders)");
+        $deleteStmt->execute($cartItemIds);
+    }
     
     $conn->commit();
     

@@ -197,6 +197,9 @@ $prefix = $webBasePath;
         });
     }
     
+    // Call on page load to update cart count
+    updateCartCount();
+    
     // Handle browser back/forward navigation
     window.addEventListener('pageshow', function(event) {
         if (event.persisted) {

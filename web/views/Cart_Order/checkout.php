@@ -140,7 +140,7 @@ $grandTotal = $subtotal + $shippingFee + $tax;
                 <span class="step-number">3</span>
                 <i class="fas fa-check step-check"></i>
             </div>
-            <span class="step-label">Order Review</span>
+            <span class="step-label">Confirmed</span>
         </div>
     </div>
     
