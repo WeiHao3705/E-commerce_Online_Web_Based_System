@@ -188,7 +188,6 @@ $isAdmin = isset($_SESSION['user']) && isset($_SESSION['user']->role) && $_SESSI
                                     <option value="+86" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+86') ? 'selected' : ''; ?>>🇨🇳 +86 (CN)</option>
                                     <option value="+81" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+81') ? 'selected' : ''; ?>>🇯🇵 +81 (JP)</option>
                                     <option value="+61" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+61') ? 'selected' : ''; ?>>🇦🇺 +61 (AU)</option>
-                                    <option value="+91" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+91') ? 'selected' : ''; ?>>🇮🇳 +91 (IN)</option>
                                     <option value="+33" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+33') ? 'selected' : ''; ?>>🇫🇷 +33 (FR)</option>
                                     <option value="+49" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+49') ? 'selected' : ''; ?>>🇩🇪 +49 (DE)</option>
                                 </select>
@@ -893,12 +892,6 @@ $isAdmin = isset($_SESSION['user']) && isset($_SESSION['user']->role) && $_SESSI
                     example: '04 1234 5678',
                     minLength: 10,
                     maxLength: 12
-                },
-                '+91': { // India
-                    pattern: /^[6-9][0-9]{9}$/,
-                    example: '9876543210',
-                    minLength: 10,
-                    maxLength: 10
                 },
                 '+33': { // France
                     pattern: /^[0-9]{2}[- ]?[0-9]{2}[- ]?[0-9]{2}[- ]?[0-9]{2}[- ]?[0-9]{2}$/,

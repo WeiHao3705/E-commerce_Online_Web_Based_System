@@ -40,7 +40,7 @@ class MemberController
                 // Check if email is verified
                 $user = $this->membershipServices->getMemberByUsername($username);
                 if ($user && !$user['email_verified']) {
-                    $_SESSION['error_message'] = 'Please verify your email before logging in. Check your inbox for the verification link.';
+                    $_SESSION['error_message'] = 'Please verify your email before logging in.';
                     $_SESSION['unverified_email'] = $user['email'];
                     header('Location: ../views/security/email_verification.php');
                     exit;
@@ -323,11 +323,14 @@ class MemberController
                     throw new Exception("Invalid email format.");
                 }
 
-                // Normalize phone, accept display format 000-000 0000, store digits-only
+                // Normalize phone: keep only digits, support 10–11 digit numbers (e.g. MY or US including country code)
                 $contact_digits = preg_replace('/\D+/', '', $contact_no);
-                if (strlen($contact_digits) !== 10) {
-                    throw new Exception("Invalid phone number format. Use 000-000 0000.");
+                $len = strlen($contact_digits);
+                if ($len < 10 || $len > 11) {
+                    throw new Exception("Invalid phone number format. Please enter a valid 10–11 digit number.");
                 }
+
+                // Store digits-only (keep leading country code if present, e.g. 1XXXXXXXXXX for US)
                 $contact_no = $contact_digits;
 
                 // Get current user data to preserve gender
@@ -622,10 +625,16 @@ class MemberController
             $stmt = $conn->prepare("UPDATE users SET profile_photo = ? WHERE user_id = ?");
             $stmt->execute([$photoPath, $userId]);
 
+            // Compute the web-accessible URL
+            $docRoot = $_SERVER['DOCUMENT_ROOT'];
+            $webRootDir = dirname(__DIR__); // /web directory
+            $relativePath = str_replace($docRoot, '', $webRootDir);
+            $webBasePath = str_replace('\\', '/', $relativePath) . '/';
+            
             echo json_encode([
                 'success' => true,
                 'message' => 'Profile photo updated successfully',
-                'photoUrl' => '../images/profiles/' . $newFilename
+                'photoUrl' => $webBasePath . 'images/profiles/' . $newFilename
             ]);
             exit;
         } catch (Exception $e) {

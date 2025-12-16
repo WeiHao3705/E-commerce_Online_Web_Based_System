@@ -737,7 +737,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
             }
             
             // Try to extract country code (format: "+60 11-5550 5761" or "+60 1155505761")
-            const countryCodes = ['+60', '+1', '+44', '+65', '+86', '+81', '+61', '+91', '+33', '+49'];
+            const countryCodes = ['+60', '+1', '+44', '+65', '+86', '+81', '+61', '+33', '+49'];
             let countryCode = '+60'; // default
             let phoneNumber = contactNo;
             
@@ -817,12 +817,6 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                 example: '04 1234 5678',
                 minLength: 10,
                 maxLength: 12
-            },
-            '+91': { // India
-                pattern: /^[6-9][0-9]{9}$/,
-                example: '9876543210',
-                minLength: 10,
-                maxLength: 10
             },
             '+33': { // France
                 pattern: /^[0-9]{2}[- ]?[0-9]{2}[- ]?[0-9]{2}[- ]?[0-9]{2}[- ]?[0-9]{2}$/,
@@ -1128,7 +1122,6 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                     <option value="+86">🇨🇳 +86 (CN)</option>
                                     <option value="+81">🇯🇵 +81 (JP)</option>
                                     <option value="+61">🇦🇺 +61 (AU)</option>
-                                    <option value="+91">🇮🇳 +91 (IN)</option>
                                     <option value="+33">🇫🇷 +33 (FR)</option>
                                     <option value="+49">🇩🇪 +49 (DE)</option>
                                 </select>

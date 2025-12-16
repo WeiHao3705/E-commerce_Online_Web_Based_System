@@ -1,3 +1,29 @@
+// Initialize Stripe
+const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+const elements = stripe.elements();
+const cardElement = elements.create('card', {
+    style: {
+        base: {
+            fontSize: '16px',
+            color: '#32325d',
+            '::placeholder': {
+                color: '#aab7c4'
+            }
+        }
+    }
+});
+cardElement.mount('#card-element');
+
+// Handle card element errors
+cardElement.on('change', function(event) {
+    const displayError = document.getElementById('card-errors');
+    if (event.error) {
+        displayError.textContent = event.error.message;
+    } else {
+        displayError.textContent = '';
+    }
+});
+
 $(document).ready(function() {
     // Progress Step Management
     var currentStep = 1;
@@ -33,8 +59,20 @@ $(document).ready(function() {
     // Initialize first step as active
     updateProgressSteps(1);
     
+    // Handle payment method selection
+    $('input[name="payment"]').change(function() {
+        var paymentMethod = $(this).val();
+        if (paymentMethod === 'card') {
+            $('#card-payment-section').show();
+            $('#other-payment-section').hide();
+        } else {
+            $('#card-payment-section').hide();
+            $('#other-payment-section').show();
+        }
+    });
+    
     // Handle place order button click
-    $('#placeOrderBtn').click(function() {
+    $('#placeOrderBtn').click(async function() {
         // Validate delivery address form
         if (!$('#addressForm')[0].checkValidity()) {
             alert('Please fill in all required delivery address fields');
@@ -45,27 +83,26 @@ $(document).ready(function() {
         // Get selected payment method
         var paymentMethod = $('input[name="payment"]:checked').val();
         
+        // Collect address data
+        ORDER_DATA.address = $('#address1').val() + ' ' + $('#address2').val();
+        ORDER_DATA.city = $('#city').val();
+        ORDER_DATA.postcode = $('#postcode').val();
+        ORDER_DATA.state = $('#state').val();
+        
         // Progress to step 2 (Payment)
         currentStep = 2;
         updateProgressSteps(currentStep);
         
-        // Simulate payment processing
-        setTimeout(function() {
-            // Progress to step 3 (Order Review)
-            currentStep = 3;
-            updateProgressSteps(currentStep);
-            
-            // Confirm order after showing review step
-            setTimeout(function() {
-                if (confirm('Confirm order placement?')) {
-                    // Mark all steps as completed
-                    $('.step').addClass('completed').removeClass('active');
-                    alert('Order placed successfully! Payment method: ' + paymentMethod);
-                    // TODO: Redirect to order confirmation page
-                    // window.location.href = 'order-confirmation.php';
-                }
-            }, 1000);
-        }, 1500);
+        // Disable button to prevent double submission
+        $(this).prop('disabled', true).text('Processing...');
+        
+        if (paymentMethod === 'card') {
+            // Stripe payment flow
+            await processStripePayment();
+        } else {
+            alert('This payment method will be available soon');
+            $(this).prop('disabled', false).text('Place Order');
+        }
     });
     
     // Add visual feedback for payment method selection
@@ -127,3 +164,62 @@ $(document).ready(function() {
         }
     });
 });
+
+// Stripe payment processing function
+async function processStripePayment() {
+    try {
+        // Step 1: Create Payment Intent
+        const response = await fetch('create_payment_intent.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                amount: ORDER_DATA.total_amount,
+                orderData: ORDER_DATA
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to create payment intent');
+        }
+        
+        // Step 2: Confirm card payment
+        const {error, paymentIntent} = await stripe.confirmCardPayment(data.clientSecret, {
+            payment_method: {
+                card: cardElement
+            }
+        });
+        
+        if (error) {
+            throw new Error(error.message);
+        }
+        
+        // Step 3: Payment succeeded - save order to database
+        if (paymentIntent.status === 'succeeded') {
+            const orderResponse = await fetch('process_payment.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    paymentIntentId: paymentIntent.id
+                })
+            });
+            
+            const orderData = await orderResponse.json();
+            
+            if (!orderData.success) {
+                throw new Error(orderData.error || 'Failed to save order');
+            }
+            
+            // Progress to step 3 (Order Review)
+            $('.step').addClass('completed').removeClass('active');
+            
+            alert('Payment successful! Order ID: ' + orderData.orderId);
+            window.location.href = 'order_confirmation.php?order_id=' + orderData.orderId;
+        }
+        
+    } catch (error) {
+        alert('Payment failed: ' + error.message);
+        $('#placeOrderBtn').prop('disabled', false).text('Place Order');
+    }
+}

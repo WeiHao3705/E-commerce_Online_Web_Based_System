@@ -1,6 +1,12 @@
 <?php 
 if (session_status() === PHP_SESSION_NONE) session_start();
 
+// Redirect admins to AdminDashboard - they should not access member pages
+if (isset($_SESSION['user']) && isset($_SESSION['user']->role) && $_SESSION['user']->role === 'admin') {
+    header('Location: ../../views/admin/AdminDashboard.php');
+    exit;
+}
+
 // Get user_id from session (login stores it in $_SESSION['user']['user_id'])
 $userId = null;
 if (isset($_SESSION['user']) && isset($_SESSION['user']->user_id)) {
@@ -76,6 +82,7 @@ if (isset($_SESSION['user_id']) && !empty($selectedItemIds)) {
     foreach ($dbCartItems as $item) {
         $cartItems[] = [
             'id' => $item['cart_item_id'],
+            'product_id' => $item['product_id'],
             'image' => $item['image_path'] ?? '../../images/products/default.png',
             'name' => $item['product_name'],
             'variant' => $item['description'] ?? 'Standard',
@@ -224,7 +231,7 @@ $grandTotal = $subtotal + $shippingFee + $tax;
                         <input type="radio" name="payment" value="card" checked>
                         <div class="payment-card">
                             <i class="fas fa-credit-card"></i>
-                            <span>Credit/Debit Card</span>
+                            <span>Credit/Debit Card (Stripe)</span>
                         </div>
                     </label>
                     
@@ -243,6 +250,19 @@ $grandTotal = $subtotal + $shippingFee + $tax;
                             <span>E-Wallet</span>
                         </div>
                     </label>
+                </div>
+                
+                <!-- Stripe Card Element (shown when card is selected) -->
+                <div id="card-payment-section" style="margin-top: 20px;">
+                    <div id="card-element" style="padding: 12px; border: 1px solid #ccc; border-radius: 4px; background: white;">
+                        <!-- Stripe.js injects the Card Element here -->
+                    </div>
+                    <div id="card-errors" role="alert" style="color: #fa755a; margin-top: 10px;"></div>
+                </div>
+                
+                <!-- Other payment methods (hidden initially) -->
+                <div id="other-payment-section" style="display: none; margin-top: 20px;">
+                    <p style="color: #666;">This payment method will be available soon.</p>
                 </div>
             </div>
             
@@ -297,12 +317,26 @@ $grandTotal = $subtotal + $shippingFee + $tax;
         </div>
     </div>
 </div>
+<script src="https://js.stripe.com/v3/"></script>
 <script>
-    <?php if(isset($_SESSION['user_id'])): ?>
+    <?php 
+    require __DIR__ . '/../../config/stripe_config.php';
+    if(isset($_SESSION['user_id'])): ?>
         console.log('User is logged in with user_id: <?= $_SESSION['user_id'] ?>');
     <?php else: ?>
         console.log('User is not logged in.');
     <?php endif; ?>
+    
+    // Stripe configuration
+    const STRIPE_PUBLISHABLE_KEY = '<?= STRIPE_PUBLISHABLE_KEY ?>';
+    const ORDER_DATA = {
+        items: <?= json_encode($cartItems) ?>,
+        total_amount: <?= $grandTotal ?>,
+        address: '',
+        city: '',
+        postcode: '',
+        state: ''
+    };
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="../../js/checkout.js"></script>

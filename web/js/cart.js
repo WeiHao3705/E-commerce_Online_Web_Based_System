@@ -66,9 +66,10 @@ $(document).ready(function() {
             
             // Update database
             $.ajax({
-                url: window.location.href,
+                url: '../../controller/CartController.php',
                 type: 'POST',
                 data: { 
+                    action: 'updateQuantity',
                     cart_item_id: cartItemId,
                     quantity: newQty 
                 }
@@ -92,9 +93,10 @@ $(document).ready(function() {
             
             // Update database
             $.ajax({
-                url: window.location.href,
+                url: '../../controller/CartController.php',
                 type: 'POST',
                 data: { 
+                    action: 'updateQuantity',
                     cart_item_id: cartItemId,
                     quantity: newQty 
                 }
@@ -106,9 +108,12 @@ $(document).ready(function() {
                 
                 // Delete from database
                 $.ajax({
-                    url: window.location.href,
+                    url: '../../controller/CartController.php',
                     type: 'POST',
-                    data: { cart_item_id: cartItemId },
+                    data: { 
+                        action: 'delete',
+                        cart_item_id: cartItemId 
+                    },
                     dataType: 'json',
                     success: function(response) {
                         if (response.success) {
@@ -131,9 +136,12 @@ $(document).ready(function() {
             
             // Send AJAX request to delete from database
             $.ajax({
-                url: window.location.href,
+                url: '../../controller/CartController.php',
                 type: 'POST',
-                data: { cart_item_id: cartItemId },
+                data: { 
+                    action: 'delete',
+                    cart_item_id: cartItemId 
+                },
                 dataType: 'json',
                 success: function(response) {
                     if (response.success) {

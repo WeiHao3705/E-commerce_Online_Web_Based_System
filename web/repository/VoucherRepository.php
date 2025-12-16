@@ -661,6 +661,20 @@ class VoucherRepository
                 ];
             }
 
+            // Check if voucher has already been used by this member
+            $usageCheckSql = "SELECT user_id FROM voucher_usage 
+                              WHERE voucher_id = ? AND user_id = ?";
+            $usageCheckStmt = $this->db->prepare($usageCheckSql);
+            $usageCheckStmt->execute([$voucher['voucher_id'], $userId]);
+            $existingUsage = $usageCheckStmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($existingUsage) {
+                return [
+                    'success' => false,
+                    'message' => 'This voucher has already been used by you and cannot be redeemed again.'
+                ];
+            }
+
             // Assign voucher to member
             $assignSql = "INSERT INTO voucher_assignment (voucher_id, user_id, assigned_at, assigned_by) 
                          VALUES (?, ?, ?, NULL)";

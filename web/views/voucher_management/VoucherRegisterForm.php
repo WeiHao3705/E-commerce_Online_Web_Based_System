@@ -62,9 +62,6 @@ if (!empty($_POST)) {
     <link rel="stylesheet" href="<?php echo $prefix; ?>css/VoucherForm.css">
 </head>
 <body>
-    <!-- Include Navbar -->
-    <?php include __DIR__ . '/../../general/_navbar.php'; ?>
-
     <main class="voucher-main">
         <div class="voucher-container">
             <div class="mb-6">
@@ -312,9 +309,6 @@ if (!empty($_POST)) {
             </div>
         </div>
     </div>
-
-    <!-- Include Footer -->
-    <?php include __DIR__ . '/../../general/_footer.php'; ?>
 
     <script>
         // Bulk Import Modal

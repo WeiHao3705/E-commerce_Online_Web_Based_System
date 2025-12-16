@@ -4,9 +4,13 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit5726834464b54df5c26cde494ec31af2
+class ComposerStaticInit4e16e4e6aa435046f80ec55523ebe507
 {
     public static $prefixLengthsPsr4 = array (
+        'S' =>
+        array (
+            'Stripe\\' => 7,
+        ),
         'E' =>
         array (
             'Endroid\\QrCode\\' => 15,
@@ -19,9 +23,17 @@ class ComposerStaticInit5726834464b54df5c26cde494ec31af2
         array (
             'BaconQrCode\\' => 12,
         ),
+        'A' =>
+        array (
+            'App\\' => 4,
+        ),
     );
 
     public static $prefixDirsPsr4 = array (
+        'Stripe\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/stripe/stripe-php/lib',
+        ),
         'Endroid\\QrCode\\' =>
         array (
             0 => __DIR__ . '/..' . '/endroid/qr-code/src',
@@ -34,6 +46,10 @@ class ComposerStaticInit5726834464b54df5c26cde494ec31af2
         array (
             0 => __DIR__ . '/..' . '/bacon/bacon-qr-code/src',
         ),
+        'App\\' =>
+        array (
+            0 => __DIR__ . '/../..' . '/web',
+        ),
     );
 
     public static $classMap = array (
@@ -43,9 +59,9 @@ class ComposerStaticInit5726834464b54df5c26cde494ec31af2
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit5726834464b54df5c26cde494ec31af2::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit5726834464b54df5c26cde494ec31af2::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInit5726834464b54df5c26cde494ec31af2::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit4e16e4e6aa435046f80ec55523ebe507::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit4e16e4e6aa435046f80ec55523ebe507::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit4e16e4e6aa435046f80ec55523ebe507::$classMap;
 
         }, null, ClassLoader::class);
     }

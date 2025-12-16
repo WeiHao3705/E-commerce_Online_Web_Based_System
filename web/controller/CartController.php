@@ -1,0 +1,100 @@
+<?php
+session_start();
+require __DIR__ . '/../database/connection.php';
+
+header('Content-Type: application/json');
+
+class CartController {
+    private $conn;
+    
+    public function __construct($connection) {
+        $this->conn = $connection;
+    }
+    
+    private function getUserId() {
+        if (isset($_SESSION['user']) && isset($_SESSION['user']->user_id)) {
+            return $_SESSION['user']->user_id;
+        } elseif (isset($_SESSION['user_id'])) {
+            return $_SESSION['user_id'];
+        }
+        return null;
+    }
+    
+    public function deleteCartItem() {
+        $userId = $this->getUserId();
+        if (!$userId) {
+            echo json_encode(['success' => false, 'message' => 'User not logged in']);
+            return;
+        }
+        
+        $cartItemId = (int) ($_POST['cart_item_id'] ?? 0);
+        if ($cartItemId <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Invalid cart item ID']);
+            return;
+        }
+        
+        $deleteQuery = "DELETE ci FROM cart_item ci 
+                        JOIN shopping_cart sc ON ci.cart_id = sc.cart_id 
+                        WHERE ci.cart_item_id = :cart_item_id 
+                        AND sc.user_id = :user_id";
+        
+        $stmt = $this->conn->prepare($deleteQuery);
+        $stmt->execute([
+            ':cart_item_id' => $cartItemId,
+            ':user_id' => $userId
+        ]);
+        
+        echo json_encode(['success' => $stmt->rowCount() > 0]);
+    }
+    
+    public function updateQuantity() {
+        $userId = $this->getUserId();
+        if (!$userId) {
+            echo json_encode(['success' => false, 'message' => 'User not logged in']);
+            return;
+        }
+        
+        $cartItemId = (int) ($_POST['cart_item_id'] ?? 0);
+        $quantity = max(1, min(99, (int) ($_POST['quantity'] ?? 1)));
+        
+        if ($cartItemId <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Invalid cart item ID']);
+            return;
+        }
+        
+        $updateQuery = "UPDATE cart_item ci
+                        JOIN shopping_cart sc ON ci.cart_id = sc.cart_id
+                        SET ci.quantity = :quantity
+                        WHERE ci.cart_item_id = :cart_item_id
+                        AND sc.user_id = :user_id";
+        
+        $stmt = $this->conn->prepare($updateQuery);
+        $stmt->execute([
+            ':quantity' => $quantity,
+            ':cart_item_id' => $cartItemId,
+            ':user_id' => $userId
+        ]);
+        
+        echo json_encode(['success' => $stmt->rowCount() > 0]);
+    }
+}
+
+// Initialize controller
+$db = new Database();
+$conn = $db->getConnection();
+$controller = new CartController($conn);
+
+// Route based on action
+$action = $_POST['action'] ?? '';
+
+switch ($action) {
+    case 'delete':
+        $controller->deleteCartItem();
+        break;
+    case 'updateQuantity':
+        $controller->updateQuantity();
+        break;
+    default:
+        echo json_encode(['success' => false, 'message' => 'Invalid action']);
+        break;
+}
