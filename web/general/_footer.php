@@ -31,7 +31,6 @@
                     <li><a href="<?php echo $webBasePath; ?>index.php">Home</a></li>
                     <li><a href="<?php echo $webBasePath; ?>views/product/ProductPage.php">Products</a></li>
                     <li><a href="<?php echo $webBasePath; ?>about.php">About Us</a></li>
-                    <li><a href="<?php echo $webBasePath; ?>contact.php">Contact</a></li>
                 </ul>
             </div>
 
@@ -44,8 +43,7 @@
                     ?>
                     <li><a href="<?php echo $controllerBasePath; ?>VoucherController.php?action=showMemberVouchers">My Vouchers</a></li>
                     <li><a href="<?php echo $webBasePath; ?>return-policy.php">Return Policy</a></li>
-                    <li><a href="<?php echo $webBasePath; ?>blog.php">Blog</a></li>
-                    <li><a href="<?php echo $webBasePath; ?>affiliate.php">Join Affiliate</a></li>
+                    <li><a href="<?php echo $webBasePath; ?>contact.php">Contact</a></li>
                 </ul>
             </div>
 

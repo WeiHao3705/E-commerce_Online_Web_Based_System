@@ -516,6 +516,52 @@ $recentOrders = [
                 restoreViewFromHash();
             });
 
+            // Prevent back navigation to login page or home page
+            (function() {
+                var dashboardUrl = window.location.href;
+                
+                // Replace the previous history entry if it was login/home page
+                // This prevents the back button from going to those pages
+                if (window.history.length > 1) {
+                    window.history.replaceState(
+                        { page: 'admin-dashboard', preventBack: true },
+                        document.title,
+                        dashboardUrl
+                    );
+                }
+                
+                // Push current state to ensure we have a valid entry
+                window.history.pushState(
+                    { page: 'admin-dashboard', preventBack: true },
+                    document.title,
+                    dashboardUrl
+                );
+            })();
+
+            // Intercept browser back/forward navigation (mouse side button, browser back button) using jQuery
+            $(window).on('popstate', function(event) {
+                var currentUrl = window.location.href;
+                
+                // Check if trying to navigate to login, account, or home page (but not admin pages)
+                var isLoginPage = currentUrl.indexOf('LoginForm.php') !== -1;
+                var isAccountPage = currentUrl.indexOf('account.php') !== -1;
+                var isHomePage = currentUrl.indexOf('index.php') !== -1 && currentUrl.indexOf('/admin/') === -1;
+                
+                // If trying to go back to any of these pages, prevent it
+                if (isLoginPage || isAccountPage || isHomePage) {
+                    // Immediately redirect back to dashboard without adding to history
+                    window.location.replace('<?php echo $viewsBasePath; ?>admin/AdminDashboard.php');
+                    return;
+                }
+                
+                // If we have a valid dashboard state, restore the view
+                if (event.originalEvent && event.originalEvent.state && event.originalEvent.state.page === 'admin-dashboard') {
+                    restoreViewFromHash();
+                } else if (event.state && event.state.page === 'admin-dashboard') {
+                    restoreViewFromHash();
+                }
+            });
+
             // Sidebar toggle functionality
             var sidebar = $('#admin-sidebar');
             var sidebarToggle = $('#sidebar-toggle');

@@ -9,7 +9,11 @@ require_once __DIR__ . '/../DTO/VoucherDTO.php';
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Endroid\QrCode\QrCode;
-use Endroid\QrCode\Writer\SvgWriter;
+use Endroid\QrCode\Writer\PngWriter;
+use Endroid\QrCode\Logo\Logo;
+use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\Color\Color;
+use Endroid\QrCode\RoundBlockSizeMode;
 
 class VoucherController
 {
@@ -643,12 +647,21 @@ class VoucherController
 
             // Build a safe filename for download
             $safeCode = preg_replace('/[^A-Za-z0-9_\-]/', '_', $voucherCode);
-            $fileName = 'voucher_' . $safeCode . '.svg';
+            $fileName = 'voucher_' . $safeCode . '.png';
 
-            // Generate QR code as SVG (does not require GD extension)
-            $qrCode = new QrCode($voucherCode);
+            // Generate QR code with brand colors (#FF523B)
+            $qrCode = new QrCode(
+                $voucherCode,
+                new \Endroid\QrCode\Encoding\Encoding('UTF-8'),
+                ErrorCorrectionLevel::High,
+                300,
+                10,  // margin
+                RoundBlockSizeMode::Margin,
+                new Color(255, 82, 59),  // Foreground: #FF523B (brand red)
+                new Color(255, 255, 255)  // Background: White
+            );
 
-            $writer = new SvgWriter();
+            $writer = new PngWriter();
             $result = $writer->write($qrCode);
 
             // Send headers for file download
@@ -686,15 +699,25 @@ class VoucherController
 
             $voucherCode = trim($_GET['code']);
 
-            // Generate QR code as SVG string for inline display
-            $qrCode = new QrCode($voucherCode);
-            $writer = new SvgWriter();
+            // Generate QR code with brand colors (#FF523B)
+            $qrCode = new QrCode(
+                $voucherCode,
+                new \Endroid\QrCode\Encoding\Encoding('UTF-8'),
+                ErrorCorrectionLevel::High,
+                300,
+                10,  // margin
+                RoundBlockSizeMode::Margin,
+                new Color(255, 82, 59),  // Foreground: #FF523B (brand red)
+                new Color(255, 255, 255)  // Background: White
+            );
+
+            $writer = new PngWriter();
             $result = $writer->write($qrCode);
             $svgContent = $result->getString();
 
             // Build a safe filename hint for the view (used in title / labels)
             $safeCode = preg_replace('/[^A-Za-z0-9_\-]/', '_', $voucherCode);
-            $fileName = 'voucher_' . $safeCode . '.svg';
+            $fileName = 'voucher_' . $safeCode . '.png';
 
             // Include a simple preview view
             require __DIR__ . '/../views/voucher_management/VoucherQrPreview.php';
