@@ -185,8 +185,6 @@
                 }
             ],
             "install-path": "../endroid/qr-code"
-<<<<<<< HEAD
-=======
         },
         {
             "name": "stripe/stripe-php",
@@ -249,7 +247,6 @@
                 "source": "https://github.com/stripe/stripe-php/tree/v13.18.0"
             },
             "install-path": "../stripe/stripe-php"
->>>>>>> 033e4aec69a67c7b719cd0e1c7a26318915e59bd
         }
     ],
     "dev": true,

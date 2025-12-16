@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -488,11 +488,7 @@ $recentOrders = [
                 var view = parts[0];
                 var url = parts.length > 1 ? decodeURIComponent(parts[1]) : null;
 
-<<<<<<< HEAD
-                if (view === 'members' || view === 'admins' || view === 'vouchers' || view === 'admin_profile') {
-=======
                 if (view === 'members' || view === 'admins' || view === 'products' || view === 'vouchers' || view === 'admin_profile') {
->>>>>>> 033e4aec69a67c7b719cd0e1c7a26318915e59bd
                     // Get URL from navigation item if not in hash
                     if (!url) {
                         var navItem = $('.admin-nav-item[data-view="' + view + '"]');

@@ -4,11 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-<<<<<<< HEAD
-    "content-hash": "0300fd4fc78913c6a623fb7438c09fec",
-=======
     "content-hash": "4e16e4e6aa435046f80ec55523ebe507",
->>>>>>> 033e4aec69a67c7b719cd0e1c7a26318915e59bd
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -186,8 +182,6 @@
                 }
             ],
             "time": "2025-07-13T19:59:45+00:00"
-<<<<<<< HEAD
-=======
         },
         {
             "name": "stripe/stripe-php",
@@ -247,7 +241,6 @@
                 "source": "https://github.com/stripe/stripe-php/tree/v13.18.0"
             },
             "time": "2024-04-09T21:08:04+00:00"
->>>>>>> 033e4aec69a67c7b719cd0e1c7a26318915e59bd
         }
     ],
     "packages-dev": [],
@@ -256,13 +249,9 @@
     "stability-flags": {},
     "prefer-stable": false,
     "prefer-lowest": false,
-<<<<<<< HEAD
-    "platform": {},
-=======
     "platform": {
         "php": ">=7.4"
     },
->>>>>>> 033e4aec69a67c7b719cd0e1c7a26318915e59bd
     "platform-dev": {},
     "plugin-api-version": "2.9.0"
 }

@@ -6,15 +6,9 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
-<<<<<<< HEAD
-    'Endroid\\QrCode\\' => array($vendorDir . '/endroid/qr-code/src'),
-    'DASPRiD\\Enum\\' => array($vendorDir . '/dasprid/enum/src'),
-    'BaconQrCode\\' => array($vendorDir . '/bacon/bacon-qr-code/src'),
-=======
     'Stripe\\' => array($vendorDir . '/stripe/stripe-php/lib'),
     'Endroid\\QrCode\\' => array($vendorDir . '/endroid/qr-code/src'),
     'DASPRiD\\Enum\\' => array($vendorDir . '/dasprid/enum/src'),
     'BaconQrCode\\' => array($vendorDir . '/bacon/bacon-qr-code/src'),
     'App\\' => array($baseDir . '/web'),
->>>>>>> 033e4aec69a67c7b719cd0e1c7a26318915e59bd
 );

@@ -1,8 +1,4 @@
 {
-<<<<<<< HEAD
-    "require": {
-        "endroid/qr-code": "^6.0"
-=======
     "name": "ecommerce/online-web-system",
     "description": "E-commerce Online Web Based System",
     "type": "project",
@@ -15,6 +11,5 @@
         "psr-4": {
             "App\\": "web/"
         }
->>>>>>> 033e4aec69a67c7b719cd0e1c7a26318915e59bd
     }
 }
