@@ -47,7 +47,6 @@ $prefix = $webBasePath;
                                 <li><a href="<?php echo $prefix; ?>orders.php"><i class="fas fa-box"></i> My Orders</a></li>
                                 <li><a href="<?php echo $prefix; ?>controller/VoucherController.php?action=showMemberVouchers"><i class="fas fa-ticket-alt"></i> My Vouchers</a></li>
                                 <li><a href="<?php echo $prefix; ?>wishlist.php"><i class="fas fa-heart"></i> Wishlist</a></li>
-                                <li><a href="<?php echo $prefix; ?>settings.php"><i class="fas fa-cog"></i> Settings</a></li>
                                 <li class="divider"></li>
                                 <li><a href="<?php echo $prefix; ?>logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                             </ul>

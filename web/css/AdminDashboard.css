@@ -128,8 +128,9 @@ body {
 }
 
 .admin-sidebar-logo {
-    color: var(--primary);
-    font-size: 1.875rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    object-fit: contain;
 }
 
 .admin-sidebar-title {
@@ -144,6 +145,15 @@ body {
     gap: 0.75rem;
     align-items: center;
     margin-bottom: 1rem;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.admin-user-profile:hover {
+    background-color: rgba(255, 82, 59, 0.05);
 }
 
 .admin-user-avatar {
