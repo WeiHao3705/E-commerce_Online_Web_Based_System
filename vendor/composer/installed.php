@@ -3,7 +3,7 @@
         'name' => 'ecommerce/online-web-system',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '94df857979f06852f92122eee654333dd1c826df',
+        'reference' => '002bab2d75292482ac2d42130d48b4609d2e69a1',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -31,7 +31,7 @@
         'ecommerce/online-web-system' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '94df857979f06852f92122eee654333dd1c826df',
+            'reference' => '002bab2d75292482ac2d42130d48b4609d2e69a1',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
