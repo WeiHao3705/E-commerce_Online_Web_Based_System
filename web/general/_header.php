@@ -235,4 +235,5 @@
     </style>
 </head>
 
-<body></body>
+<body data-user-role="<?php echo isset($_SESSION['user']) ? $_SESSION['user']->role : ''; ?>" 
+      data-user-id="<?php echo isset($_SESSION['user']) ? $_SESSION['user']->user_id : ''; ?>">

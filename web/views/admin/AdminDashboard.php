@@ -4,8 +4,17 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Check if user is logged in and is admin
-if (!isset($_SESSION['user']) || $_SESSION['user']->role !== 'admin') {
+if (!isset($_SESSION['user'])) {
+    // Not logged in - redirect to login
     header('Location: ../security/login.php');
+    exit;
+}
+
+// Check if user has admin role
+if ($_SESSION['user']->role !== 'admin') {
+    // User is logged in but not admin - redirect to member home
+    $_SESSION['error_message'] = 'Access denied. Admin privileges required.';
+    header('Location: ../../index.php');
     exit;
 }
 
@@ -118,6 +127,8 @@ $recentOrders = [
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+    <!-- Font Awesome for chat icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AdminDashboard.css">
 </head>
 
@@ -579,6 +590,13 @@ $recentOrders = [
 
         });
     </script>
+
+    <?php
+    // Include chat component for admin to reply to messages
+    if (isset($_SESSION['user']) && $_SESSION['user']->role === 'admin') {
+        include __DIR__ . '/../chat/chat.php';
+    }
+    ?>
 </body>
 
 </html>

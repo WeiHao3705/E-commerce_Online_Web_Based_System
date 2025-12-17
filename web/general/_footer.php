@@ -351,6 +351,12 @@
     }
 </style>
 
+<?php
+if (isset($_SESSION['user']) && !empty($_SESSION['user'])) {
+    include __DIR__ . '/../views/chat/chat.php';
+}
+?>
+
 </body>
 
 </html>

@@ -3,10 +3,19 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Check if user is logged in and is admin
-if (!isset($_SESSION['user']) || $_SESSION['user']->role !== 'admin') {
+// Check if user is logged in
+if (!isset($_SESSION['user'])) {
     header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+    http_response_code(401);
+    echo json_encode(['success' => false, 'error' => 'Unauthorized. Please log in.']);
+    exit;
+}
+
+// Check if user has admin role
+if ($_SESSION['user']->role !== 'admin') {
+    header('Content-Type: application/json');
+    http_response_code(403);
+    echo json_encode(['success' => false, 'error' => 'Forbidden. Admin privileges required.']);
     exit;
 }
 

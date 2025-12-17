@@ -4,8 +4,17 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Only admins can access
-if (!isset($_SESSION['user']) || $_SESSION['user']->role !== 'admin') {
+if (!isset($_SESSION['user'])) {
+	// Not logged in - redirect to login
 	header('Location: ../../security/login.php');
+	exit;
+}
+
+// Check if user has admin role
+if ($_SESSION['user']->role !== 'admin') {
+	// User is logged in but not admin - redirect to member home
+	$_SESSION['error_message'] = 'Access denied. Admin privileges required.';
+	header('Location: ../../../index.php');
 	exit;
 }
 

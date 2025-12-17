@@ -3,8 +3,9 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Check if user is logged in and is admin
+// Check if user is logged in
 if (!isset($_SESSION['user'])) {
+    // Not logged in - redirect to login
     header('Location: ../security/login.php');
     exit;
 }
@@ -12,7 +13,9 @@ if (!isset($_SESSION['user'])) {
 // Check if user has admin role
 $userRole = isset($_SESSION['user']->role) ? $_SESSION['user']->role : (isset($_SESSION['user']['role']) ? $_SESSION['user']['role'] : '');
 if ($userRole !== 'admin') {
-    header('Location: ../security/login.php');
+    // User is logged in but not admin - redirect to member home
+    $_SESSION['error_message'] = 'Access denied. Admin privileges required.';
+    header('Location: ../../index.php');
     exit;
 }
 

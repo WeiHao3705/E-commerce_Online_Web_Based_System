@@ -14,8 +14,18 @@ $relativePath = str_replace($docRoot, '', $webRootDir);
 $imageBasePath = str_replace('\\', '/', $relativePath) . '/';
 $cssBasePath = $imageBasePath . 'css/';
 
-if (!isset($_SESSION['user']) || $_SESSION['user']->role !== 'admin') {
+// Check if user is logged in
+if (!isset($_SESSION['user'])) {
+    // Not logged in - redirect to login
     header('Location: ../security/login.php');
+    exit;
+}
+
+// Check if user has admin role
+if ($_SESSION['user']->role !== 'admin') {
+    // User is logged in but not admin - redirect to member home
+    $_SESSION['error_message'] = 'Access denied. Admin privileges required.';
+    header('Location: ../../index.php');
     exit;
 }
 

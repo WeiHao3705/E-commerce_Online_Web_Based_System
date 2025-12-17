@@ -223,3 +223,27 @@ CREATE TABLE voucher_assignment (
     INDEX idx_assigned_at (assigned_at)
 );
 
+CREATE TABLE chat_room (
+    chat_room_id INT AUTO_INCREMENT PRIMARY KEY,
+    member_id INT NOT NULL,
+    admin_id INT NULL,
+    status ENUM('open','closed') DEFAULT 'open',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    closed_at TIMESTAMP NULL,
+
+    FOREIGN KEY (member_id) REFERENCES users(user_id),
+    FOREIGN KEY (admin_id) REFERENCES users(user_id)
+);
+
+CREATE TABLE chat_message (
+    message_id INT AUTO_INCREMENT PRIMARY KEY,
+    chat_room_id INT NOT NULL,
+    sender_id INT NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (chat_room_id) REFERENCES chat_room(chat_room_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (sender_id) REFERENCES users(user_id)
+);
