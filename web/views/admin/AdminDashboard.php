@@ -5,7 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Check if user is logged in and is admin
 if (!isset($_SESSION['user']) || $_SESSION['user']->role !== 'admin') {
-    header('Location: ../security/LoginForm.php');
+    header('Location: ../security/login.php');
     exit;
 }
 
@@ -543,7 +543,7 @@ $recentOrders = [
                 var currentUrl = window.location.href;
                 
                 // Check if trying to navigate to login, account, or home page (but not admin pages)
-                var isLoginPage = currentUrl.indexOf('LoginForm.php') !== -1;
+                var isLoginPage = currentUrl.indexOf('login.php') !== -1;
                 var isAccountPage = currentUrl.indexOf('account.php') !== -1;
                 var isHomePage = currentUrl.indexOf('index.php') !== -1 && currentUrl.indexOf('/admin/') === -1;
                 

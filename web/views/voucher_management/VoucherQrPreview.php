@@ -5,7 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Basic access check: only admins should access this page
 if (!isset($_SESSION['user']) || $_SESSION['user']->role !== 'admin') {
-    header('Location: ../../views/security/LoginForm.php');
+    header('Location: ../../views/security/login.php');
     exit;
 }
 

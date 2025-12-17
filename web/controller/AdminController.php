@@ -20,7 +20,7 @@ class AdminController
     {
         if (!isset($_SESSION['user']) || $_SESSION['user']->role !== 'admin') {
             $_SESSION['error_message'] = 'You must be logged in as admin to access this page.';
-            header('Location: ../views/security/LoginForm.php');
+            header('Location: ../views/security/login.php');
             exit;
         }
     }

@@ -137,7 +137,7 @@ if ($errorMessage) {
             
             <!-- Back to Login Link -->
             <div class="back-link">
-                <a href="<?php echo htmlspecialchars($prefix); ?>views/security/LoginForm.php">
+                <a href="<?php echo htmlspecialchars($prefix); ?>views/security/login.php">
                     <i class="fas fa-arrow-left"></i> 
                     Back to Login
                 </a>

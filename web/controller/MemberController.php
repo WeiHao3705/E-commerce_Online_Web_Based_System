@@ -59,13 +59,13 @@ class MemberController
                 if ($userDTO->getRole() === 'admin') {
                     header('Location: ../views/admin/AdminDashboard.php');
                 } else {
-                    header('Location: ../index.php');
+                    header('Location: /index.php');
                 }
                 exit;
             }
         } catch (Exception $e) {
             $_SESSION['error_message'] = $e->getMessage();
-            header('Location: ../views/security/LoginForm.php');
+            header('Location: ../views/security/login.php');
             exit;
         }
     }
@@ -76,7 +76,7 @@ class MemberController
         session_destroy();
         session_start();
         $_SESSION['success_message'] = 'You have been logged out';
-        header('Location: ../index.php');
+        header('Location: /index.php');
         exit;
     }
 
@@ -167,7 +167,7 @@ class MemberController
 
             if ($result['success']) {
                 $_SESSION['success_message'] = 'Email verified successfully! You can now log in.';
-                header('Location: ../views/security/LoginForm.php');
+                header('Location: ../views/security/login.php');
             } else {
                 $_SESSION['error_message'] = $result['message'];
                 header('Location: ../views/security/email_verification.php');
@@ -531,7 +531,7 @@ class MemberController
                 // Use the general success message so it shows on the login page,
                 // and does not persist as a forgot-password specific message.
                 $_SESSION['success_message'] = 'Password updated successfully. You may now log in.';
-                header('Location: ../views/security/LoginForm.php');
+                header('Location: ../views/security/login.php');
                 exit;
             } else {
                 $_SESSION['fp_message'] = 'Failed to update password. Please try again.';

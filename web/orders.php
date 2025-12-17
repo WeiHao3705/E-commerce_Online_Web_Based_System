@@ -3,7 +3,7 @@ session_start();
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id']) && !isset($_SESSION['user'])) {
-    header('Location: views/security/LoginForm.php');
+    header('Location: views/security/login.php');
     exit;
 }
 

@@ -15,7 +15,7 @@ $imageBasePath = str_replace('\\', '/', $relativePath) . '/';
 $cssBasePath = $imageBasePath . 'css/';
 
 if (!isset($_SESSION['user']) || $_SESSION['user']->role !== 'admin') {
-    header('Location: ../security/LoginForm.php');
+    header('Location: ../security/login.php');
     exit;
 }
 

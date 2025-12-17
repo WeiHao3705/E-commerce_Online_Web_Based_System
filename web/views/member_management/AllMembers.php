@@ -20,7 +20,7 @@ $viewsBasePath = $imageBasePath . 'views/'; // Views files are in web/views/
 
 // Check if user is logged in and is admin
 if (!isset($_SESSION['user']) || $_SESSION['user']->role !== 'admin') {
-    header('Location: ../views/security/LoginForm.php');
+    header('Location: ../views/security/login.php');
     exit;
 }
 

@@ -62,7 +62,7 @@ $pageTitle = 'Forgot Password';
                     <i class="fas fa-arrow-left"></i> Back
                 </a>
             <?php else: ?>
-                <a href="<?php echo $prefix; ?>views/security/LoginForm.php" class="back-link" style="display:inline-flex;align-items:center;gap:8px;color:#fff;text-decoration:none;font-size:14px;opacity:0.8;transition:opacity 0.2s;">
+                <a href="<?php echo $prefix; ?>views/security/login.php" class="back-link" style="display:inline-flex;align-items:center;gap:8px;color:#fff;text-decoration:none;font-size:14px;opacity:0.8;transition:opacity 0.2s;">
                     <i class="fas fa-arrow-left"></i> Back to Login
                 </a>
             <?php endif; ?>
