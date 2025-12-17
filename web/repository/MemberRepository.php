@@ -529,4 +529,26 @@ class MembershipRepository
             throw new Exception("Error bulk deleting members: " . $e->getMessage());
         }
     }
+
+    // Failed login tracking methods
+    public function incrementFailedLoginAttempts($username)
+    {
+        $sql = "UPDATE users SET failed_login_attempts = failed_login_attempts + 1, last_failed_login = NOW() WHERE username = ?";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$username]);
+    }
+
+    public function resetFailedLoginAttempts($username)
+    {
+        $sql = "UPDATE users SET failed_login_attempts = 0, last_failed_login = NULL WHERE username = ?";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$username]);
+    }
+
+    public function blockUser($username)
+    {
+        $sql = "UPDATE users SET status = 'blocked' WHERE username = ?";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$username]);
+    }
 }
