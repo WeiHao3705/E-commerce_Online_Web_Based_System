@@ -37,12 +37,13 @@ $pageTitle = 'Member Login';
     <link rel="stylesheet" href="<?php echo $prefix; ?>css/Login.css">
 </head>
 
-<body style="background: url('<?php echo $prefix; ?>images/Login_Signup/login.jpg') center top / cover no-repeat;">
+<body class="login-page-body">
 
     <?php include __DIR__ . '/../../general/_navbar.php'; ?>
 
     <?php
     $login_error = '';
+    $saved_username = '';
     if (isset($_SESSION['success_message'])) {
         echo '<div class="success-popup">' . htmlspecialchars($_SESSION['success_message']) . '</div>';
         unset($_SESSION['success_message']);
@@ -51,10 +52,14 @@ $pageTitle = 'Member Login';
         $login_error = htmlspecialchars($_SESSION['error_message']);
         unset($_SESSION['error_message']);
     }
+    if (isset($_SESSION['login_username'])) {
+        $saved_username = htmlspecialchars($_SESSION['login_username']);
+        unset($_SESSION['login_username']);
+    }
     ?>
 
     <div class="registration-wrapper">
-        <div class="registration-container" style="max-width:500px;padding:40px;">
+        <div class="registration-container login-container">
             <div class="form-header">
                 <h2>Log In</h2>
                 <p>Welcome back — please enter your details.</p>
@@ -65,13 +70,13 @@ $pageTitle = 'Member Login';
 
                 <div class="form-group">
                     <label for="username">Username</label>
-                    <div class="input-wrapper">
-                        <span class="material-symbols-outlined input-icon">person</span>
-                        <input type="text" id="username" name="username" class="form-control" placeholder="Username" required>
-                    </div>
                     <?php if (!empty($login_error)): ?>
                         <div class="field-error"><?php echo $login_error; ?></div>
                     <?php endif; ?>
+                    <div class="input-wrapper">
+                        <span class="material-symbols-outlined input-icon">person</span>
+                        <input type="text" id="username" name="username" class="form-control" placeholder="Username" value="<?php echo $saved_username; ?>" required>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -83,7 +88,7 @@ $pageTitle = 'Member Login';
                     </div>
                 </div>
 
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <div class="forgot-password-row">
                     <div></div>
                     <div class="forgot-link"><a href="<?php echo $prefix; ?>views/security/forgot_password.php?start=1">Forgot your password?</a></div>
                 </div>

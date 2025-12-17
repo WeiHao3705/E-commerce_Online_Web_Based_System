@@ -181,21 +181,59 @@ class MembershipServices
             throw new Exception('Invalid username or password');
         }
 
-        $verify = password_verify($password, $user['password']);
+        // Check if this is an admin user
+        $isAdmin = isset($user['role']) && strtolower($user['role']) === 'admin';
 
-        if (!$verify) {
-            error_log("Auth debug: password_verify failed for username='{$username}'");
-            throw new Exception('Invalid username or password');
+        // Check if account is blocked (only for non-admin users)
+        if (!$isAdmin && isset($user['status']) && strtolower($user['status']) === 'blocked') {
+            unset($_SESSION['login_username']);
+            throw new Exception('Your account has been blocked due to multiple failed login attempts. Please use the "Forgot Password" option to reset your password.');
         }
 
-        // Block login for banned users
+        // Check if account is banned
         if (isset($user['status']) && strtolower($user['status']) === 'banned') {
             throw new Exception('Your account has been banned. Please contact support.');
         }
 
-        // Block login if email not verified
-        if (isset($user['email_verified']) && !$user['email_verified']) {
+        // Verify password
+        $verify = password_verify($password, $user['password']);
+
+        if (!$verify) {
+            error_log("Auth debug: password_verify failed for username='{$username}'");
+            
+            // Only track failed attempts for non-admin users
+            if (!$isAdmin) {
+                // Increment failed login attempts
+                $this->membershipRepository->incrementFailedLoginAttempts($username);
+                
+                // Get updated user data to check failed attempts
+                $user = $this->membershipRepository->getMemberByUsername($username);
+                $failedAttempts = isset($user['failed_login_attempts']) ? (int)$user['failed_login_attempts'] : 0;
+                
+                // Block account after 3 failed attempts
+                if ($failedAttempts >= 3) {
+                    $this->membershipRepository->blockUser($username);
+                    unset($_SESSION['login_username']);
+                    throw new Exception('Your account has been blocked due to multiple failed login attempts. Please use the "Forgot Password" option to reset your password.');
+                }
+                
+                $remainingAttempts = 3 - $failedAttempts;
+                $_SESSION['login_username'] = $username;
+                throw new Exception("Invalid username or password. You have {$remainingAttempts} attempt(s) remaining before your account is blocked.");
+            } else {
+                // Simple error message for admins without attempt tracking
+                throw new Exception('Invalid username or password');
+            }
+        }
+
+        // Block login if email not verified (only for non-admin users)
+        if (!$isAdmin && isset($user['email_verified']) && !$user['email_verified']) {
             throw new Exception('Please verify your email before logging in.');
+        }
+
+        // Reset failed login attempts on successful login (for all users)
+        if (!$isAdmin) {
+            $this->membershipRepository->resetFailedLoginAttempts($username);
         }
 
         // Build DTO
