@@ -1,9 +1,15 @@
 <?php 
 session_start();
 
+// Generate device fingerprint for tracking
+$device_fingerprint = md5($_SERVER['HTTP_USER_AGENT'] . $_SERVER['REMOTE_ADDR']);
+
 // CAPTCHA verification for first-time visitors
-// Check if user has not verified CAPTCHA yet (except admins and logged-in users)
-if (!isset($_SESSION['captcha_verified']) || $_SESSION['captcha_verified'] !== true) {
+// Check if device has verified CAPTCHA (via cookie - valid for 1 week)
+$captcha_cookie_valid = isset($_COOKIE['captcha_verified']) && $_COOKIE['captcha_verified'] === $device_fingerprint;
+$captcha_session_valid = isset($_SESSION['captcha_verified']) && $_SESSION['captcha_verified'] === true;
+
+if (!$captcha_cookie_valid && !$captcha_session_valid) {
     // Allow admins and logged-in users to bypass CAPTCHA
     if (empty($_SESSION['user'])) {
         // First-time visitor needs to verify CAPTCHA
@@ -11,6 +17,15 @@ if (!isset($_SESSION['captcha_verified']) || $_SESSION['captcha_verified'] !== t
         exit;
     } else {
         // Logged-in users automatically have CAPTCHA verified
+        $_SESSION['captcha_verified'] = true;
+        
+        // Also set cookie for 7 days
+        $cookie_expiry = time() + (7 * 24 * 60 * 60);
+        setcookie('captcha_verified', $device_fingerprint, $cookie_expiry, '/');
+    }
+} else {
+    // If cookie is valid but session isn't, sync them
+    if ($captcha_cookie_valid && !$captcha_session_valid) {
         $_SESSION['captcha_verified'] = true;
     }
 }
