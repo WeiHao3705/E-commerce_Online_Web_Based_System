@@ -164,20 +164,20 @@ $recentOrders = [
         <!-- Sidebar -->
         <aside class="admin-sidebar" id="admin-sidebar">
             <div class="admin-sidebar-header">
-                <span class="material-symbols-outlined admin-sidebar-logo">sports_soccer</span>
+                <img src="<?php echo $webBasePath; ?>images/logo/logo1.png" alt="NGEAR" class="admin-sidebar-logo">
                 <h1 class="admin-sidebar-title">NGear</h1>
                 <button class="admin-sidebar-toggle" id="sidebar-toggle" title="Toggle Sidebar">
                     <span class="material-symbols-outlined">menu</span>
                 </button>
             </div>
 
-            <div class="admin-user-profile">
+            <a href="#" class="admin-user-profile" id="adminProfileLink" data-view="admin_profile" data-url="<?php echo $viewsBasePath; ?>admin/AdminProfile.php">
                 <div class="admin-user-avatar" style="background-image: url('<?php echo htmlspecialchars($adminAvatar); ?>');"></div>
                 <div class="admin-user-info">
                     <h2 class="admin-user-name"><?php echo htmlspecialchars($adminName); ?></h2>
                     <p class="admin-user-role">Administrator</p>
                 </div>
-            </div>
+            </a>
 
             <nav class="admin-nav">
                 <a href="#" data-view="dashboard" class="admin-nav-item active">
@@ -200,27 +200,6 @@ $recentOrders = [
                     <span class="material-symbols-outlined">sell</span>
                     <p>Vouchers</p>
                 </a>
-                <!-- Settings dropdown -->
-                <div class="admin-nav-dropdown">
-                    <a href="#"
-                       class="admin-nav-item"
-                       id="settingsToggle"
-                       data-view="admin_profile"
-                       data-url="<?php echo $viewsBasePath; ?>admin/AdminProfile.php">
-                        <span class="material-symbols-outlined">settings</span>
-                        <p>Settings</p>
-                        <span class="material-symbols-outlined dropdown-arrow">expand_more</span>
-                    </a>
-                    <div class="admin-nav-submenu" id="settingsSubmenu">
-                        <a href="#"
-                           data-view="admin_profile"
-                           data-url="<?php echo $viewsBasePath; ?>admin/AdminProfile.php"
-                           class="admin-nav-item admin-nav-subitem">
-                            <span class="material-symbols-outlined">account_circle</span>
-                            <p>User Profile</p>
-                        </a>
-                    </div>
-                </div>
             </nav>
 
             <div class="admin-sidebar-footer">
@@ -345,8 +324,8 @@ $recentOrders = [
     <script>
         // jQuery event handlers - following conventions (no inline JavaScript)
         $(document).ready(function() {
-            // Navigation click handlers (exclude Settings, it has its own handler)
-            $('.admin-nav-item[data-view]').not('#settingsToggle').on('click', function(e) {
+            // Navigation click handlers
+            $('.admin-nav-item[data-view]').on('click', function(e) {
                 e.preventDefault();
                 var view = $(this).data('view');
                 var url = $(this).data('url');
@@ -358,6 +337,17 @@ $recentOrders = [
                 if (view === 'dashboard') {
                     showDashboard();
                 } else if (url) {
+                    showContentView(view, url);
+                }
+            });
+
+            // Admin profile link click handler
+            $('#adminProfileLink').on('click', function(e) {
+                e.preventDefault();
+                var view = $(this).data('view');
+                var url = $(this).data('url');
+                
+                if (url) {
                     showContentView(view, url);
                 }
             });
@@ -587,23 +577,6 @@ $recentOrders = [
                 }
             });
 
-            // Settings dropdown toggle + redirect to Admin Profile page
-            $('#settingsToggle').on('click', function(e) {
-                e.preventDefault();
-                var $this = $(this);
-                var dropdown = $this.closest('.admin-nav-dropdown');
-                var submenu = $('#settingsSubmenu');
-
-                // Toggle open class for CSS-based animation
-                dropdown.toggleClass('open');
-                submenu.toggleClass('open');
-
-                // Redirect whole page to Admin Profile
-                var url  = $this.data('url');
-                if (url) {
-                    window.location.href = url;
-                }
-            });
         });
     </script>
 </body>
