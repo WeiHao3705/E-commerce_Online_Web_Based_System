@@ -1,6 +1,20 @@
 <?php 
 session_start();
 
+// CAPTCHA verification for first-time visitors
+// Check if user has not verified CAPTCHA yet (except admins and logged-in users)
+if (!isset($_SESSION['captcha_verified']) || $_SESSION['captcha_verified'] !== true) {
+    // Allow admins and logged-in users to bypass CAPTCHA
+    if (empty($_SESSION['user'])) {
+        // First-time visitor needs to verify CAPTCHA
+        header('Location: views/security/captcha_verification.php');
+        exit;
+    } else {
+        // Logged-in users automatically have CAPTCHA verified
+        $_SESSION['captcha_verified'] = true;
+    }
+}
+
 // Redirect admins to AdminDashboard - they should not access member website
 if (!empty($_SESSION['user']) && isset($_SESSION['user']->role) && $_SESSION['user']->role === 'admin') {
     header('Location: views/admin/AdminDashboard.php');
