@@ -3,7 +3,9 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
 $current_dir = dirname($_SERVER['PHP_SELF']);
 $is_in_views = (strpos($current_dir, '/views') !== false);
-$prefix = $is_in_views ? '../' : '';
+// Check if we're being included from root index.php
+$is_root = (basename($_SERVER['SCRIPT_FILENAME']) === 'index.php' && dirname($_SERVER['SCRIPT_FILENAME']) !== __DIR__);
+$prefix = $is_root ? 'web/' : ($is_in_views ? '../' : '');
 
 // Get random image from images/guest/
 $guestImgDir = __DIR__ . '/../../images/guest';

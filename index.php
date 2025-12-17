@@ -32,11 +32,11 @@ if (!$captcha_cookie_valid && !$captcha_session_valid) {
 
 // Redirect admins to AdminDashboard - they should not access member website
 if (!empty($_SESSION['user']) && isset($_SESSION['user']->role) && $_SESSION['user']->role === 'admin') {
-    header('Location: views/admin/AdminDashboard.php');
+    header('Location: web/views/admin/AdminDashboard.php');
     exit;
 }
 
-require __DIR__ . '/database/connection.php';
+require __DIR__ . '/web/database/connection.php';
 
 $db = new Database();
 $conn = $db->getConnection();
@@ -45,8 +45,8 @@ $page = $_GET['page'] ?? 'home'; // default page
 
 $pageTitle = ucfirst($page);
 
-include 'general/_header.php';
-include 'general/_navbar.php';
+include 'web/general/_header.php';
+include 'web/general/_navbar.php';
 
 // Display and clear success/error messages
 if (isset($_SESSION['success_message'])) {
@@ -93,12 +93,12 @@ switch ($page) {
     case 'home':
     default:
         if (empty($_SESSION['user'])) {
-            require __DIR__ . '/views/guest/GuestHome.php';
+            require __DIR__ . '/web/views/guest/GuestHome.php';
         } else {
-            require __DIR__ . '/views/member/MemberHome.php';
+            require __DIR__ . '/web/views/member/MemberHome.php';
         }
         break;
 }
 
-include 'general/_footer.php';
+include 'web/general/_footer.php';
 ?>
