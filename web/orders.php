@@ -136,6 +136,11 @@ include 'general/_navbar.php';
                         <a href="views/Cart_Order/order_confirmation.php?order_id=<?= $order['order_id'] ?>" class="btn btn-secondary">
                             <i class="fas fa-eye"></i> View Details
                         </a>
+                        <?php if ($order['order_status'] === 'paid'): ?>
+                            <a href="views/Cart_Order/generate_receipt.php?order_id=<?= $order['order_id'] ?>" class="btn btn-success" target="_blank">
+                                <i class="fas fa-receipt"></i> E-Receipt
+                            </a>
+                        <?php endif; ?>
                         <?php if ($order['order_status'] === 'pending' || $order['order_status'] === 'paid'): ?>
                             <button class="btn btn-outline" onclick="trackOrder(<?= $order['order_id'] ?>)">
                                 <i class="fas fa-truck"></i> Track Order

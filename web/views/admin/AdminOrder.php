@@ -95,77 +95,65 @@ $pageTitle = "Manage Orders - Admin";
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $pageTitle; ?> - NGEAR</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AdminDashboard.css">
     <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AdminOrder.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: transparent;
+            color: #0f172a;
+        }
+        .page-container {
+            max-width: 100%;
+            margin: 0;
+            padding: 20px;
+        }
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        .btn-analytics {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            border: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+        }
+        .btn-analytics:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+        }
+    </style>
 </head>
 <body>
-    <div class="admin-layout">
-        <!-- Sidebar -->
-        <aside class="admin-sidebar" id="admin-sidebar">
-            <div class="admin-sidebar-header">
-                <img src="<?php echo $webBasePath; ?>images/logo/logo1.png" alt="NGEAR" class="admin-sidebar-logo">
-                <h1 class="admin-sidebar-title">NGear</h1>
-                <button class="admin-sidebar-toggle" id="sidebar-toggle" title="Toggle Sidebar">
-                    <span class="material-symbols-outlined">menu</span>
-                </button>
-            </div>
-
-            <a href="AdminProfile.php" class="admin-user-profile">
-                <div class="admin-user-avatar" style="background-image: url('<?php echo htmlspecialchars($adminAvatar); ?>');"></div>
-                <div class="admin-user-info">
-                    <h2 class="admin-user-name"><?php echo htmlspecialchars($adminName); ?></h2>
-                    <p class="admin-user-role">Administrator</p>
-                </div>
+    <div class="page-container">
+        <!-- Header -->
+        <header class="header-actions">
+            <h1 style="font-size: 2rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 0.75rem;">
+                <i class="fas fa-box" style="color: #FF523B;"></i> Orders Management
+            </h1>
+            <a href="OrderAnalytics.php" class="btn-analytics">
+                <i class="fas fa-chart-line"></i> View Analytics
             </a>
+        </header>
 
-            <nav class="admin-nav">
-                <a href="AdminDashboard.php" class="admin-nav-item">
-                    <span class="material-symbols-outlined">dashboard</span>
-                    <p>Dashboard</p>
-                </a>
-                <a href="AdminProduct.php" class="admin-nav-item">
-                    <span class="material-symbols-outlined">inventory_2</span>
-                    <p>Products</p>
-                </a>
-                <a href="<?php echo $controllerBasePath; ?>MemberController.php?action=showAll" class="admin-nav-item">
-                    <span class="material-symbols-outlined">group</span>
-                    <p>Members</p>
-                </a>
-                <a href="<?php echo $controllerBasePath; ?>AdminController.php?action=showAll" class="admin-nav-item">
-                    <span class="material-symbols-outlined">admin_panel_settings</span>
-                    <p>Admins</p>
-                </a>
-                <a href="<?php echo $controllerBasePath; ?>VoucherController.php?action=showAll" class="admin-nav-item">
-                    <span class="material-symbols-outlined">sell</span>
-                    <p>Vouchers</p>
-                </a>
-                <a href="AdminOrder.php" class="admin-nav-item active">
-                    <span class="material-symbols-outlined">shopping_cart</span>
-                    <p>Orders</p>
-                </a>
-            </nav>
-
-            <div class="admin-sidebar-footer">
-                <a href="<?php echo $webBasePath; ?>logout.php" class="admin-nav-item">
-                    <span class="material-symbols-outlined">logout</span>
-                    <p>Logout</p>
-                </a>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="admin-main">
-            <div class="admin-main-content">
-                <!-- Header -->
-                <header class="admin-header">
-                    <h1 class="admin-page-title">Orders Management</h1>
-                </header>
-
-                <!-- Statistics Cards -->
-                <section class="stats-grid">
+        <!-- Statistics Cards -->
+        <section class="stats-grid">
             <div class="stat-card">
                 <div class="stat-icon blue"><i class="fas fa-shopping-cart"></i></div>
                 <div class="stat-info">
@@ -194,10 +182,10 @@ $pageTitle = "Manage Orders - Admin";
                     <p>Total Revenue</p>
                 </div>
             </div>
-                </section>
+        </section>
 
-                <!-- Filters -->
-                <section class="filters-section">
+        <!-- Filters -->
+        <section class="filters-section">
             <form method="GET" class="filters-form">
                 <div class="filter-group">
                     <label><i class="fas fa-filter"></i> Status</label>
@@ -232,10 +220,10 @@ $pageTitle = "Manage Orders - Admin";
                     <a href="orders.php" class="btn btn-secondary"><i class="fas fa-redo"></i> Reset</a>
                 </div>
             </form>
-                </section>
+        </section>
 
-                <!-- Orders Table -->
-                <section class="table-container">
+        <!-- Orders Table -->
+        <section class="table-container">
             <table class="orders-table">
                 <thead>
                     <tr>
@@ -299,16 +287,9 @@ $pageTitle = "Manage Orders - Admin";
                 </tbody>
             </table>
         </section>
-            </div>
-        </main>
     </div>
 
     <script>
-    // Sidebar toggle functionality
-    document.getElementById('sidebar-toggle')?.addEventListener('click', function() {
-        document.getElementById('admin-sidebar')?.classList.toggle('collapsed');
-    });
-
     function updateOrderStatus(orderId) {
         // Future implementation for updating order status
         alert('Update order status feature - Order #' + String(orderId).padStart(6, '0'));

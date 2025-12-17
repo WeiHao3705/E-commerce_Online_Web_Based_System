@@ -1,0 +1,621 @@
+<?php
+session_start();
+
+// Check if user is logged in and is admin
+if (!isset($_SESSION['user']) || $_SESSION['user']->role !== 'admin') {
+    header('Location: ../security/login.php');
+    exit;
+}
+
+require __DIR__ . '/../../database/connection.php';
+$db = new Database();
+$conn = $db->getConnection();
+
+// Get statistics
+$statsQuery = "
+    SELECT 
+        COUNT(*) as total_orders,
+        SUM(CASE WHEN order_status = 'pending' THEN 1 ELSE 0 END) as pending_orders,
+        SUM(CASE WHEN order_status = 'paid' THEN 1 ELSE 0 END) as paid_orders,
+        SUM(CASE WHEN order_status = 'shipped' THEN 1 ELSE 0 END) as shipped_orders,
+        SUM(CASE WHEN order_status = 'delivered' THEN 1 ELSE 0 END) as delivered_orders,
+        SUM(CASE WHEN order_status = 'canceled' THEN 1 ELSE 0 END) as canceled_orders,
+        SUM(CASE WHEN order_status = 'refunded' THEN 1 ELSE 0 END) as refunded_orders,
+        SUM(total_amount) as total_revenue
+    FROM orders
+";
+$statsStmt = $conn->query($statsQuery);
+$stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
+
+// Get payment method distribution
+$paymentQuery = "
+    SELECT 
+        payment_method,
+        COUNT(*) as count,
+        ROUND((COUNT(*) * 100.0 / (SELECT COUNT(*) FROM orders)), 1) as percentage
+    FROM orders
+    GROUP BY payment_method
+";
+$paymentStmt = $conn->query($paymentQuery);
+$paymentMethods = $paymentStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get monthly revenue (last 6 months)
+$revenueQuery = "
+    SELECT 
+        DATE_FORMAT(create_at, '%b') as month,
+        SUM(total_amount) as revenue
+    FROM orders
+    WHERE create_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+    GROUP BY YEAR(create_at), MONTH(create_at)
+    ORDER BY YEAR(create_at), MONTH(create_at)
+";
+$revenueStmt = $conn->query($revenueQuery);
+$monthlyRevenue = $revenueStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Calculate base path
+$currentFileDir = dirname(__FILE__);
+$webRootDir = dirname(dirname($currentFileDir));
+$docRoot = $_SERVER['DOCUMENT_ROOT'];
+$relativePath = str_replace($docRoot, '', $webRootDir);
+$webBasePath = str_replace('\\', '/', $relativePath) . '/';
+$cssBasePath = $webBasePath . 'css/';
+
+$pageTitle = "Order Analytics - Admin";
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo $pageTitle; ?> - NGEAR</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: transparent;
+            color: #0f172a;
+        }
+        .page-container {
+            max-width: 100%;
+            margin: 0;
+            padding: 20px;
+        }
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        .btn-back {
+            background: #6b7280;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            border: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        .btn-back:hover {
+            background: #4b5563;
+            transform: translateY(-2px);
+        }
+        
+        /* Statistics Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+        .stat-icon.blue { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .stat-icon.orange { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .stat-icon.green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .stat-icon.purple { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
+        .stat-info h3 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.25rem;
+        }
+        .stat-info p {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+        
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .chart-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .chart-card h2 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .chart-card h2 i {
+            color: #FF523B;
+        }
+        .chart-container {
+            position: relative;
+            height: 320px;
+        }
+        
+        /* Insights Section */
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .insight-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+        }
+        .insight-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .insight-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+        }
+        .insight-card .description {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+        
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <!-- Header -->
+        <header class="header-actions">
+            <h1 style="font-size: 2rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 0.75rem;">
+                <i class="fas fa-chart-line" style="color: #FF523B;"></i> Order Analytics
+            </h1>
+            <a href="AdminOrder.php" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Orders
+            </a>
+        </header>
+
+        <!-- Statistics Cards -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fas fa-shopping-cart"></i></div>
+                <div class="stat-info">
+                    <h3><?= number_format($stats['total_orders']) ?></h3>
+                    <p>Total Orders</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="fas fa-clock"></i></div>
+                <div class="stat-info">
+                    <h3><?= number_format($stats['pending_orders']) ?></h3>
+                    <p>Pending Orders</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-info">
+                    <h3><?= number_format($stats['delivered_orders']) ?></h3>
+                    <p>Delivered</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple"><i class="fas fa-dollar-sign"></i></div>
+                <div class="stat-info">
+                    <h3>RM <?= number_format($stats['total_revenue'], 2) ?></h3>
+                    <p>Total Revenue</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Insights -->
+        <section class="insights-grid">
+            <div class="insight-card" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                <h3><i class="fas fa-percentage"></i> Conversion Rate</h3>
+                <div class="value">
+                    <?php 
+                    $conversionRate = $stats['total_orders'] > 0 
+                        ? round(($stats['delivered_orders'] / $stats['total_orders']) * 100, 1) 
+                        : 0;
+                    echo $conversionRate . '%';
+                    ?>
+                </div>
+                <div class="description">Orders successfully delivered</div>
+            </div>
+            <div class="insight-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                <h3><i class="fas fa-chart-line"></i> Average Order Value</h3>
+                <div class="value">
+                    RM <?php 
+                    $avgOrder = $stats['total_orders'] > 0 
+                        ? number_format($stats['total_revenue'] / $stats['total_orders'], 2) 
+                        : 0;
+                    echo $avgOrder;
+                    ?>
+                </div>
+                <div class="description">Per order revenue</div>
+            </div>
+            <div class="insight-card" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                <h3><i class="fas fa-exclamation-triangle"></i> Cancellation Rate</h3>
+                <div class="value">
+                    <?php 
+                    $cancelRate = $stats['total_orders'] > 0 
+                        ? round(($stats['canceled_orders'] / $stats['total_orders']) * 100, 1) 
+                        : 0;
+                    echo $cancelRate . '%';
+                    ?>
+                </div>
+                <div class="description">Orders canceled or refunded</div>
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section class="charts-grid">
+            <!-- Pie Chart - Order Status Distribution -->
+            <div class="chart-card">
+                <h2><i class="fas fa-chart-pie"></i> Order Status Distribution</h2>
+                <div class="chart-container">
+                    <canvas id="statusPieChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Bar Chart - Orders by Status -->
+            <div class="chart-card">
+                <h2><i class="fas fa-chart-bar"></i> Orders by Status</h2>
+                <div class="chart-container">
+                    <canvas id="statusBarChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Line Chart - Revenue Overview -->
+            <div class="chart-card">
+                <h2><i class="fas fa-chart-line"></i> Revenue Trend</h2>
+                <div class="chart-container">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Doughnut Chart - Payment Methods -->
+            <div class="chart-card">
+                <h2><i class="fas fa-credit-card"></i> Payment Methods Distribution</h2>
+                <div class="chart-container">
+                    <canvas id="paymentMethodChart"></canvas>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+    // Prepare data from PHP
+    const orderStats = {
+        pending: <?= $stats['pending_orders'] ?>,
+        paid: <?= $stats['paid_orders'] ?>,
+        shipped: <?= $stats['shipped_orders'] ?>,
+        delivered: <?= $stats['delivered_orders'] ?>,
+        canceled: <?= $stats['canceled_orders'] ?>,
+        refunded: <?= $stats['refunded_orders'] ?>,
+        totalRevenue: <?= $stats['total_revenue'] ?>
+    };
+
+    const paymentMethods = <?= json_encode($paymentMethods) ?>;
+    const monthlyRevenue = <?= json_encode($monthlyRevenue) ?>;
+
+    // Chart colors
+    const chartColors = {
+        pending: '#f59e0b',
+        paid: '#3b82f6',
+        shipped: '#8b5cf6',
+        delivered: '#10b981',
+        canceled: '#ef4444',
+        refunded: '#6b7280'
+    };
+
+    // 1. Pie Chart - Order Status Distribution
+    const statusPieCtx = document.getElementById('statusPieChart').getContext('2d');
+    new Chart(statusPieCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Pending', 'Paid', 'Shipped', 'Delivered', 'Canceled', 'Refunded'],
+            datasets: [{
+                data: [
+                    orderStats.pending,
+                    orderStats.paid,
+                    orderStats.shipped,
+                    orderStats.delivered,
+                    orderStats.canceled,
+                    orderStats.refunded
+                ],
+                backgroundColor: [
+                    chartColors.pending,
+                    chartColors.paid,
+                    chartColors.shipped,
+                    chartColors.delivered,
+                    chartColors.canceled,
+                    chartColors.refunded
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        font: { size: 12, family: 'Poppins' }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return label + ': ' + value + ' (' + percentage + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // 2. Bar Chart - Orders by Status
+    const statusBarCtx = document.getElementById('statusBarChart').getContext('2d');
+    new Chart(statusBarCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Pending', 'Paid', 'Shipped', 'Delivered', 'Canceled', 'Refunded'],
+            datasets: [{
+                label: 'Number of Orders',
+                data: [
+                    orderStats.pending,
+                    orderStats.paid,
+                    orderStats.shipped,
+                    orderStats.delivered,
+                    orderStats.canceled,
+                    orderStats.refunded
+                ],
+                backgroundColor: [
+                    chartColors.pending,
+                    chartColors.paid,
+                    chartColors.shipped,
+                    chartColors.delivered,
+                    chartColors.canceled,
+                    chartColors.refunded
+                ],
+                borderRadius: 8,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Orders: ' + context.parsed.y;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        font: { family: 'Poppins' }
+                    },
+                    grid: { color: '#f3f4f6' }
+                },
+                x: {
+                    ticks: { font: { family: 'Poppins' } },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+
+    // 3. Line Chart - Revenue Overview
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    
+    // Prepare revenue data
+    let revenueLabels = [];
+    let revenueData = [];
+    
+    if (monthlyRevenue.length > 0) {
+        monthlyRevenue.forEach(item => {
+            revenueLabels.push(item.month);
+            revenueData.push(parseFloat(item.revenue));
+        });
+    } else {
+        // Fallback to simulated data if no orders
+        revenueLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+        revenueData = [0, 0, 0, 0, 0, 0];
+    }
+
+    new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: revenueLabels,
+            datasets: [{
+                label: 'Revenue (RM)',
+                data: revenueData,
+                borderColor: '#FF523B',
+                backgroundColor: 'rgba(255, 82, 59, 0.1)',
+                tension: 0.4,
+                fill: true,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointBackgroundColor: '#FF523B',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'RM ' + context.parsed.y.toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'RM ' + value.toFixed(0);
+                        },
+                        font: { family: 'Poppins' }
+                    },
+                    grid: { color: '#f3f4f6' }
+                },
+                x: {
+                    ticks: { font: { family: 'Poppins' } },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+
+    // 4. Doughnut Chart - Payment Methods
+    const paymentMethodCtx = document.getElementById('paymentMethodChart').getContext('2d');
+    
+    // Prepare payment method data
+    let paymentLabels = [];
+    let paymentData = [];
+    let paymentColors = [];
+    
+    const colorMap = {
+        'credit_card': '#3b82f6',
+        'fpx': '#10b981',
+        'e_wallet': '#8b5cf6',
+        'COD': '#f59e0b',
+        'debit_card': '#06b6d4'
+    };
+
+    if (paymentMethods.length > 0) {
+        paymentMethods.forEach(item => {
+            const label = item.payment_method.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            paymentLabels.push(label);
+            paymentData.push(parseFloat(item.percentage));
+            paymentColors.push(colorMap[item.payment_method] || '#6b7280');
+        });
+    } else {
+        // Fallback if no data
+        paymentLabels = ['No Data'];
+        paymentData = [100];
+        paymentColors = ['#6b7280'];
+    }
+
+    new Chart(paymentMethodCtx, {
+        type: 'doughnut',
+        data: {
+            labels: paymentLabels,
+            datasets: [{
+                data: paymentData,
+                backgroundColor: paymentColors,
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        font: { size: 12, family: 'Poppins' }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            return label + ': ' + value.toFixed(1) + '%';
+                        }
+                    }
+                }
+            },
+            cutout: '60%'
+        }
+    });
+    </script>
+</body>
+</html>

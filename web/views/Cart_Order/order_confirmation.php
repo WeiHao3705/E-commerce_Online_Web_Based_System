@@ -155,6 +155,9 @@ include '../../general/_header.php';
     </div>
 
     <div class="action-buttons">
+        <a href="generate_receipt.php?order_id=<?= $orderId ?>" class="btn btn-success" target="_blank">
+            <i class="fas fa-receipt"></i> Generate E-Receipt
+        </a>
         <a href="../../index.php" class="btn btn-primary">Continue Shopping</a>
         <a href="../../orders.php" class="btn btn-secondary">View All Orders</a>
     </div>
