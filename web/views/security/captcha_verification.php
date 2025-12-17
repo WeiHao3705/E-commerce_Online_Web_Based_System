@@ -18,7 +18,18 @@ function generateCaptchaCode($length = 6) {
 
 session_start();
 
-// Check if user has already verified CAPTCHA
+// Generate device fingerprint for tracking
+$device_fingerprint = md5($_SERVER['HTTP_USER_AGENT'] . $_SERVER['REMOTE_ADDR']);
+
+// Check if device has already verified CAPTCHA (via cookie)
+if (isset($_COOKIE['captcha_verified']) && $_COOKIE['captcha_verified'] === $device_fingerprint) {
+    // Device already verified within the last week, redirect to home
+    $_SESSION['captcha_verified'] = true; // Also set session for consistency
+    header('Location: ../../index.php');
+    exit;
+}
+
+// Check if user has already verified CAPTCHA in this session
 if (isset($_SESSION['captcha_verified']) && $_SESSION['captcha_verified'] === true) {
     // User already verified, redirect to home
     header('Location: ../../index.php');
@@ -52,6 +63,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['verify_captcha'])) {
     } else {
         // CAPTCHA verified successfully
         $_SESSION['captcha_verified'] = true;
+        
+        // Set cookie valid for 7 days (1 week)
+        $cookie_expiry = time() + (7 * 24 * 60 * 60); // 7 days
+        setcookie('captcha_verified', $device_fingerprint, $cookie_expiry, '/');
+        
         unset($_SESSION['captcha_code']);
         header('Location: ../../index.php');
         exit;
