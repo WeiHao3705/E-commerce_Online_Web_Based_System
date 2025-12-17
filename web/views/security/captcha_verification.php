@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['verify_captcha'])) {
                 <button type="submit" name="refresh_captcha" class="refresh-btn" title="Refresh CAPTCHA">
                     <i class="fas fa-sync-alt"></i>
                 </button>
-                <div class="captcha-code"><?php echo $_SESSION['captcha_code']; ?></div>
+                <div class="captcha-code"><?php echo htmlspecialchars($_SESSION['captcha_code'] ?? 'ERROR'); ?></div>
             </div>
         </form>
 

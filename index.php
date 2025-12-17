@@ -13,7 +13,7 @@ if (!$captcha_cookie_valid && !$captcha_session_valid) {
     // Allow admins and logged-in users to bypass CAPTCHA
     if (empty($_SESSION['user'])) {
         // First-time visitor needs to verify CAPTCHA
-        header('Location: views/security/captcha_verification.php');
+        header('Location: web/views/security/captcha_verification.php');
         exit;
     } else {
         // Logged-in users automatically have CAPTCHA verified
