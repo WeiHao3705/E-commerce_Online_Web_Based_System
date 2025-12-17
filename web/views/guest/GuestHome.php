@@ -27,7 +27,7 @@ $heroWidth = $placement['width'] ?? '40%';
 <link rel="stylesheet" href="<?php echo $prefix; ?>css/GuestHome.css?v=<?php echo filemtime(__DIR__ . '/../../css/GuestHome.css'); ?>">
 
 <section class="guest-hero">
-    <div class="guest-container" style="--guest-image-vw:60vw;">
+    <div class="guest-container">
         <img class="guest-img" src="<?php echo $prefix; ?>images/guest/<?php echo htmlspecialchars($randomGuestImg); ?>" alt="Guest hero">
         <div class="hero-content">
             <h2>ONLINE SHOPPING</h2>
@@ -69,5 +69,5 @@ $productImages = array_slice($productImages, 0, 12);
 </section>
 
 <div class="slider-cta">
-    <button type="button" class="slider-learn-btn">Learn more</button>
+    <a href="<?php echo $prefix; ?>views/product/ProductPage.php" class="slider-learn-btn">Learn more</a>
 </div>
