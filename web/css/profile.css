@@ -348,6 +348,170 @@
     max-width: 700px;
 }
 
+/* Photo Upload Modal */
+.photo-upload-modal {
+    max-width: 500px;
+}
+
+.current-photo-section {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.section-label {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.current-photo-preview {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid #e5e7eb;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.current-photo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.upload-area {
+    border: 2px dashed #d1d5db;
+    border-radius: 16px;
+    padding: 32px 24px;
+    text-align: center;
+    background: #f9fafb;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.upload-area:hover,
+.upload-area.drag-over {
+    border-color: #ef4444;
+    background: #fef2f2;
+}
+
+.upload-area.drag-over {
+    transform: scale(1.02);
+}
+
+.upload-icon {
+    font-size: 48px;
+    color: #9ca3af;
+    margin-bottom: 16px;
+}
+
+.upload-area:hover .upload-icon,
+.upload-area.drag-over .upload-icon {
+    color: #ef4444;
+}
+
+.upload-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 4px;
+}
+
+.upload-subtext {
+    font-size: 14px;
+    color: #9ca3af;
+    margin: 8px 0 16px;
+}
+
+.upload-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.upload-btn {
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.upload-btn-file {
+    background: #ef4444;
+    color: white;
+}
+
+.upload-btn-file:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.upload-btn-camera {
+    background: #3b82f6;
+    color: white;
+}
+
+.upload-btn-camera:hover {
+    background: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.upload-btn-capture {
+    background: #10b981;
+    color: white;
+}
+
+.upload-btn-capture:hover {
+    background: #059669;
+}
+
+.upload-btn-cancel {
+    background: #6b7280;
+    color: white;
+}
+
+.upload-btn-cancel:hover {
+    background: #4b5563;
+}
+
+.upload-hint {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 16px;
+}
+
+/* Camera Section */
+.camera-section {
+    text-align: center;
+}
+
+.camera-section video {
+    width: 100%;
+    max-width: 400px;
+    border-radius: 12px;
+    background: #000;
+    margin-bottom: 16px;
+}
+
+.camera-controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
 .photo-cropper-modal {
     max-width: 700px;
 }

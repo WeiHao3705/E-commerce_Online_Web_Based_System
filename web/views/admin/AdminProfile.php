@@ -376,6 +376,61 @@ $pageTitle = 'Admin Profile';
         </div>
     </div>
 
+    <!-- Photo Upload Modal -->
+    <div class="modal-overlay" id="photoUploadModal" aria-hidden="true">
+        <div class="modal photo-upload-modal" role="dialog" aria-modal="true">
+            <div class="modal-header">
+                Upload Profile Photo
+                <button type="button" class="modal-close" id="btnClosePhotoUpload" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Current Photo Preview -->
+                <div class="current-photo-section">
+                    <p class="section-label">Current Photo</p>
+                    <div class="current-photo-preview">
+                        <img src="<?php echo html_escape($photoUrl); ?>" alt="Current profile photo" id="currentPhotoPreview">
+                    </div>
+                </div>
+                
+                <!-- Upload Area -->
+                <div class="upload-area" id="uploadDropZone">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <p class="upload-text">Drag & drop your photo here</p>
+                    <p class="upload-subtext">or</p>
+                    <div class="upload-buttons">
+                        <button type="button" class="upload-btn upload-btn-file" id="btnSelectFile">
+                            <i class="fas fa-folder-open"></i> Browse Files
+                        </button>
+                        <button type="button" class="upload-btn upload-btn-camera" id="btnOpenCamera">
+                            <i class="fas fa-camera"></i> Take Photo
+                        </button>
+                    </div>
+                    <p class="upload-hint">Supported formats: JPG, PNG, GIF (Max 5MB)</p>
+                    <input type="file" id="photoFileInput" accept="image/*" style="display: none;">
+                    <input type="file" id="cameraInput" accept="image/*" capture="user" style="display: none;">
+                </div>
+                
+                <!-- Camera Preview (hidden by default) -->
+                <div class="camera-section" id="cameraSection" style="display: none;">
+                    <video id="cameraVideo" autoplay playsinline></video>
+                    <canvas id="cameraCanvas" style="display: none;"></canvas>
+                    <div class="camera-controls">
+                        <button type="button" class="upload-btn upload-btn-capture" id="btnCapture">
+                            <i class="fas fa-camera"></i> Capture
+                        </button>
+                        <button type="button" class="upload-btn upload-btn-cancel" id="btnCancelCamera">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Photo Cropper Modal -->
     <div class="modal-overlay" id="photoCropperModal" aria-hidden="true">
         <div class="modal photo-cropper-modal" role="dialog" aria-modal="true">

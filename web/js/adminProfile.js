@@ -1,6 +1,7 @@
 $(document).ready(function() {
     let cropper;
     let currentFile;
+    let cameraStream = null;
 
     // Get data attributes from body
     const userId = document.body.dataset.userId;
@@ -16,57 +17,221 @@ $(document).ready(function() {
         $('#updateModal').removeClass('open');
     });
 
-    // Trigger file input on avatar badge click
+    // ===== Photo Upload Modal =====
+    
+    // Open Photo Upload Modal (instead of directly opening file picker)
     $('#uploadPhotoBtn').on('click', function() {
-        $('#photoUpload').click();
+        // Update current photo preview
+        const profilePhotoSrc = $('#profilePhoto').attr('src');
+        $('#currentPhotoPreview').attr('src', profilePhotoSrc);
+        $('#photoUploadModal').addClass('open');
     });
 
-    // Handle photo upload
+    // Close Photo Upload Modal
+    $('#btnClosePhotoUpload').on('click', function() {
+        closePhotoUploadModal();
+    });
+
+    function closePhotoUploadModal() {
+        $('#photoUploadModal').removeClass('open');
+        stopCamera();
+    }
+
+    // Browse Files Button - use event delegation
+    $(document).on('click', '#btnSelectFile', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        document.getElementById('photoFileInput').click();
+    });
+
+    // File Input Change
+    $(document).on('change', '#photoFileInput', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            handleImageFile(file);
+        }
+    });
+
+    // Drag and Drop
+    const uploadDropZone = document.getElementById('uploadDropZone');
+    if (uploadDropZone) {
+        uploadDropZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).addClass('drag-over');
+        });
+
+        uploadDropZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).removeClass('drag-over');
+        });
+
+        uploadDropZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).removeClass('drag-over');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type.startsWith('image/')) {
+                handleImageFile(files[0]);
+            }
+        });
+
+        // Click on drop zone (excluding buttons)
+        $(uploadDropZone).on('click', function(e) {
+            if ($(e.target).closest('.upload-btn').length === 0) {
+                document.getElementById('photoFileInput').click();
+            }
+        });
+    }
+
+    // Camera functionality - use event delegation
+    $(document).on('click', '#btnOpenCamera', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            startCamera();
+        } else {
+            // Fallback to file input with capture attribute (mobile)
+            document.getElementById('cameraInput').click();
+        }
+    });
+
+    // Camera input change (mobile fallback)
+    $(document).on('change', '#cameraInput', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            handleImageFile(file);
+        }
+    });
+
+    function startCamera() {
+        $('#uploadDropZone').hide();
+        $('#cameraSection').show();
+        
+        navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'user',
+                width: { ideal: 640 },
+                height: { ideal: 480 }
+            } 
+        })
+        .then(function(stream) {
+            cameraStream = stream;
+            document.getElementById('cameraVideo').srcObject = stream;
+        })
+        .catch(function(err) {
+            console.error('Camera error:', err);
+            alert('Unable to access camera. Please check your permissions.');
+            stopCamera();
+        });
+    }
+
+    function stopCamera() {
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(function(track) {
+                track.stop();
+            });
+            cameraStream = null;
+        }
+        const video = document.getElementById('cameraVideo');
+        if (video) video.srcObject = null;
+        $('#cameraSection').hide();
+        $('#uploadDropZone').show();
+    }
+
+    // Capture photo from camera
+    $('#btnCapture').on('click', function() {
+        const video = document.getElementById('cameraVideo');
+        const canvas = document.getElementById('cameraCanvas');
+        
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            
+            canvas.toBlob(function(blob) {
+                stopCamera();
+                const file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
+                handleImageFile(file);
+            }, 'image/jpeg', 0.9);
+        }
+    });
+
+    // Cancel camera
+    $('#btnCancelCamera').on('click', stopCamera);
+
+    // Handle image file - open cropper
+    function handleImageFile(file) {
+        if (!file.type.startsWith('image/')) {
+            alert('Please select an image file.');
+            return;
+        }
+        
+        if (file.size > 5 * 1024 * 1024) {
+            alert('File size must be less than 5MB.');
+            return;
+        }
+
+        currentFile = file;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            // Close upload modal
+            closePhotoUploadModal();
+            
+            // Open cropper modal
+            $('#cropperImage').attr('src', event.target.result);
+            $('#photoCropperModal').addClass('open');
+            
+            if (cropper) {
+                cropper.destroy();
+            }
+            
+            cropper = new Cropper(document.getElementById('cropperImage'), {
+                aspectRatio: 1,
+                viewMode: 2,
+                autoCropArea: 1,
+                responsive: true,
+                restore: false,
+                guides: true,
+                center: true,
+                highlight: false,
+                cropBoxMovable: true,
+                cropBoxResizable: true,
+                toggleDragModeOnDblclick: false
+            });
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // Legacy file input handler (backward compatibility)
     $('#photoUpload').on('change', function(e) {
         const file = e.target.files[0];
         if (file && file.type.startsWith('image/')) {
-            currentFile = file;
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                $('#cropperImage').attr('src', event.target.result);
-                $('#photoCropperModal').addClass('open');
-                
-                if (cropper) {
-                    cropper.destroy();
-                }
-                
-                cropper = new Cropper(document.getElementById('cropperImage'), {
-                    aspectRatio: 1,
-                    viewMode: 2,
-                    autoCropArea: 1,
-                    responsive: true,
-                    restore: false,
-                    guides: true,
-                    center: true,
-                    highlight: false,
-                    cropBoxMovable: true,
-                    cropBoxResizable: true,
-                    toggleDragModeOnDblclick: false
-                });
-            };
-            reader.readAsDataURL(file);
+            handleImageFile(file);
         }
     });
 
     // Cropper controls
-    $('#btnRotateLeft').on('click', () => cropper.rotate(-45));
-    $('#btnRotateRight').on('click', () => cropper.rotate(45));
-    $('#btnZoomIn').on('click', () => cropper.zoom(0.1));
-    $('#btnZoomOut').on('click', () => cropper.zoom(-0.1));
+    $('#btnRotateLeft').on('click', () => cropper && cropper.rotate(-45));
+    $('#btnRotateRight').on('click', () => cropper && cropper.rotate(45));
+    $('#btnZoomIn').on('click', () => cropper && cropper.zoom(0.1));
+    $('#btnZoomOut').on('click', () => cropper && cropper.zoom(-0.1));
     
     let scaleX = 1, scaleY = 1;
     $('#btnFlipHorizontal').on('click', function() {
-        scaleX = -scaleX;
-        cropper.scaleX(scaleX);
+        if (cropper) {
+            scaleX = -scaleX;
+            cropper.scaleX(scaleX);
+        }
     });
     $('#btnFlipVertical').on('click', function() {
-        scaleY = -scaleY;
-        cropper.scaleY(scaleY);
+        if (cropper) {
+            scaleY = -scaleY;
+            cropper.scaleY(scaleY);
+        }
     });
 
     // Close cropper modal
@@ -76,6 +241,8 @@ $(document).ready(function() {
             cropper.destroy();
         }
         $('#photoUpload').val('');
+        $('#photoFileInput').val('');
+        $('#cameraInput').val('');
     });
 
     // Save cropped photo
@@ -91,7 +258,7 @@ $(document).ready(function() {
             const formData = new FormData();
             formData.append('action', 'update_photo');
             formData.append('user_id', userId);
-            formData.append('photo', blob, currentFile.name);
+            formData.append('photo', blob, currentFile ? currentFile.name : 'profile.jpg');
 
             $.ajax({
                 url: controllerUrl,
@@ -105,7 +272,11 @@ $(document).ready(function() {
                         $('#profilePhoto').attr('src', result.photoUrl + '?t=' + new Date().getTime());
                         $('#photoCropperModal').removeClass('open');
                         if (cropper) cropper.destroy();
-                        alert('Profile photo updated successfully!');
+                        
+                        // Show success message
+                        const alertDiv = $('<div class="alert alert-success">Profile photo updated successfully!</div>');
+                        $('.admin-profile-wrapper').prepend(alertDiv);
+                        setTimeout(function() { alertDiv.remove(); }, 3000);
                     } else {
                         alert('Error: ' + (result.message || 'Failed to upload photo'));
                     }
@@ -122,6 +293,7 @@ $(document).ready(function() {
         if (e.target === this) {
             $(this).removeClass('open');
             if (cropper) cropper.destroy();
+            stopCamera();
         }
     });
 

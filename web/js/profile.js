@@ -4,9 +4,27 @@
   var controllerUrl = document.body.dataset.controllerUrl;
   var prefix = document.body.dataset.prefix;
 
-  // Photo Upload and Cropping
+  // Photo Upload Modal Elements
   var uploadPhotoBtn = document.getElementById('uploadPhotoBtn');
-  var photoUpload = document.getElementById('photoUpload');
+  var photoUploadModal = document.getElementById('photoUploadModal');
+  var btnClosePhotoUpload = document.getElementById('btnClosePhotoUpload');
+  var uploadDropZone = document.getElementById('uploadDropZone');
+  var btnSelectFile = document.getElementById('btnSelectFile');
+  var btnOpenCamera = document.getElementById('btnOpenCamera');
+  var photoFileInput = document.getElementById('photoFileInput');
+  var cameraInput = document.getElementById('cameraInput');
+  var currentPhotoPreview = document.getElementById('currentPhotoPreview');
+  
+  // Camera Section Elements
+  var cameraSection = document.getElementById('cameraSection');
+  var cameraVideo = document.getElementById('cameraVideo');
+  var cameraCanvas = document.getElementById('cameraCanvas');
+  var btnCapture = document.getElementById('btnCapture');
+  var btnCancelCamera = document.getElementById('btnCancelCamera');
+  var cameraStream = null;
+
+  // Photo Cropper Elements
+  var photoUpload = document.getElementById('photoUpload'); // legacy hidden input
   var photoCropperModal = document.getElementById('photoCropperModal');
   var cropperImage = document.getElementById('cropperImage');
   var btnCancelCrop = document.getElementById('btnCancelCrop');
@@ -15,46 +33,227 @@
   var scaleX = 1;
   var scaleY = 1;
 
-  // Trigger file input when camera badge is clicked
+  // Open Photo Upload Modal
   if(uploadPhotoBtn) {
     uploadPhotoBtn.addEventListener('click', function(e) {
       e.preventDefault();
-      photoUpload.click();
+      openPhotoUploadModal();
     });
   }
 
-  // Handle file selection
+  function openPhotoUploadModal() {
+    // Update current photo preview
+    var profilePhoto = document.getElementById('profilePhoto');
+    if(currentPhotoPreview && profilePhoto) {
+      currentPhotoPreview.src = profilePhoto.src;
+    }
+    photoUploadModal.classList.add('open');
+    photoUploadModal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closePhotoUploadModal() {
+    photoUploadModal.classList.remove('open');
+    photoUploadModal.setAttribute('aria-hidden', 'true');
+    stopCamera();
+  }
+
+  // Close Photo Upload Modal
+  if(btnClosePhotoUpload) {
+    btnClosePhotoUpload.addEventListener('click', closePhotoUploadModal);
+  }
+
+  // Close modal on overlay click
+  if(photoUploadModal) {
+    photoUploadModal.addEventListener('click', function(e) {
+      if(e.target === photoUploadModal) {
+        closePhotoUploadModal();
+      }
+    });
+  }
+
+  // Browse Files Button
+  if(btnSelectFile) {
+    btnSelectFile.addEventListener('click', function(e) {
+      e.stopPropagation();
+      photoFileInput.click();
+    });
+  }
+
+  // File Input Change
+  if(photoFileInput) {
+    photoFileInput.addEventListener('change', function(e) {
+      var file = e.target.files[0];
+      if(file) {
+        handleImageFile(file);
+      }
+    });
+  }
+
+  // Drag and Drop
+  if(uploadDropZone) {
+    uploadDropZone.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      uploadDropZone.classList.add('drag-over');
+    });
+
+    uploadDropZone.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      uploadDropZone.classList.remove('drag-over');
+    });
+
+    uploadDropZone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      uploadDropZone.classList.remove('drag-over');
+      
+      var files = e.dataTransfer.files;
+      if(files.length > 0 && files[0].type.startsWith('image/')) {
+        handleImageFile(files[0]);
+      }
+    });
+
+    // Click on drop zone (excluding buttons)
+    uploadDropZone.addEventListener('click', function(e) {
+      if(e.target === uploadDropZone || e.target.closest('.upload-icon') || e.target.closest('.upload-text') || e.target.closest('.upload-subtext')) {
+        photoFileInput.click();
+      }
+    });
+  }
+
+  // Camera functionality
+  if(btnOpenCamera) {
+    btnOpenCamera.addEventListener('click', function(e) {
+      e.stopPropagation();
+      // Check if device supports getUserMedia
+      if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        startCamera();
+      } else {
+        // Fallback to file input with capture attribute (mobile)
+        cameraInput.click();
+      }
+    });
+  }
+
+  // Camera input change (mobile fallback)
+  if(cameraInput) {
+    cameraInput.addEventListener('change', function(e) {
+      var file = e.target.files[0];
+      if(file) {
+        handleImageFile(file);
+      }
+    });
+  }
+
+  function startCamera() {
+    uploadDropZone.style.display = 'none';
+    cameraSection.style.display = 'block';
+    
+    navigator.mediaDevices.getUserMedia({ 
+      video: { 
+        facingMode: 'user',
+        width: { ideal: 640 },
+        height: { ideal: 480 }
+      } 
+    })
+    .then(function(stream) {
+      cameraStream = stream;
+      cameraVideo.srcObject = stream;
+    })
+    .catch(function(err) {
+      console.error('Camera error:', err);
+      alert('Unable to access camera. Please check your permissions.');
+      stopCamera();
+    });
+  }
+
+  function stopCamera() {
+    if(cameraStream) {
+      cameraStream.getTracks().forEach(function(track) {
+        track.stop();
+      });
+      cameraStream = null;
+    }
+    cameraVideo.srcObject = null;
+    cameraSection.style.display = 'none';
+    uploadDropZone.style.display = 'block';
+  }
+
+  // Capture photo from camera
+  if(btnCapture) {
+    btnCapture.addEventListener('click', function() {
+      if(cameraVideo.readyState === cameraVideo.HAVE_ENOUGH_DATA) {
+        cameraCanvas.width = cameraVideo.videoWidth;
+        cameraCanvas.height = cameraVideo.videoHeight;
+        var ctx = cameraCanvas.getContext('2d');
+        ctx.drawImage(cameraVideo, 0, 0);
+        
+        cameraCanvas.toBlob(function(blob) {
+          stopCamera();
+          var file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
+          handleImageFile(file);
+        }, 'image/jpeg', 0.9);
+      }
+    });
+  }
+
+  // Cancel camera
+  if(btnCancelCamera) {
+    btnCancelCamera.addEventListener('click', stopCamera);
+  }
+
+  // Handle image file - open cropper
+  function handleImageFile(file) {
+    if(!file.type.startsWith('image/')) {
+      alert('Please select an image file.');
+      return;
+    }
+    
+    if(file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB.');
+      return;
+    }
+
+    var reader = new FileReader();
+    reader.onload = function(event) {
+      // Close upload modal
+      closePhotoUploadModal();
+      
+      // Open cropper modal
+      cropperImage.src = event.target.result;
+      photoCropperModal.classList.add('open');
+      photoCropperModal.setAttribute('aria-hidden', 'false');
+      
+      // Initialize cropper
+      if(cropper) {
+        cropper.destroy();
+      }
+      cropper = new Cropper(cropperImage, {
+        aspectRatio: 1,
+        viewMode: 2,
+        dragMode: 'move',
+        autoCropArea: 1,
+        restore: false,
+        guides: true,
+        center: true,
+        highlight: false,
+        cropBoxMovable: true,
+        cropBoxResizable: true,
+        toggleDragModeOnDblclick: false,
+      });
+      scaleX = 1;
+      scaleY = 1;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Legacy file input handler (for backward compatibility)
   if(photoUpload) {
     photoUpload.addEventListener('change', function(e) {
       var file = e.target.files[0];
       if(file && file.type.startsWith('image/')) {
-        var reader = new FileReader();
-        reader.onload = function(event) {
-          cropperImage.src = event.target.result;
-          photoCropperModal.classList.add('open');
-          photoCropperModal.setAttribute('aria-hidden', 'false');
-          
-          // Initialize cropper
-          if(cropper) {
-            cropper.destroy();
-          }
-          cropper = new Cropper(cropperImage, {
-            aspectRatio: 1,
-            viewMode: 2,
-            dragMode: 'move',
-            autoCropArea: 1,
-            restore: false,
-            guides: true,
-            center: true,
-            highlight: false,
-            cropBoxMovable: true,
-            cropBoxResizable: true,
-            toggleDragModeOnDblclick: false,
-          });
-          scaleX = 1;
-          scaleY = 1;
-        };
-        reader.readAsDataURL(file);
+        handleImageFile(file);
       }
     });
   }
@@ -88,7 +287,8 @@
         cropper.destroy();
         cropper = null;
       }
-      photoUpload.value = '';
+      photoFileInput.value = '';
+      cameraInput.value = '';
     });
   }
 
@@ -136,7 +336,8 @@
                 cropper.destroy();
                 cropper = null;
               }
-              photoUpload.value = '';
+              photoFileInput.value = '';
+              cameraInput.value = '';
             } else {
               alert('Error: ' + (data.message || 'Failed to upload photo'));
             }
