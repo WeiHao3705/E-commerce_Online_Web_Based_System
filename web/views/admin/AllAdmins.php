@@ -96,8 +96,500 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AdminOrder.css">
     <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AllTables.css">
     <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AllMembers.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: transparent;
+            color: #0f172a;
+        }
+        .page-container {
+            max-width: 100%;
+            margin: 0;
+            padding: 20px;
+        }
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .btn-add-admin {
+            background: linear-gradient(135deg, #FF523B 0%, #e64a35 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            border: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            box-shadow: 0 4px 6px rgba(255, 82, 59, 0.3);
+        }
+        .btn-add-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(255, 82, 59, 0.4);
+        }
+        
+        /* Statistics Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-color: #FF523B;
+        }
+        .stat-icon {
+            width: 3.5rem;
+            height: 3.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.75rem;
+            font-size: 1.5rem;
+            color: white;
+            flex-shrink: 0;
+        }
+        .stat-icon.blue { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .stat-icon.green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .stat-icon.orange { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .stat-icon.red { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .stat-info h3 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+        }
+        .stat-info p {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin: 0;
+        }
+        
+        /* Filters Section */
+        .filters-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #e5e7eb;
+            margin-bottom: 1.5rem;
+        }
+        .filters-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            align-items: end;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .filter-group label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .filter-group label i {
+            color: #FF523B;
+        }
+        .filter-group input,
+        .filter-group select {
+            padding: 0.625rem 0.875rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: #FF523B;
+            box-shadow: 0 0 0 3px rgba(255, 82, 59, 0.1);
+        }
+        .filter-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: flex-end;
+        }
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-primary {
+            background: #FF523B;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #e64a35;
+        }
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+        
+        /* Table Container */
+        .table-container {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+        }
+        .orders-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .orders-table thead {
+            background: #f9fafb;
+        }
+        .orders-table thead th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .orders-table tbody td {
+            padding: 1rem;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.875rem;
+        }
+        .orders-table tbody tr:hover {
+            background: #f9fafb;
+        }
+        .orders-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .btn-action {
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.375rem;
+            border: 1px solid #d1d5db;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #6b7280;
+        }
+        .btn-action:hover {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+            color: #374151;
+        }
+        .btn-action.btn-view {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+        .btn-action.btn-view:hover {
+            background: #dbeafe;
+            border-color: #2563eb;
+            color: #1d4ed8;
+        }
+        .btn-action.btn-edit {
+            background: #fffbeb;
+            border-color: #f59e0b;
+            color: #f59e0b;
+        }
+        .btn-action.btn-edit:hover {
+            background: #fef3c7;
+            border-color: #d97706;
+            color: #d97706;
+        }
+        .btn-action.btn-delete {
+            background: #fef2f2;
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+        .btn-action.btn-delete:hover {
+            background: #fee2e2;
+            border-color: #dc2626;
+            color: #dc2626;
+        }
+        .btn-action i,
+        .btn-action .material-symbols-outlined {
+            font-size: 1.125rem;
+        }
+        
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-badge.status-active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .status-badge.status-inactive {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .status-badge.status-banned {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            padding: 3rem;
+            color: #9ca3af;
+        }
+        .empty-state i {
+            font-size: 3rem;
+        }
+        .empty-state p {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        
+        /* Bulk Actions Section */
+        .bulk-actions-section {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #fef3c7;
+            border-radius: 0.5rem;
+            border: 1px solid #fcd34d;
+        }
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        .col-checkbox {
+            width: 40px;
+        }
+        .member-profile-photo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+        }
+        .pagination-info {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        .pagination-number {
+            font-weight: 600;
+            color: #0f172a;
+        }
+        .pagination-list {
+            display: flex;
+            gap: 0.25rem;
+            list-style: none;
+        }
+        .pagination-link {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            color: #374151;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .pagination-link:hover:not(.pagination-disabled) {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+        }
+        .pagination-link.pagination-active {
+            background: #FF523B;
+            color: white;
+            border-color: #FF523B;
+        }
+        .pagination-link.pagination-disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        /* Fix action button spacing - Override AllMembers.css */
+        .action-btn {
+            width: 2rem !important;
+            height: 2rem !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 0.375rem !important;
+            border: 1px solid #d1d5db !important;
+            background: white !important;
+            cursor: pointer !important;
+            transition: all 0.2s !important;
+            color: #6b7280 !important;
+            margin-right: 0.25rem;
+            padding: 0 !important;
+        }
+        .action-btn:hover {
+            background: #f3f4f6 !important;
+            border-color: #9ca3af !important;
+            color: #374151 !important;
+        }
+        .action-btn.edit-btn {
+            background: #fffbeb !important;
+            border-color: #f59e0b !important;
+            color: #f59e0b !important;
+        }
+        .action-btn.edit-btn:hover {
+            background: #fef3c7 !important;
+            border-color: #d97706 !important;
+            color: #d97706 !important;
+        }
+        .action-btn.ban-btn {
+            background: #fef2f2 !important;
+            border-color: #ef4444 !important;
+            color: #ef4444 !important;
+        }
+        .action-btn.ban-btn:hover {
+            background: #fee2e2 !important;
+            border-color: #dc2626 !important;
+            color: #dc2626 !important;
+        }
+        .action-btn.inactive-btn {
+            background: #fffbeb !important;
+            border-color: #f59e0b !important;
+            color: #f59e0b !important;
+        }
+        .action-btn.inactive-btn:hover {
+            background: #fef3c7 !important;
+            border-color: #d97706 !important;
+            color: #d97706 !important;
+        }
+        .action-btn.activate-btn {
+            background: #f0fdf4 !important;
+            border-color: #10b981 !important;
+            color: #10b981 !important;
+        }
+        .action-btn.activate-btn:hover {
+            background: #d1fae5 !important;
+            border-color: #059669 !important;
+            color: #059669 !important;
+        }
+        .action-btn.delete-btn {
+            background: #fef2f2 !important;
+            border-color: #ef4444 !important;
+            color: #ef4444 !important;
+        }
+        .action-btn.delete-btn:hover {
+            background: #fee2e2 !important;
+            border-color: #dc2626 !important;
+            color: #dc2626 !important;
+        }
+        .action-btn .material-symbols-outlined {
+            font-size: 1.125rem !important;
+        }
+        
+        .col-actions {
+            white-space: nowrap;
+        }
+        
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+        
+        /* Message Styles */
+        .message {
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 500;
+        }
+        .message-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        .message-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        
+    </style>
     <style>
         /* Enhanced Add Admin Modal Styles */
         .modal-content.narrow {
@@ -413,138 +905,163 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
     </style>
 </head>
 
-<body class="page-body">
-
+<body>
     <div class="page-container">
-        <div class="page-content">
-            <?php if (isset($_SESSION['success_message'])): ?>
-                <div class="message message-success">
-                    <?php echo htmlspecialchars($_SESSION['success_message']); ?>
-                    <?php unset($_SESSION['success_message']); ?>
+        <?php if (isset($_SESSION['success_message'])): ?>
+            <div class="message message-success">
+                <?php echo htmlspecialchars($_SESSION['success_message']); ?>
+                <?php unset($_SESSION['success_message']); ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if (isset($_SESSION['error_message'])): ?>
+            <div class="message message-error">
+                <?php echo htmlspecialchars($_SESSION['error_message']); ?>
+                <?php unset($_SESSION['error_message']); ?>
+            </div>
+        <?php endif; ?>
+
+        <!-- Header -->
+        <header class="header-actions">
+            <h1 style="font-size: 2rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 0.75rem;">
+                <i class="fas fa-user-shield" style="color: #FF523B;"></i> Admin Management
+            </h1>
+            <button type="button" class="btn-add-admin" id="openAddAdminBtn">
+                <i class="fas fa-user-plus"></i> Add New Admin
+            </button>
+        </header>
+
+        <!-- Statistics Cards -->
+        <section class="stats-grid">
+            <?php
+            // Calculate statistics
+            $totalAdmins = $pagination['total_admins'] ?? 0;
+            $activeCount = 0;
+            $inactiveCount = 0;
+            $bannedCount = 0;
+            if (!empty($admins)) {
+                foreach ($admins as $admin) {
+                    $status = $admin['status'] ?? 'active';
+                    if ($status === 'active') $activeCount++;
+                    elseif ($status === 'inactive') $inactiveCount++;
+                    elseif ($status === 'banned') $bannedCount++;
+                }
+            }
+            ?>
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+                <div class="stat-info">
+                    <h3><?= number_format($totalAdmins) ?></h3>
+                    <p>Total Admins</p>
                 </div>
-            <?php endif; ?>
-
-            <?php if (isset($_SESSION['error_message'])): ?>
-                <div class="message message-error">
-                    <?php echo htmlspecialchars($_SESSION['error_message']); ?>
-                    <?php unset($_SESSION['error_message']); ?>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-info">
+                    <h3><?= number_format($activeCount) ?></h3>
+                    <p>Active Admins</p>
                 </div>
-            <?php endif; ?>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="fas fa-pause-circle"></i></div>
+                <div class="stat-info">
+                    <h3><?= number_format($inactiveCount) ?></h3>
+                    <p>Inactive Admins</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon red"><i class="fas fa-ban"></i></div>
+                <div class="stat-info">
+                    <h3><?= number_format($bannedCount) ?></h3>
+                    <p>Banned Admins</p>
+                </div>
+            </div>
+        </section>
 
-            <div class="content-card">
-                <div class="card-header">
-                    <h2 class="card-title">All Admins</h2>
-
-                    <div class="toolbar" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between;">
-                        <div class="search-section" style="flex: 1 1 320px;">
-                            <form method="GET" action="AdminController.php" class="search-form" style="display: flex; gap: 8px; align-items: center;">
-                                <input type="hidden" name="action" value="showAll">
-                                <?php if (!empty($_GET['sortBy'])): ?>
-                                    <input type="hidden" name="sortBy" value="<?php echo htmlspecialchars($_GET['sortBy']); ?>">
-                                <?php endif; ?>
-                                <?php if (!empty($_GET['sortOrder'])): ?>
-                                    <input type="hidden" name="sortOrder" value="<?php echo htmlspecialchars($_GET['sortOrder']); ?>">
-                                <?php endif; ?>
-                                <label class="sr-only" for="simple-search">Search</label>
-                                <div class="search-input-wrapper" style="flex: 1 1 auto;">
-                                    <input
-                                        class="search-input"
-                                        id="simple-search"
-                                        name="search"
-                                        placeholder="Search for admins..."
-                                        type="text"
-                                        value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>" />
-                                </div>
-                                <button type="submit" class="btn btn-primary btn-search">
-                                    <span class="material-symbols-outlined">search</span>
-                                    <span>Search</span>
-                                </button>
-                            </form>
-                        </div>
-                        <div style="display: flex; gap: 8px; align-items: center;">
-                            <button type="button" class="btn btn-primary" id="openAddAdminBtn">
-                                <span class="material-symbols-outlined">add</span>
-                                <span>Add Admin</span>
-                            </button>
-                        </div>
-                        <div class="bulk-actions-section" style="margin-bottom: 0; display: none; width: 100%;" id="bulkActionsSection">
-                            <button type="button" class="btn btn-danger" id="bulkDeleteBtn" style="margin-right: 0.5rem;">
-                                <span class="material-symbols-outlined">delete</span>
-                                <span>Delete Selected (<span id="selectedCount">0</span>)</span>
-                            </button>
-                            <button type="button" class="btn btn-secondary" id="clearSelectionBtn">
-                                <span class="material-symbols-outlined">close</span>
-                                <span>Clear Selection</span>
-                            </button>
-                        </div>
-                    </div>
+        <!-- Filters -->
+        <section class="filters-section">
+            <form method="GET" action="AdminController.php" class="filters-form" id="filterForm">
+                <input type="hidden" name="action" value="showAll">
+                <input type="hidden" name="sortBy" id="filterSortBy" value="<?= $currentSortBy ?>">
+                <input type="hidden" name="sortOrder" id="filterSortOrder" value="<?= $currentSortOrder ?>">
+                
+                <div class="filter-group">
+                    <label><i class="fas fa-search"></i> Search</label>
+                    <input type="text" name="search" id="filterSearch" placeholder="Username, Email, Name..." value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>">
                 </div>
 
-                <div class="table-wrapper" id="admins-table-wrapper">
-                    <table class="members-table" id="admins-table">
+                <div class="filter-group">
+                    <label><i class="fas fa-filter"></i> Status</label>
+                    <select name="status" id="filterStatus">
+                        <option value="">All Status</option>
+                        <option value="active" <?= (isset($_GET['status']) && $_GET['status'] === 'active') ? 'selected' : '' ?>>Active</option>
+                        <option value="inactive" <?= (isset($_GET['status']) && $_GET['status'] === 'inactive') ? 'selected' : '' ?>>Inactive</option>
+                        <option value="banned" <?= (isset($_GET['status']) && $_GET['status'] === 'banned') ? 'selected' : '' ?>>Banned</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label><i class="fas fa-sort"></i> Sort By</label>
+                    <select name="sortBy" id="filterSortBySelect">
+                        <option value="created_at" <?= $currentSortBy === 'created_at' ? 'selected' : '' ?>>Join Date</option>
+                        <option value="username" <?= $currentSortBy === 'username' ? 'selected' : '' ?>>Username</option>
+                        <option value="full_name" <?= $currentSortBy === 'full_name' ? 'selected' : '' ?>>Full Name</option>
+                        <option value="email" <?= $currentSortBy === 'email' ? 'selected' : '' ?>>Email</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label><i class="fas fa-arrow-up"></i> Order</label>
+                    <select name="sortOrder" id="filterSortOrderSelect">
+                        <option value="DESC" <?= $currentSortOrder === 'DESC' ? 'selected' : '' ?>>Descending</option>
+                        <option value="ASC" <?= $currentSortOrder === 'ASC' ? 'selected' : '' ?>>Ascending</option>
+                    </select>
+                </div>
+
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
+                    <a href="AdminController.php?action=showAll" class="btn btn-secondary"><i class="fas fa-redo"></i> Reset</a>
+                </div>
+            </form>
+        </section>
+
+        <!-- Bulk Actions Section -->
+        <div class="bulk-actions-section" style="display: none;" id="bulkActionsSection">
+            <button type="button" class="btn btn-danger" id="bulkDeleteBtn">
+                <i class="fas fa-trash"></i>
+                <span>Delete Selected (<span id="selectedCount">0</span>)</span>
+            </button>
+            <button type="button" class="btn btn-secondary" id="clearSelectionBtn">
+                <i class="fas fa-times"></i>
+                <span>Clear Selection</span>
+            </button>
+        </div>
+
+        <!-- Admins Table -->
+        <section class="table-container" id="admins-table-wrapper">
+            <table class="orders-table" id="admins-table">
                         <thead>
                             <tr>
-                                <th class="col-checkbox" style="width: 40px;">
+                                <th class="col-checkbox">
                                     <input type="checkbox" id="selectAllCheckbox" title="Select all">
                                 </th>
-                                <th class="col-photo">
-                                    <span>Photo</span>
-                                </th>
-                                <th class="col-sortable">
-                                    <a href="<?php echo getSortUrl('username', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
-                                        <span>Username</span>
-                                        <?php echo getSortArrow('username', $currentSortBy, $currentSortOrder); ?>
-                                    </a>
-                                </th>
-                                <th class="col-sortable">
-                                    <a href="<?php echo getSortUrl('full_name', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
-                                        <span>Full Name</span>
-                                        <?php echo getSortArrow('full_name', $currentSortBy, $currentSortOrder); ?>
-                                    </a>
-                                </th>
-                                <th class="col-sortable">
-                                    <a href="<?php echo getSortUrl('email', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
-                                        <span>Email</span>
-                                        <?php echo getSortArrow('email', $currentSortBy, $currentSortOrder); ?>
-                                    </a>
-                                </th>
-                                <th class="col-sortable">
-                                    <a href="<?php echo getSortUrl('contact_no', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
-                                        <span>Contact Number</span>
-                                        <?php echo getSortArrow('contact_no', $currentSortBy, $currentSortOrder); ?>
-                                    </a>
-                                </th>
-                                <th class="col-sortable">
-                                    <a href="<?php echo getSortUrl('gender', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
-                                        <span>Gender</span>
-                                        <?php echo getSortArrow('gender', $currentSortBy, $currentSortOrder); ?>
-                                    </a>
-                                </th>
-                                <th class="col-sortable">
-                                    <a href="<?php echo getSortUrl('created_at', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
-                                        <span>Joined Date</span>
-                                        <?php echo getSortArrow('created_at', $currentSortBy, $currentSortOrder); ?>
-                                    </a>
-                                </th>
-                                <th class="col-sortable">
-                                    <a href="<?php echo getSortUrl('status', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
-                                        <span>Status</span>
-                                        <?php echo getSortArrow('status', $currentSortBy, $currentSortOrder); ?>
-                                    </a>
-                                </th>
-                                <th class="col-actions">
-                                    <span class="sr-only">Actions</span>
-                                </th>
+                                <th>Photo</th>
+                                <th>Admin Info</th>
+                                <th>Contact</th>
+                                <th>Gender</th>
+                                <th>Joined Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (!empty($admins)): ?>
                                 <?php foreach ($admins as $admin): ?>
-                                    <tr class="table-row">
+                                    <tr>
                                         <td class="col-checkbox">
                                             <input type="checkbox" class="admin-checkbox" name="admin_ids[]" value="<?php echo $admin['user_id']; ?>" data-admin-name="<?php echo htmlspecialchars($admin['full_name'], ENT_QUOTES); ?>">
                                         </td>
-                                        <td class="col-photo">
+                                        <td>
                                             <?php
                                             $photoUrl = getProfilePhotoUrl($admin['profile_photo'] ?? '', $imageBasePath);
                                             $defaultPhotoUrl = $imageBasePath . 'images/defaultUserImage.jpg';
@@ -558,20 +1075,22 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                                  style="cursor: pointer;"
                                                  title="Click to view full size">
                                         </td>
-                                        <td class="col-username">
-                                            <?php echo htmlspecialchars($admin['username']); ?>
+                                        <td>
+                                            <div>
+                                                <strong><?php echo htmlspecialchars($admin['username']); ?></strong>
+                                                <br><small style="color: #6b7280;"><?php echo htmlspecialchars($admin['full_name']); ?></small>
+                                                <br><small style="color: #9ca3af;"><?php echo htmlspecialchars($admin['email']); ?></small>
+                                            </div>
                                         </td>
-                                        <td class="col-name"><?php echo htmlspecialchars($admin['full_name']); ?></td>
-                                        <td class="col-email"><?php echo htmlspecialchars($admin['email']); ?></td>
-                                        <td class="col-contact"><?php echo htmlspecialchars($admin['contact_no']); ?></td>
-                                        <td class="col-gender"><?php echo htmlspecialchars($admin['gender']); ?></td>
-                                        <td class="col-date">
+                                        <td><?php echo htmlspecialchars($admin['contact_no']); ?></td>
+                                        <td><?php echo htmlspecialchars($admin['gender']); ?></td>
+                                        <td>
                                             <?php
                                             $date = new DateTime($admin['created_at']);
-                                            echo $date->format('Y-m-d');
+                                            echo $date->format('M d, Y');
                                             ?>
                                         </td>
-                                        <td class="col-status">
+                                        <td>
                                             <?php
                                             $status = $admin['status'] ?? 'active';
                                             $statusClass = '';
@@ -594,146 +1113,149 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                             <span class="<?php echo $statusClass; ?>"><?php echo htmlspecialchars($statusText); ?></span>
                                         </td>
                                         <td class="col-actions">
-                                            <button
-                                                class="action-btn edit-btn"
-                                                data-user-id="<?php echo $admin['user_id']; ?>"
-                                                data-username="<?php echo htmlspecialchars($admin['username'], ENT_QUOTES); ?>"
-                                                data-full-name="<?php echo htmlspecialchars($admin['full_name'], ENT_QUOTES); ?>"
-                                                data-email="<?php echo htmlspecialchars($admin['email'], ENT_QUOTES); ?>"
-                                                data-contact-no="<?php echo htmlspecialchars($admin['contact_no'], ENT_QUOTES); ?>"
-                                                data-gender="<?php echo htmlspecialchars($admin['gender'], ENT_QUOTES); ?>"
-                                                title="Edit admin">
-                                                <span class="material-symbols-outlined">edit</span>
-                                            </button>
-
-                                            <?php $currentStatus = $admin['status'] ?? 'active'; ?>
-                                            <?php if ($currentStatus !== 'banned'): ?>
+                                            <div class="action-buttons">
                                                 <button
-                                                    class="action-btn ban-btn"
-                                                    data-action="status"
+                                                    class="action-btn edit-btn"
+                                                    data-user-id="<?php echo $admin['user_id']; ?>"
+                                                    data-username="<?php echo htmlspecialchars($admin['username'], ENT_QUOTES); ?>"
+                                                    data-full-name="<?php echo htmlspecialchars($admin['full_name'], ENT_QUOTES); ?>"
+                                                    data-email="<?php echo htmlspecialchars($admin['email'], ENT_QUOTES); ?>"
+                                                    data-contact-no="<?php echo htmlspecialchars($admin['contact_no'], ENT_QUOTES); ?>"
+                                                    data-gender="<?php echo htmlspecialchars($admin['gender'], ENT_QUOTES); ?>"
+                                                    title="Edit admin">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+
+                                                <?php $currentStatus = $admin['status'] ?? 'active'; ?>
+                                                <?php if ($currentStatus !== 'banned'): ?>
+                                                    <button
+                                                        class="action-btn ban-btn"
+                                                        data-action="status"
+                                                        data-user-id="<?php echo $admin['user_id']; ?>"
+                                                        data-admin-name="<?php echo htmlspecialchars($admin['full_name'], ENT_QUOTES); ?>"
+                                                        data-status="banned"
+                                                        title="Ban admin">
+                                                        <i class="fas fa-ban"></i>
+                                                    </button>
+                                                <?php endif; ?>
+
+                                                <?php if ($currentStatus !== 'inactive'): ?>
+                                                    <button
+                                                        class="action-btn inactive-btn"
+                                                        data-action="status"
+                                                        data-user-id="<?php echo $admin['user_id']; ?>"
+                                                        data-admin-name="<?php echo htmlspecialchars($admin['full_name'], ENT_QUOTES); ?>"
+                                                        data-status="inactive"
+                                                        title="Set to inactive">
+                                                        <i class="fas fa-pause-circle"></i>
+                                                    </button>
+                                                <?php endif; ?>
+
+                                                <?php if ($currentStatus !== 'active'): ?>
+                                                    <button
+                                                        class="action-btn activate-btn"
+                                                        data-action="status"
+                                                        data-user-id="<?php echo $admin['user_id']; ?>"
+                                                        data-admin-name="<?php echo htmlspecialchars($admin['full_name'], ENT_QUOTES); ?>"
+                                                        data-status="active"
+                                                        title="Activate admin">
+                                                        <i class="fas fa-check-circle"></i>
+                                                    </button>
+                                                <?php endif; ?>
+
+                                                <button
+                                                    class="action-btn delete-btn"
+                                                    data-action="delete"
                                                     data-user-id="<?php echo $admin['user_id']; ?>"
                                                     data-admin-name="<?php echo htmlspecialchars($admin['full_name'], ENT_QUOTES); ?>"
-                                                    data-status="banned"
-                                                    title="Ban admin">
-                                                    <span class="material-symbols-outlined">block</span>
+                                                    title="Delete admin">
+                                                    <i class="fas fa-trash"></i>
                                                 </button>
-                                            <?php endif; ?>
-
-                                            <?php if ($currentStatus !== 'inactive'): ?>
-                                                <button
-                                                    class="action-btn inactive-btn"
-                                                    data-action="status"
-                                                    data-user-id="<?php echo $admin['user_id']; ?>"
-                                                    data-admin-name="<?php echo htmlspecialchars($admin['full_name'], ENT_QUOTES); ?>"
-                                                    data-status="inactive"
-                                                    title="Set to inactive">
-                                                    <span class="material-symbols-outlined">pause_circle</span>
-                                                </button>
-                                            <?php endif; ?>
-
-                                            <?php if ($currentStatus !== 'active'): ?>
-                                                <button
-                                                    class="action-btn activate-btn"
-                                                    data-action="status"
-                                                    data-user-id="<?php echo $admin['user_id']; ?>"
-                                                    data-admin-name="<?php echo htmlspecialchars($admin['full_name'], ENT_QUOTES); ?>"
-                                                    data-status="active"
-                                                    title="Activate admin">
-                                                    <span class="material-symbols-outlined">check_circle</span>
-                                                </button>
-                                            <?php endif; ?>
-
-                                            <button
-                                                class="action-btn delete-btn"
-                                                data-action="delete"
-                                                data-user-id="<?php echo $admin['user_id']; ?>"
-                                                data-admin-name="<?php echo htmlspecialchars($admin['full_name'], ENT_QUOTES); ?>"
-                                                title="Delete admin">
-                                                <span class="material-symbols-outlined">delete</span>
-                                            </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php else: ?>
-                                <tr class="table-row table-row-empty">
-                                    <td colspan="10" class="col-empty">
-                                        No admins found. <?php echo !empty($_GET['search']) ? 'Try a different search term.' : ''; ?>
+                                <tr>
+                                    <td colspan="8" class="text-center">
+                                        <div class="empty-state">
+                                            <i class="fas fa-inbox"></i>
+                                            <p>No admins found<?php echo !empty($_GET['search']) ? '. Try a different search term.' : ''; ?></p>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
                     </table>
-                </div>
-
-                <?php if (!empty($admins)): ?>
-                    <nav class="pagination" aria-label="Table navigation">
-                        <span class="pagination-info">
-                            Showing
-                            <span class="pagination-number"><?php echo $pagination['showing_from']; ?>-<?php echo $pagination['showing_to']; ?></span>
-                            of
-                            <span class="pagination-number"><?php echo $pagination['total_admins']; ?></span>
-                        </span>
-                        <ul class="pagination-list">
-                            <li>
-                                <?php
-                                $prevParams = ['action' => 'showAll', 'page' => $pagination['current_page'] - 1];
-                                if (!empty($_GET['search'])) $prevParams['search'] = $_GET['search'];
-                                if (!empty($_GET['sortBy'])) $prevParams['sortBy'] = $_GET['sortBy'];
-                                if (!empty($_GET['sortOrder'])) $prevParams['sortOrder'] = $_GET['sortOrder'];
-                                $prevUrl = 'AdminController.php?' . http_build_query($prevParams);
-                                ?>
-                                <?php if ($pagination['current_page'] > 1): ?>
-                                    <a href="<?php echo $prevUrl; ?>" class="pagination-link pagination-prev">
-                                        <span class="material-symbols-outlined">chevron_left</span>
-                                    </a>
-                                <?php else: ?>
-                                    <span class="pagination-link pagination-prev pagination-disabled">
-                                        <span class="material-symbols-outlined">chevron_left</span>
-                                    </span>
-                                <?php endif; ?>
-                            </li>
-
+            
+            <?php if (!empty($admins)): ?>
+                <nav class="pagination" aria-label="Table navigation">
+                    <span class="pagination-info">
+                        Showing
+                        <span class="pagination-number"><?php echo $pagination['showing_from']; ?>-<?php echo $pagination['showing_to']; ?></span>
+                        of
+                        <span class="pagination-number"><?php echo $pagination['total_admins']; ?></span>
+                    </span>
+                    <ul class="pagination-list">
+                        <li>
                             <?php
-                            $startPage = max(1, $pagination['current_page'] - 2);
-                            $endPage = min($pagination['total_pages'], $pagination['current_page'] + 2);
-
-                            for ($i = $startPage; $i <= $endPage; $i++):
-                                $pageParams = ['action' => 'showAll', 'page' => $i];
-                                if (!empty($_GET['search'])) $pageParams['search'] = $_GET['search'];
-                                if (!empty($_GET['sortBy'])) $pageParams['sortBy'] = $_GET['sortBy'];
-                                if (!empty($_GET['sortOrder'])) $pageParams['sortOrder'] = $_GET['sortOrder'];
-                                $pageUrl = 'AdminController.php?' . http_build_query($pageParams);
+                            $prevParams = ['action' => 'showAll', 'page' => $pagination['current_page'] - 1];
+                            if (!empty($_GET['search'])) $prevParams['search'] = $_GET['search'];
+                            if (!empty($_GET['sortBy'])) $prevParams['sortBy'] = $_GET['sortBy'];
+                            if (!empty($_GET['sortOrder'])) $prevParams['sortOrder'] = $_GET['sortOrder'];
+                            $prevUrl = 'AdminController.php?' . http_build_query($prevParams);
                             ?>
-                                <li>
-                                    <a href="<?php echo $pageUrl; ?>" class="pagination-link <?php echo $i == $pagination['current_page'] ? 'pagination-active' : ''; ?>">
-                                        <?php echo $i; ?>
-                                    </a>
-                                </li>
-                            <?php endfor; ?>
+                            <?php if ($pagination['current_page'] > 1): ?>
+                                <a href="<?php echo $prevUrl; ?>" class="pagination-link pagination-prev">
+                                    <span class="material-symbols-outlined">chevron_left</span>
+                                </a>
+                            <?php else: ?>
+                                <span class="pagination-link pagination-prev pagination-disabled">
+                                    <span class="material-symbols-outlined">chevron_left</span>
+                                </span>
+                            <?php endif; ?>
+                        </li>
 
+                        <?php
+                        $startPage = max(1, $pagination['current_page'] - 2);
+                        $endPage = min($pagination['total_pages'], $pagination['current_page'] + 2);
+
+                        for ($i = $startPage; $i <= $endPage; $i++):
+                            $pageParams = ['action' => 'showAll', 'page' => $i];
+                            if (!empty($_GET['search'])) $pageParams['search'] = $_GET['search'];
+                            if (!empty($_GET['sortBy'])) $pageParams['sortBy'] = $_GET['sortBy'];
+                            if (!empty($_GET['sortOrder'])) $pageParams['sortOrder'] = $_GET['sortOrder'];
+                            $pageUrl = 'AdminController.php?' . http_build_query($pageParams);
+                        ?>
                             <li>
-                                <?php
-                                $nextParams = ['action' => 'showAll', 'page' => $pagination['current_page'] + 1];
-                                if (!empty($_GET['search'])) $nextParams['search'] = $_GET['search'];
-                                if (!empty($_GET['sortBy'])) $nextParams['sortBy'] = $_GET['sortBy'];
-                                if (!empty($_GET['sortOrder'])) $nextParams['sortOrder'] = $_GET['sortOrder'];
-                                $nextUrl = 'AdminController.php?' . http_build_query($nextParams);
-                                ?>
-                                <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
-                                    <a href="<?php echo $nextUrl; ?>" class="pagination-link pagination-next">
-                                        <span class="material-symbols-outlined">chevron_right</span>
-                                    </a>
-                                <?php else: ?>
-                                    <span class="pagination-link pagination-next pagination-disabled">
-                                        <span class="material-symbols-outlined">chevron_right</span>
-                                    </span>
-                                <?php endif; ?>
+                                <a href="<?php echo $pageUrl; ?>" class="pagination-link <?php echo $i == $pagination['current_page'] ? 'pagination-active' : ''; ?>">
+                                    <?php echo $i; ?>
+                                </a>
                             </li>
-                        </ul>
-                    </nav>
-                <?php endif; ?>
-            </div>
-        </div>
+                        <?php endfor; ?>
+
+                        <li>
+                            <?php
+                            $nextParams = ['action' => 'showAll', 'page' => $pagination['current_page'] + 1];
+                            if (!empty($_GET['search'])) $nextParams['search'] = $_GET['search'];
+                            if (!empty($_GET['sortBy'])) $nextParams['sortBy'] = $_GET['sortBy'];
+                            if (!empty($_GET['sortOrder'])) $nextParams['sortOrder'] = $_GET['sortOrder'];
+                            $nextUrl = 'AdminController.php?' . http_build_query($nextParams);
+                            ?>
+                            <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
+                                <a href="<?php echo $nextUrl; ?>" class="pagination-link pagination-next">
+                                    <span class="material-symbols-outlined">chevron_right</span>
+                                </a>
+                            <?php else: ?>
+                                <span class="pagination-link pagination-next pagination-disabled">
+                                    <span class="material-symbols-outlined">chevron_right</span>
+                                </span>
+                            <?php endif; ?>
+                        </li>
+                    </ul>
+                </nav>
+            <?php endif; ?>
+        </section>
     </div>
 
     <form id="statusForm" method="POST" action="AdminController.php" style="display: none;">
@@ -755,31 +1277,31 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
     <script>
         const imageBasePath = '<?php echo $imageBasePath; ?>';
         let searchTimeout;
-        const searchInput = $('#simple-search');
-        const searchForm = $('.search-form');
 
-        searchForm.on('submit', function(e) {
-            e.preventDefault();
-            performSearch();
-        });
-
-        searchInput.on('input', function() {
+        // AJAX Search with real-time filtering
+        $('#filterSearch').on('input', function() {
             clearTimeout(searchTimeout);
-            const searchTerm = $(this).val();
-            if (!searchTerm || searchTerm.trim() === '') {
-                performSearch();
-            } else {
-                searchTimeout = setTimeout(function() {
-                    performSearch();
-                }, 500);
-            }
+            searchTimeout = setTimeout(function() {
+                performAjaxFilter();
+            }, 500);
         });
 
-        function performSearch() {
-            const searchTerm = searchInput.val() || '';
-            const trimmedSearch = searchTerm.trim();
-            const sortBy = $('input[name="sortBy"]').val() || 'created_at';
-            const sortOrder = $('input[name="sortOrder"]').val() || 'DESC';
+        // AJAX Filter on form submit
+        $('#filterForm').on('submit', function(e) {
+            e.preventDefault();
+            performAjaxFilter();
+        });
+
+        // AJAX Filter on dropdown change
+        $('#filterStatus, #filterSortBySelect, #filterSortOrderSelect').on('change', function() {
+            performAjaxFilter();
+        });
+
+        function performAjaxFilter() {
+            const searchTerm = $('#filterSearch').val().trim();
+            const status = $('#filterStatus').val();
+            const sortBy = $('#filterSortBySelect').val() || 'created_at';
+            const sortOrder = $('#filterSortOrderSelect').val() || 'DESC';
 
             const tableWrapper = $('#admins-table-wrapper');
             tableWrapper.css('opacity', '0.6');
@@ -787,7 +1309,8 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
             const requestData = {
                 action: 'showAll',
                 ajax: '1',
-                search: trimmedSearch,
+                search: searchTerm,
+                status: status,
                 sortBy: sortBy,
                 sortOrder: sortOrder,
                 page: 1
@@ -829,7 +1352,16 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                     tbody.append(row);
                 });
             } else {
-                tbody.append('<tr class="table-row table-row-empty"><td colspan="10" class="col-empty">No admins found. Try a different search term.</td></tr>');
+                tbody.append(`
+                    <tr>
+                        <td colspan="8" class="text-center">
+                            <div class="empty-state">
+                                <i class="fas fa-inbox"></i>
+                                <p>No admins found. Try a different search term.</p>
+                            </div>
+                        </td>
+                    </tr>
+                `);
             }
         }
 
@@ -865,21 +1397,21 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
 
             let statusButtons = '';
             if (status !== 'banned') {
-                statusButtons += '<button class="action-btn ban-btn" data-action="status" data-user-id="' + admin.user_id + '" data-admin-name="' + escapeHtml(admin.full_name) + '" data-status="banned" title="Ban admin"><span class="material-symbols-outlined">block</span></button>';
+                statusButtons += '<button class="action-btn ban-btn" data-action="status" data-user-id="' + admin.user_id + '" data-admin-name="' + escapeHtml(admin.full_name) + '" data-status="banned" title="Ban admin"><i class="fas fa-ban"></i></button>';
             }
             if (status !== 'inactive') {
-                statusButtons += '<button class="action-btn inactive-btn" data-action="status" data-user-id="' + admin.user_id + '" data-admin-name="' + escapeHtml(admin.full_name) + '" data-status="inactive" title="Set to inactive"><span class="material-symbols-outlined">pause_circle</span></button>';
+                statusButtons += '<button class="action-btn inactive-btn" data-action="status" data-user-id="' + admin.user_id + '" data-admin-name="' + escapeHtml(admin.full_name) + '" data-status="inactive" title="Set to inactive"><i class="fas fa-pause-circle"></i></button>';
             }
             if (status !== 'active') {
-                statusButtons += '<button class="action-btn activate-btn" data-action="status" data-user-id="' + admin.user_id + '" data-admin-name="' + escapeHtml(admin.full_name) + '" data-status="active" title="Activate admin"><span class="material-symbols-outlined">check_circle</span></button>';
+                statusButtons += '<button class="action-btn activate-btn" data-action="status" data-user-id="' + admin.user_id + '" data-admin-name="' + escapeHtml(admin.full_name) + '" data-status="active" title="Activate admin"><i class="fas fa-check-circle"></i></button>';
             }
 
             const row = `
-                <tr class="table-row">
+                <tr>
                     <td class="col-checkbox">
                         <input type="checkbox" class="admin-checkbox" name="admin_ids[]" value="${admin.user_id}" data-admin-name="${escapeHtml(admin.full_name)}">
                     </td>
-                    <td class="col-photo">
+                    <td>
                         <img src="${escapeHtml(photoUrl)}"
                              alt="Profile photo"
                              class="member-profile-photo clickable-image"
@@ -889,23 +1421,29 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                              style="cursor: pointer;"
                              title="Click to view full size">
                     </td>
-                    <td class="col-username">${escapeHtml(admin.username)}</td>
-                    <td class="col-name">${escapeHtml(admin.full_name)}</td>
-                    <td class="col-email">${escapeHtml(admin.email)}</td>
-                    <td class="col-contact">${escapeHtml(admin.contact_no)}</td>
-                    <td class="col-gender">${escapeHtml(admin.gender)}</td>
-                    <td class="col-date">${createdDateDisplay}</td>
-                    <td class="col-status">
+                    <td>
+                        <div>
+                            <strong>${escapeHtml(admin.username)}</strong>
+                            <br><small style="color: #6b7280;">${escapeHtml(admin.full_name)}</small>
+                            <br><small style="color: #9ca3af;">${escapeHtml(admin.email)}</small>
+                        </div>
+                    </td>
+                    <td>${escapeHtml(admin.contact_no)}</td>
+                    <td>${escapeHtml(admin.gender)}</td>
+                    <td>${createdDateDisplay}</td>
+                    <td>
                         <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
                     </td>
                     <td class="col-actions">
-                        <button class="action-btn edit-btn" data-user-id="${admin.user_id}" data-username="${escapeHtml(admin.username)}" data-full-name="${escapeHtml(admin.full_name)}" data-email="${escapeHtml(admin.email)}" data-contact-no="${escapeHtml(admin.contact_no)}" data-gender="${escapeHtml(admin.gender)}" title="Edit admin">
-                            <span class="material-symbols-outlined">edit</span>
-                        </button>
-                        ${statusButtons}
-                        <button class="action-btn delete-btn" data-action="delete" data-user-id="${admin.user_id}" data-admin-name="${escapeHtml(admin.full_name)}" title="Delete admin">
-                            <span class="material-symbols-outlined">delete</span>
-                        </button>
+                        <div class="action-buttons">
+                            <button class="action-btn edit-btn" data-user-id="${admin.user_id}" data-username="${escapeHtml(admin.username)}" data-full-name="${escapeHtml(admin.full_name)}" data-email="${escapeHtml(admin.email)}" data-contact-no="${escapeHtml(admin.contact_no)}" data-gender="${escapeHtml(admin.gender)}" title="Edit admin">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            ${statusButtons}
+                            <button class="action-btn delete-btn" data-action="delete" data-user-id="${admin.user_id}" data-admin-name="${escapeHtml(admin.full_name)}" title="Delete admin">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     </td>
                 </tr>
             `;

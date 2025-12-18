@@ -101,8 +101,84 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
     <title><?php echo $pageTitle; ?> - NGear</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AdminOrder.css">
     <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AllTables.css">
     <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AllVouchers.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background: transparent; color: #0f172a; }
+        .page-container { max-width: 100%; margin: 0; padding: 20px; }
+        .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+        .btn-add-voucher { background: linear-gradient(135deg, #FF523B 0%, #e64a35 100%); color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; border: none; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; transition: all 0.3s ease; text-decoration: none; box-shadow: 0 4px 6px rgba(255, 82, 59, 0.3); }
+        .btn-add-voucher:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(255, 82, 59, 0.4); }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { display: flex; align-items: center; gap: 1.25rem; background: white; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.3s; }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-color: #FF523B; }
+        .stat-icon { width: 3.5rem; height: 3.5rem; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-size: 1.5rem; color: white; flex-shrink: 0; }
+        .stat-icon.blue { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .stat-icon.green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .stat-icon.orange { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .stat-icon.red { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .stat-icon.purple { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
+        .stat-info h3 { font-size: 1.875rem; font-weight: 700; color: #0f172a; margin: 0; }
+        .stat-info p { font-size: 0.875rem; color: #6b7280; margin: 0; }
+        .filters-section { background: white; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; margin-bottom: 1.5rem; }
+        .filters-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: end; }
+        .filter-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .filter-group label { font-size: 0.875rem; font-weight: 600; color: #374151; display: flex; align-items: center; gap: 0.5rem; }
+        .filter-group label i { color: #FF523B; }
+        .filter-group input, .filter-group select { padding: 0.625rem 0.875rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 0.875rem; transition: all 0.2s; }
+        .filter-group input:focus, .filter-group select:focus { outline: none; border-color: #FF523B; box-shadow: 0 0 0 3px rgba(255, 82, 59, 0.1); }
+        .filter-actions { display: flex; gap: 0.5rem; align-items: flex-end; }
+        .btn { padding: 0.625rem 1.25rem; border-radius: 0.5rem; font-weight: 600; font-size: 0.875rem; cursor: pointer; transition: all 0.2s; border: none; display: flex; align-items: center; gap: 0.5rem; }
+        .btn-primary { background: #FF523B; color: white; }
+        .btn-primary:hover { background: #e64a35; }
+        .btn-secondary { background: #6b7280; color: white; }
+        .btn-secondary:hover { background: #4b5563; }
+        .table-container { background: white; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; overflow: hidden; }
+        .orders-table { width: 100%; border-collapse: collapse; }
+        .orders-table thead { background: #f9fafb; }
+        .orders-table thead th { padding: 1rem; text-align: left; font-weight: 600; font-size: 0.875rem; color: #374151; border-bottom: 2px solid #e5e7eb; }
+        .orders-table tbody td { padding: 1rem; border-bottom: 1px solid #f3f4f6; font-size: 0.875rem; }
+        .orders-table tbody tr:hover { background: #f9fafb; }
+        .orders-table tbody tr:last-child td { border-bottom: none; }
+        .action-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .action-btn { width: 2rem !important; height: 2rem !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; border-radius: 0.375rem !important; border: 1px solid #d1d5db !important; background: white !important; cursor: pointer !important; transition: all 0.2s !important; color: #6b7280 !important; margin-right: 0.25rem; padding: 0 !important; }
+        .action-btn:hover { background: #f3f4f6 !important; border-color: #9ca3af !important; color: #374151 !important; }
+        .action-btn.view-btn { background: #eff6ff !important; border-color: #3b82f6 !important; color: #3b82f6 !important; }
+        .action-btn.view-btn:hover { background: #dbeafe !important; border-color: #2563eb !important; color: #1d4ed8 !important; }
+        .action-btn.edit-btn { background: #fffbeb !important; border-color: #f59e0b !important; color: #f59e0b !important; }
+        .action-btn.edit-btn:hover { background: #fef3c7 !important; border-color: #d97706 !important; color: #d97706 !important; }
+        .action-btn.delete-btn { background: #fef2f2 !important; border-color: #ef4444 !important; color: #ef4444 !important; }
+        .action-btn.delete-btn:hover { background: #fee2e2 !important; border-color: #dc2626 !important; color: #dc2626 !important; }
+        .action-btn .material-symbols-outlined { font-size: 1.125rem !important; }
+        .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+        .status-badge.status-active { background: #d1fae5; color: #065f46; }
+        .status-badge.status-expired { background: #fee2e2; color: #991b1b; }
+        .status-badge.status-pending { background: #fef3c7; color: #92400e; }
+        .empty-state { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 3rem; color: #9ca3af; }
+        .empty-state i { font-size: 3rem; }
+        .empty-state p { font-size: 1rem; font-weight: 500; }
+        .bulk-actions-section { margin-top: 1rem; padding: 1rem; background: #fef3c7; border-radius: 0.5rem; border: 1px solid #fcd34d; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .col-checkbox { width: 40px; }
+        .pagination { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; background: white; border-top: 1px solid #e5e7eb; }
+        .pagination-info { font-size: 0.875rem; color: #6b7280; }
+        .pagination-number { font-weight: 600; color: #0f172a; }
+        .pagination-list { display: flex; gap: 0.25rem; list-style: none; }
+        .pagination-link { padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; color: #374151; text-decoration: none; transition: all 0.2s; }
+        .pagination-link:hover:not(.pagination-disabled) { background: #f3f4f6; border-color: #9ca3af; }
+        .pagination-link.pagination-active { background: #FF523B; color: white; border-color: #FF523B; }
+        .pagination-link.pagination-disabled { opacity: 0.5; cursor: not-allowed; }
+        .text-center { text-align: center; }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0; }
+        .message { padding: 1rem 1.5rem; border-radius: 0.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; font-weight: 500; }
+        .message-success { background: #d1fae5; color: #065f46; border: 1px solid #10b981; }
+        .message-error { background: #fee2e2; color: #991b1b; border: 1px solid #ef4444; }
+        .voucher-code { font-family: 'Courier New', monospace; background: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-weight: 600; }
+    </style>
 </head>
 
 <body class="page-body">
@@ -112,6 +188,7 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
             <!-- Success/Error Messages -->
             <?php if (isset($_SESSION['success_message'])): ?>
                 <div class="message message-success">
+                    <i class="fas fa-check-circle"></i>
                     <?php echo htmlspecialchars($_SESSION['success_message']); ?>
                     <?php unset($_SESSION['success_message']); ?>
                 </div>
@@ -119,168 +196,214 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
 
             <?php if (isset($_SESSION['error_message'])): ?>
                 <div class="message message-error">
+                    <i class="fas fa-exclamation-circle"></i>
                     <?php echo htmlspecialchars($_SESSION['error_message']); ?>
                     <?php unset($_SESSION['error_message']); ?>
                 </div>
             <?php endif; ?>
 
-            <!-- Main Content Card -->
-            <div class="content-card">
-                <div class="card-header">
-                    <h2 class="card-title">All Vouchers</h2>
+            <!-- Header -->
+            <div class="header-actions">
+                <h1 style="font-size: 1.875rem; font-weight: 700; display: flex; align-items: center; gap: 0.75rem; margin: 0; color: #0f172a;">
+                    <i class="fas fa-ticket-alt" style="color: #FF523B;"></i>
+                    Voucher Management
+                </h1>
+                <?php
+                $voucherFormUrl = $viewsBasePath . 'voucher_management/VoucherRegisterForm.php?return_to=admin';
+                ?>
+                <a href="<?php echo $voucherFormUrl; ?>" class="btn-add-voucher">
+                    <i class="fas fa-plus"></i>
+                    Add New Voucher
+                </a>
+            </div>
 
-                    <!-- Search and Actions Bar -->
-                    <div class="toolbar">
-                        <div class="bulk-actions-section" style="margin-bottom: 1rem; display: none;" id="bulkActionsSection">
-                            <button type="button" class="btn btn-danger" id="bulkDeleteBtn" style="margin-right: 0.5rem;">
-                                <span class="material-symbols-outlined">delete</span>
-                                <span>Delete Selected (<span id="selectedCount">0</span>)</span>
-                            </button>
-                            <button type="button" class="btn btn-secondary" id="clearSelectionBtn">
-                                <span class="material-symbols-outlined">close</span>
-                                <span>Clear Selection</span>
-                            </button>
-                        </div>
-                        <div class="search-section">
-                            <form method="GET" action="VoucherController.php" class="search-form">
-                                <input type="hidden" name="action" value="showAll">
-                                <?php if (!empty($_GET['sortBy'])): ?>
-                                    <input type="hidden" name="sortBy" value="<?php echo htmlspecialchars($_GET['sortBy']); ?>">
-                                <?php endif; ?>
-                                <?php if (!empty($_GET['sortOrder'])): ?>
-                                    <input type="hidden" name="sortOrder" value="<?php echo htmlspecialchars($_GET['sortOrder']); ?>">
-                                <?php endif; ?>
-                                <label class="sr-only" for="simple-search">Search</label>
-                                <div class="search-input-wrapper">
-                                    <input
-                                        class="search-input"
-                                        id="simple-search"
-                                        name="search"
-                                        placeholder="Search for vouchers..."
-                                        type="text"
-                                        value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>" />
-                                </div>
-                                <button type="submit" class="btn btn-primary btn-search">
-                                    <span class="material-symbols-outlined">search</span>
-                                    <span>Search</span>
-                                </button>
-                            </form>
-                        </div>
-                        <div class="actions-section">
-                            <?php
-                            // Calculate the path to VoucherRegisterForm.php using the same base path calculation
-                            $voucherFormUrl = $viewsBasePath . 'voucher_management/VoucherRegisterForm.php?return_to=admin';
-                            ?>
-                            <a href="<?php echo $voucherFormUrl; ?>" class="btn btn-primary btn-add">
-                                <span class="material-symbols-outlined">add</span>
-                                Add new voucher
-                            </a>
-                        </div>
+            <!-- Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon blue">
+                        <i class="fas fa-ticket-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3><?php echo isset($pagination['total_vouchers']) ? $pagination['total_vouchers'] : count($vouchers); ?></h3>
+                        <p>Total Vouchers</p>
                     </div>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3><?php
+                            $activeCount = 0;
+                            foreach ($vouchers as $v) {
+                                if (($v['status'] ?? 'active') === 'active') $activeCount++;
+                            }
+                            echo $activeCount;
+                        ?></h3>
+                        <p>Active Vouchers</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon orange">
+                        <i class="fas fa-pause-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3><?php
+                            $inactiveCount = 0;
+                            foreach ($vouchers as $v) {
+                                if (($v['status'] ?? 'active') === 'inactive') $inactiveCount++;
+                            }
+                            echo $inactiveCount;
+                        ?></h3>
+                        <p>Inactive Vouchers</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon red">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3><?php
+                            $expiredCount = 0;
+                            foreach ($vouchers as $v) {
+                                if (($v['status'] ?? 'active') === 'expired') $expiredCount++;
+                            }
+                            echo $expiredCount;
+                        ?></h3>
+                        <p>Expired Vouchers</p>
+                    </div>
+                </div>
+            </div>
 
-                <div class="table-wrapper" id="vouchers-table-wrapper">
-                    <table class="members-table vouchers-table" id="vouchers-table">
-                        <thead>
-                            <tr>
-                                <th class="col-checkbox" style="width: 40px;">
-                                    <input type="checkbox" id="selectAllCheckbox" title="Select all">
-                                </th>
-                                <th class="col-sortable">
-                                    <a href="<?php echo getSortUrl('code', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
-                                        <span>Code</span>
-                                        <?php echo getSortArrow('code', $currentSortBy, $currentSortOrder); ?>
-                                    </a>
-                                </th>
-                                <th class="col-sortable">
-                                    <a href="<?php echo getSortUrl('description', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
-                                        <span>Description</span>
-                                        <?php echo getSortArrow('description', $currentSortBy, $currentSortOrder); ?>
-                                    </a>
-                                </th>
-                                <th class="col-sortable">
-                                    <a href="<?php echo getSortUrl('type', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
-                                        <span>Type</span>
-                                        <?php echo getSortArrow('type', $currentSortBy, $currentSortOrder); ?>
-                                    </a>
-                                </th>
-                                <th class="col-sortable">
-                                    <a href="<?php echo getSortUrl('discount_value', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
-                                        <span>Discount</span>
-                                        <?php echo getSortArrow('discount_value', $currentSortBy, $currentSortOrder); ?>
-                                    </a>
-                                </th>
-                                <th class="col-sortable">
-                                    <a href="<?php echo getSortUrl('min_spend', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
-                                        <span>Min Spend</span>
-                                        <?php echo getSortArrow('min_spend', $currentSortBy, $currentSortOrder); ?>
-                                    </a>
-                                </th>
-                                <th class="col-sortable">
-                                    <a href="<?php echo getSortUrl('start_date', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
-                                        <span>Start Date</span>
-                                        <?php echo getSortArrow('start_date', $currentSortBy, $currentSortOrder); ?>
-                                    </a>
-                                </th>
-                                <th class="col-sortable">
-                                    <a href="<?php echo getSortUrl('end_date', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
-                                        <span>End Date</span>
-                                        <?php echo getSortArrow('end_date', $currentSortBy, $currentSortOrder); ?>
-                                    </a>
-                                </th>
-                                <th class="col-sortable col-voucher-status">
-                                    <a href="<?php echo getSortUrl('status', $currentSortBy, $currentSortOrder); ?>" class="sort-link">
-                                        <span>Status</span>
-                                        <?php echo getSortArrow('status', $currentSortBy, $currentSortOrder); ?>
-                                    </a>
-                                </th>
-                                <th class="col-sortable">
-                                    <span>Redeemable</span>
-                                </th>
-                                <th class="col-actions">
-                                    <span class="sr-only">Actions</span>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (!empty($vouchers)): ?>
-                                <?php foreach ($vouchers as $voucher): ?>
-                                    <tr class="table-row">
-                                        <td class="col-checkbox">
-                                            <input type="checkbox" class="voucher-checkbox" name="voucher_ids[]" value="<?php echo $voucher['voucher_id']; ?>" data-voucher-code="<?php echo htmlspecialchars($voucher['code'], ENT_QUOTES); ?>">
-                                        </td>
-                                        <td class="col-username">
-                                            <strong><?php echo htmlspecialchars($voucher['code']); ?></strong>
-                                        </td>
-                                        <td class="col-name">
-                                            <?php echo htmlspecialchars($voucher['description'] ?? '-'); ?>
-                                        </td>
-                                        <td class="col-gender">
+            <!-- Filters Section -->
+            <div class="filters-section">
+                <form class="filters-form" id="filtersForm">
+                    <div class="filter-group">
+                        <label for="filterSearch">
+                            <i class="fas fa-search"></i>
+                            Search
+                        </label>
+                        <input type="text" id="filterSearch" name="search" placeholder="Search vouchers..." value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterStatus">
+                            <i class="fas fa-filter"></i>
+                            Status
+                        </label>
+                        <select id="filterStatus" name="status">
+                            <option value="">All Status</option>
+                            <option value="active" <?php echo (isset($_GET['status']) && $_GET['status'] === 'active') ? 'selected' : ''; ?>>Active</option>
+                            <option value="inactive" <?php echo (isset($_GET['status']) && $_GET['status'] === 'inactive') ? 'selected' : ''; ?>>Inactive</option>
+                            <option value="expired" <?php echo (isset($_GET['status']) && $_GET['status'] === 'expired') ? 'selected' : ''; ?>>Expired</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterType">
+                            <i class="fas fa-tag"></i>
+                            Type
+                        </label>
+                        <select id="filterType" name="type">
+                            <option value="">All Types</option>
+                            <option value="percent" <?php echo (isset($_GET['type']) && $_GET['type'] === 'percent') ? 'selected' : ''; ?>>Percent</option>
+                            <option value="fixed" <?php echo (isset($_GET['type']) && $_GET['type'] === 'fixed') ? 'selected' : ''; ?>>Fixed</option>
+                            <option value="freeshipping" <?php echo (isset($_GET['type']) && $_GET['type'] === 'freeshipping') ? 'selected' : ''; ?>>Free Shipping</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="sortBy">
+                            <i class="fas fa-sort"></i>
+                            Sort By
+                        </label>
+                        <select id="sortBy" name="sortBy">
+                            <option value="voucher_id" <?php echo $currentSortBy === 'voucher_id' ? 'selected' : ''; ?>>ID</option>
+                            <option value="code" <?php echo $currentSortBy === 'code' ? 'selected' : ''; ?>>Code</option>
+                            <option value="type" <?php echo $currentSortBy === 'type' ? 'selected' : ''; ?>>Type</option>
+                            <option value="start_date" <?php echo $currentSortBy === 'start_date' ? 'selected' : ''; ?>>Start Date</option>
+                            <option value="end_date" <?php echo $currentSortBy === 'end_date' ? 'selected' : ''; ?>>End Date</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="sortOrder">
+                            <i class="fas fa-arrow-down-wide-short"></i>
+                            Order
+                        </label>
+                        <select id="sortOrder" name="sortOrder">
+                            <option value="DESC" <?php echo $currentSortOrder === 'DESC' ? 'selected' : ''; ?>>Descending</option>
+                            <option value="ASC" <?php echo $currentSortOrder === 'ASC' ? 'selected' : ''; ?>>Ascending</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Bulk Actions Section -->
+            <div class="bulk-actions-section" style="display: none;" id="bulkActionsSection">
+                <button type="button" class="btn btn-danger" id="bulkDeleteBtn">
+                    <i class="fas fa-trash"></i>
+                    Delete Selected (<span id="selectedCount">0</span>)
+                </button>
+                <button type="button" class="btn btn-secondary" id="clearSelectionBtn">
+                    <i class="fas fa-times"></i>
+                    Clear Selection
+                </button>
+            </div>
+
+            <!-- Table Container -->
+            <div class="table-container">
+                <table class="orders-table" id="vouchers-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">
+                                <input type="checkbox" id="selectAllCheckbox" title="Select all">
+                            </th>
+                            <th>Voucher Info</th>
+                            <th>Discount</th>
+                            <th>Validity Period</th>
+                            <th>Usage</th>
+                            <th>Status</th>
+                            <th style="width: 250px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($vouchers)): ?>
+                            <?php foreach ($vouchers as $voucher): ?>
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="voucher-checkbox" name="voucher_ids[]" value="<?php echo $voucher['voucher_id']; ?>" data-voucher-code="<?php echo htmlspecialchars($voucher['code'], ENT_QUOTES); ?>">
+                                    </td>
+                                    <td>
+                                        <strong style="display: block; margin-bottom: 0.25rem;"><?php echo htmlspecialchars($voucher['code']); ?></strong>
+                                        <small style="display: block; color: #6b7280; margin-bottom: 0.25rem;"><?php echo htmlspecialchars($voucher['description'] ?? '-'); ?></small>
+                                        <small style="display: block; color: #9ca3af; font-size: 0.75rem;">
                                             <?php
                                             $typeLabels = [
-                                                'percent' => 'Percent',
-                                                'fixed' => 'Fixed',
-                                                'freeshipping' => 'Free Shipping'
+                                                'percent' => '<i class="fas fa-percent"></i> Percent',
+                                                'fixed' => '<i class="fas fa-dollar-sign"></i> Fixed',
+                                                'freeshipping' => '<i class="fas fa-truck"></i> Free Shipping'
                                             ];
-                                            echo htmlspecialchars($typeLabels[$voucher['type']] ?? ucfirst($voucher['type']));
+                                            echo $typeLabels[$voucher['type']] ?? ucfirst($voucher['type']);
                                             ?>
-                                        </td>
-                                        <td class="col-contact">
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <strong style="display: block; color: #10b981; margin-bottom: 0.25rem;">
                                             <?php
                                             $maxDiscount = isset($voucher['max_discount']) ? $voucher['max_discount'] : null;
                                             echo formatDiscountValue($voucher['type'], $voucher['discount_value'], $maxDiscount);
                                             ?>
-                                        </td>
-                                        <td class="col-dob">
-                                            <?php
+                                        </strong>
+                                        <small style="display: block; color: #6b7280;">
+                                            Min: <?php
                                             if (!empty($voucher['min_spend']) && $voucher['min_spend'] > 0) {
                                                 echo 'RM' . number_format($voucher['min_spend'], 2);
                                             } else {
-                                                echo '-';
+                                                echo 'None';
                                             }
                                             ?>
-                                        </td>
-                                        <td class="col-date">
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <small style="display: block; margin-bottom: 0.25rem;">
+                                            <i class="fas fa-calendar-plus" style="color: #10b981;"></i>
                                             <?php
                                             if (!empty($voucher['start_date'])) {
                                                 $date = new DateTime($voucher['start_date']);
@@ -289,8 +412,9 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                                                 echo '-';
                                             }
                                             ?>
-                                        </td>
-                                        <td class="col-date">
+                                        </small>
+                                        <small style="display: block;">
+                                            <i class="fas fa-calendar-times" style="color: #ef4444;"></i>
                                             <?php
                                             if (!empty($voucher['end_date'])) {
                                                 $date = new DateTime($voucher['end_date']);
@@ -299,38 +423,40 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                                                 echo '-';
                                             }
                                             ?>
-                                        </td>
-                                        <td class="col-status col-voucher-status">
-                                            <?php
-                                            $status = $voucher['status'] ?? 'active';
-                                            $statusClass = '';
-                                            $statusText = ucfirst($status);
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <?php
+                                        $isRedeemable = isset($voucher['is_redeemable']) ? (bool)$voucher['is_redeemable'] : true;
+                                        $redeemableClass = $isRedeemable ? 'status-badge status-active' : 'status-badge status-pending';
+                                        $redeemableText = $isRedeemable ? '<i class="fas fa-check"></i> Redeemable' : '<i class="fas fa-lock"></i> Admin Only';
+                                        ?>
+                                        <span class="<?php echo $redeemableClass; ?>" style="display: inline-block; font-size: 0.75rem; padding: 0.15rem 0.5rem;"><?php echo $redeemableText; ?></span>
+                                    </td>
+                                    <td>
+                                        <?php
+                                        $status = $voucher['status'] ?? 'active';
+                                        $statusClass = '';
+                                        $statusText = ucfirst($status);
 
-                                            switch ($status) {
-                                                case 'active':
-                                                    $statusClass = 'status-badge status-active';
-                                                    break;
-                                                case 'inactive':
-                                                    $statusClass = 'status-badge status-inactive';
-                                                    break;
-                                                case 'expired':
-                                                    $statusClass = 'status-badge status-banned';
-                                                    break;
-                                                default:
-                                                    $statusClass = 'status-badge status-active';
-                                            }
-                                            ?>
-                                            <span class="<?php echo $statusClass; ?>"><?php echo htmlspecialchars($statusText); ?></span>
-                                        </td>
-                                        <td class="col-redeemable">
-                                            <?php
-                                            $isRedeemable = isset($voucher['is_redeemable']) ? (bool)$voucher['is_redeemable'] : true;
-                                            $redeemableClass = $isRedeemable ? 'status-badge status-active' : 'status-badge status-inactive';
-                                            $redeemableText = $isRedeemable ? 'Yes' : 'No';
-                                            ?>
-                                            <span class="<?php echo $redeemableClass; ?>"><?php echo htmlspecialchars($redeemableText); ?></span>
-                                        </td>
-                                        <td class="col-actions">
+                                        switch ($status) {
+                                            case 'active':
+                                                $statusClass = 'status-badge status-active';
+                                                break;
+                                            case 'inactive':
+                                                $statusClass = 'status-badge status-pending';
+                                                break;
+                                            case 'expired':
+                                                $statusClass = 'status-badge status-expired';
+                                                break;
+                                            default:
+                                                $statusClass = 'status-badge status-active';
+                                        }
+                                        ?>
+                                        <span class="<?php echo $statusClass; ?>"><?php echo htmlspecialchars($statusText); ?></span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
                                             <button
                                                 class="action-btn edit-btn"
                                                 data-action="edit"
@@ -345,7 +471,7 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                                                 data-end-date="<?php echo htmlspecialchars($voucher['end_date'], ENT_QUOTES); ?>"
                                                 data-is-redeemable="<?php echo isset($voucher['is_redeemable']) ? ($voucher['is_redeemable'] ? '1' : '0') : '1'; ?>"
                                                 title="Edit voucher">
-                                                <span class="material-symbols-outlined">edit</span>
+                                                <i class="fas fa-edit"></i>
                                             </button>
 
                                             <?php
@@ -353,25 +479,25 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                                             ?>
                                             <?php if ($currentStatus !== 'inactive'): ?>
                                                 <button
-                                                    class="action-btn inactive-btn"
+                                                    class="action-btn" style="background: #fef3c7 !important; border-color: #f59e0b !important; color: #f59e0b !important;"
                                                     data-action="status"
                                                     data-voucher-id="<?php echo $voucher['voucher_id']; ?>"
                                                     data-code="<?php echo htmlspecialchars($voucher['code'], ENT_QUOTES); ?>"
                                                     data-status="inactive"
                                                     title="Set to inactive">
-                                                    <span class="material-symbols-outlined">pause_circle</span>
+                                                    <i class="fas fa-pause-circle"></i>
                                                 </button>
                                             <?php endif; ?>
 
                                             <?php if ($currentStatus !== 'active'): ?>
                                                 <button
-                                                    class="action-btn activate-btn"
+                                                    class="action-btn" style="background: #d1fae5 !important; border-color: #10b981 !important; color: #10b981 !important;"
                                                     data-action="status"
                                                     data-voucher-id="<?php echo $voucher['voucher_id']; ?>"
                                                     data-code="<?php echo htmlspecialchars($voucher['code'], ENT_QUOTES); ?>"
                                                     data-status="active"
                                                     title="Activate voucher">
-                                                    <span class="material-symbols-outlined">check_circle</span>
+                                                    <i class="fas fa-check-circle"></i>
                                                 </button>
                                             <?php endif; ?>
 
@@ -381,37 +507,40 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                                                 data-voucher-id="<?php echo $voucher['voucher_id']; ?>"
                                                 data-code="<?php echo htmlspecialchars($voucher['code'], ENT_QUOTES); ?>"
                                                 title="Delete voucher">
-                                                <span class="material-symbols-outlined">delete</span>
+                                                <i class="fas fa-trash"></i>
                                             </button>
                                             
                                             <button
-                                                class="action-btn assign-btn"
+                                                class="action-btn" style="background: #dbeafe !important; border-color: #3b82f6 !important; color: #3b82f6 !important;"
                                                 data-action="assign"
                                                 data-voucher-id="<?php echo $voucher['voucher_id']; ?>"
                                                 data-code="<?php echo htmlspecialchars($voucher['code'], ENT_QUOTES); ?>"
                                                 title="Assign voucher">
-                                                <span class="material-symbols-outlined">send</span>
+                                                <i class="fas fa-paper-plane"></i>
                                             </button>
 
                                             <a
-                                                class="action-btn qr-btn"
+                                                class="action-btn" style="background: #f3e8ff !important; border-color: #8b5cf6 !important; color: #8b5cf6 !important;"
                                                 href="VoucherController.php?action=showVoucherQr&amp;voucher_id=<?php echo $voucher['voucher_id']; ?>&amp;code=<?php echo urlencode($voucher['code']); ?>"
                                                 title="View voucher QR code">
-                                                <span class="material-symbols-outlined">qr_code_2</span>
+                                                <i class="fas fa-qrcode"></i>
                                             </a>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr class="table-row table-row-empty">
-                                    <td colspan="11" class="col-empty">
-                                        No vouchers found. <?php echo !empty($_GET['search']) ? 'Try a different search term.' : ''; ?>
+                                        </div>
                                     </td>
                                 </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="7" class="text-center">
+                                    <div class="empty-state">
+                                        <i class="fas fa-inbox"></i>
+                                        <p>No vouchers found</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
 
                 <!-- Pagination -->
                 <?php if (!empty($vouchers)): ?>
@@ -517,38 +646,20 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        // AJAX Search functionality
-        let searchTimeout;
-        const searchInput = $('#simple-search');
-        const searchForm = $('.search-form');
-        
-        // Prevent form submission on Enter key
-        searchForm.on('submit', function(e) {
-            e.preventDefault();
-            performSearch();
-        });
+        // AJAX Filter functionality
+        let filterTimeout;
 
-        // AJAX search on input with debouncing
-        searchInput.on('input', function() {
-            clearTimeout(searchTimeout);
-            const searchTerm = $(this).val();
+        // Debounced AJAX filtering
+        function performAjaxFilter() {
+            const searchTerm = $('#filterSearch').val();
+            const status = $('#filterStatus').val();
+            const type = $('#filterType').val();
+            const sortBy = $('#sortBy').val() || 'voucher_id';
+            const sortOrder = $('#sortOrder').val() || 'DESC';
             
-            // Debounce: wait 500ms after user stops typing
-            searchTimeout = setTimeout(function() {
-                performSearch();
-            }, 500);
-        });
-
-        function performSearch() {
-            const searchTerm = searchInput.val();
-            const sortBy = $('input[name="sortBy"]').val() || 'voucher_id';
-            const sortOrder = $('input[name="sortOrder"]').val() || 'DESC';
+            const tableContainer = $('.table-container');
+            tableContainer.css('opacity', '0.6');
             
-            // Show loading indicator
-            const tableWrapper = $('#vouchers-table-wrapper');
-            tableWrapper.css('opacity', '0.6');
-            
-            // Make AJAX request
             $.ajax({
                 url: 'VoucherController.php',
                 method: 'GET',
@@ -556,6 +667,8 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                     action: 'showAll',
                     ajax: '1',
                     search: searchTerm,
+                    status: status,
+                    type: type,
                     sortBy: sortBy,
                     sortOrder: sortOrder,
                     page: 1
@@ -566,17 +679,28 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                         updateTable(response);
                         updatePagination(response);
                     } else {
-                        alert('Error: ' + response.error);
+                        console.error('Filter error:', response.error);
                     }
-                    tableWrapper.css('opacity', '1');
+                    tableContainer.css('opacity', '1');
                 },
                 error: function(xhr, status, error) {
                     console.error('AJAX Error:', error);
-                    alert('An error occurred while searching. Please try again.');
-                    tableWrapper.css('opacity', '1');
+                    tableContainer.css('opacity', '1');
                 }
             });
         }
+
+        // Attach filter event listeners
+        $(document).ready(function() {
+            // Search input with debounce
+            $('#filterSearch').on('input', function() {
+                clearTimeout(filterTimeout);
+                filterTimeout = setTimeout(performAjaxFilter, 500);
+            });
+
+            // Dropdown filters - immediate
+            $('#filterStatus, #filterType, #sortBy, #sortOrder').on('change', performAjaxFilter);
+        });
 
         function updateTable(response) {
             const tbody = $('#vouchers-table tbody');
@@ -593,21 +717,30 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                     tbody.append(row);
                 });
             } else {
-                tbody.append('<tr class="table-row table-row-empty"><td colspan="11" class="col-empty">No vouchers found. Try a different search term.</td></tr>');
+                tbody.append(`
+                    <tr>
+                        <td colspan="7" class="text-center">
+                            <div class="empty-state">
+                                <i class="fas fa-inbox"></i>
+                                <p>No vouchers found</p>
+                            </div>
+                        </td>
+                    </tr>
+                `);
             }
         }
 
         function buildVoucherRow(voucher) {
             const typeLabels = {
-                'percent': 'Percent',
-                'fixed': 'Fixed',
-                'freeshipping': 'Free Shipping'
+                'percent': '<i class="fas fa-percent"></i> Percent',
+                'fixed': '<i class="fas fa-dollar-sign"></i> Fixed',
+                'freeshipping': '<i class="fas fa-truck"></i> Free Shipping'
             };
             
             const statusLabels = {
                 'active': { class: 'status-active', text: 'Active' },
-                'inactive': { class: 'status-inactive', text: 'Inactive' },
-                'expired': { class: 'status-banned', text: 'Expired' }
+                'inactive': { class: 'status-pending', text: 'Inactive' },
+                'expired': { class: 'status-expired', text: 'Expired' }
             };
             
             const status = voucher.status || 'active';
@@ -628,54 +761,62 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
             
             // Format dates
             const startDate = voucher.start_date ? new Date(voucher.start_date).toISOString().split('T')[0] : '-';
-                    const endDate = voucher.end_date ? new Date(voucher.end_date).toISOString().split('T')[0] : '-';
-            const minSpend = voucher.min_spend && voucher.min_spend > 0 ? 'RM' + parseFloat(voucher.min_spend).toFixed(2) : '-';
+            const endDate = voucher.end_date ? new Date(voucher.end_date).toISOString().split('T')[0] : '-';
+            const minSpend = voucher.min_spend && voucher.min_spend > 0 ? 'RM' + parseFloat(voucher.min_spend).toFixed(2) : 'None';
             const isRedeemable = voucher.is_redeemable !== undefined ? (voucher.is_redeemable ? true : false) : true;
-            const redeemableText = isRedeemable ? 'Yes' : 'No';
-            const redeemableClass = isRedeemable ? 'status-active' : 'status-inactive';
+            const redeemableText = isRedeemable ? '<i class="fas fa-check"></i> Redeemable' : '<i class="fas fa-lock"></i> Admin Only';
+            const redeemableClass = isRedeemable ? 'status-active' : 'status-pending';
             const qrUrl = `VoucherController.php?action=showVoucherQr&voucher_id=${voucher.voucher_id}&code=${encodeURIComponent(voucher.code)}`;
             
             // Build status buttons
             let statusButtons = '';
             if (status !== 'inactive') {
-                statusButtons += '<button class="action-btn inactive-btn" data-action="status" data-voucher-id="' + voucher.voucher_id + '" data-code="' + escapeHtml(voucher.code) + '" data-status="inactive" title="Set to inactive"><span class="material-symbols-outlined">pause_circle</span></button>';
+                statusButtons += `<button class="action-btn" style="background: #fef3c7 !important; border-color: #f59e0b !important; color: #f59e0b !important;" data-action="status" data-voucher-id="${voucher.voucher_id}" data-code="${escapeHtml(voucher.code)}" data-status="inactive" title="Set to inactive"><i class="fas fa-pause-circle"></i></button>`;
             }
             if (status !== 'active') {
-                statusButtons += '<button class="action-btn activate-btn" data-action="status" data-voucher-id="' + voucher.voucher_id + '" data-code="' + escapeHtml(voucher.code) + '" data-status="active" title="Activate voucher"><span class="material-symbols-outlined">check_circle</span></button>';
+                statusButtons += `<button class="action-btn" style="background: #d1fae5 !important; border-color: #10b981 !important; color: #10b981 !important;" data-action="status" data-voucher-id="${voucher.voucher_id}" data-code="${escapeHtml(voucher.code)}" data-status="active" title="Activate voucher"><i class="fas fa-check-circle"></i></button>`;
             }
             
             const row = `
-                <tr class="table-row">
-                    <td class="col-checkbox">
+                <tr>
+                    <td>
                         <input type="checkbox" class="voucher-checkbox" name="voucher_ids[]" value="${voucher.voucher_id}" data-voucher-code="${escapeHtml(voucher.code)}">
                     </td>
-                    <td class="col-username"><strong>${escapeHtml(voucher.code)}</strong></td>
-                    <td class="col-name">${escapeHtml(voucher.description || '-')}</td>
-                    <td class="col-gender">${typeLabels[voucher.type] || voucher.type}</td>
-                    <td class="col-contact">${discountDisplay}</td>
-                    <td class="col-dob">${minSpend}</td>
-                    <td class="col-date">${startDate}</td>
-                    <td class="col-date">${endDate}</td>
-                    <td class="col-status col-voucher-status">
+                    <td>
+                        <strong style="display: block; margin-bottom: 0.25rem;">${escapeHtml(voucher.code)}</strong>
+                        <small style="display: block; color: #6b7280; margin-bottom: 0.25rem;">${escapeHtml(voucher.description || '-')}</small>
+                        <small style="display: block; color: #9ca3af; font-size: 0.75rem;">${typeLabels[voucher.type] || voucher.type}</small>
+                    </td>
+                    <td>
+                        <strong style="display: block; color: #10b981; margin-bottom: 0.25rem;">${discountDisplay}</strong>
+                        <small style="display: block; color: #6b7280;">Min: ${minSpend}</small>
+                    </td>
+                    <td>
+                        <small style="display: block; margin-bottom: 0.25rem;"><i class="fas fa-calendar-plus" style="color: #10b981;"></i> ${startDate}</small>
+                        <small style="display: block;"><i class="fas fa-calendar-times" style="color: #ef4444;"></i> ${endDate}</small>
+                    </td>
+                    <td>
+                        <span class="status-badge ${redeemableClass}" style="display: inline-block; font-size: 0.75rem; padding: 0.15rem 0.5rem;">${redeemableText}</span>
+                    </td>
+                    <td>
                         <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
                     </td>
-                    <td class="col-redeemable">
-                        <span class="status-badge ${redeemableClass}">${redeemableText}</span>
-                    </td>
-                    <td class="col-actions">
-                        <button class="action-btn edit-btn" data-action="edit" data-voucher-id="${voucher.voucher_id}" data-code="${escapeHtml(voucher.code)}" data-description="${escapeHtml(voucher.description || '')}" data-type="${escapeHtml(voucher.type)}" data-discount-value="${escapeHtml(voucher.discount_value)}" data-min-spend="${escapeHtml(voucher.min_spend || '0')}" data-max-discount="${escapeHtml(voucher.max_discount || '')}" data-start-date="${escapeHtml(voucher.start_date)}" data-end-date="${escapeHtml(voucher.end_date)}" data-is-redeemable="${isRedeemable ? '1' : '0'}" title="Edit voucher">
-                            <span class="material-symbols-outlined">edit</span>
-                        </button>
-                        ${statusButtons}
-                        <button class="action-btn delete-btn" data-action="delete" data-voucher-id="${voucher.voucher_id}" data-code="${escapeHtml(voucher.code)}" title="Delete voucher">
-                            <span class="material-symbols-outlined">delete</span>
-                        </button>
-                        <button class="action-btn assign-btn" data-action="assign" data-voucher-id="${voucher.voucher_id}" data-code="${escapeHtml(voucher.code)}" title="Assign voucher">
-                            <span class="material-symbols-outlined">send</span>
-                        </button>
-                        <a href="${qrUrl}" class="action-btn qr-btn" title="View voucher QR code">
-                            <span class="material-symbols-outlined">qr_code_2</span>
-                        </a>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn edit-btn" data-action="edit" data-voucher-id="${voucher.voucher_id}" data-code="${escapeHtml(voucher.code)}" data-description="${escapeHtml(voucher.description || '')}" data-type="${escapeHtml(voucher.type)}" data-discount-value="${escapeHtml(voucher.discount_value)}" data-min-spend="${escapeHtml(voucher.min_spend || '0')}" data-max-discount="${escapeHtml(voucher.max_discount || '')}" data-start-date="${escapeHtml(voucher.start_date)}" data-end-date="${escapeHtml(voucher.end_date)}" data-is-redeemable="${isRedeemable ? '1' : '0'}" title="Edit voucher">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            ${statusButtons}
+                            <button class="action-btn delete-btn" data-action="delete" data-voucher-id="${voucher.voucher_id}" data-code="${escapeHtml(voucher.code)}" title="Delete voucher">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button class="action-btn" style="background: #dbeafe !important; border-color: #3b82f6 !important; color: #3b82f6 !important;" data-action="assign" data-voucher-id="${voucher.voucher_id}" data-code="${escapeHtml(voucher.code)}" title="Assign voucher">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                            <a href="${qrUrl}" class="action-btn" style="background: #f3e8ff !important; border-color: #8b5cf6 !important; color: #8b5cf6 !important;" title="View voucher QR code">
+                                <i class="fas fa-qrcode"></i>
+                            </a>
+                        </div>
                     </td>
                 </tr>
             `;
@@ -696,10 +837,15 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                 const paginationList = $('.pagination-list');
                 paginationList.empty();
                 
+                const searchTerm = $('#filterSearch').val();
+                const status = $('#filterStatus').val();
+                const type = $('#filterType').val();
+                const sortBy = response.sortBy || 'voucher_id';
+                const sortOrder = response.sortOrder || 'DESC';
+                
                 // Previous button
-                const prevDisabled = pagination.current_page <= 1 ? 'pagination-disabled' : '';
                 const prevUrl = pagination.current_page > 1 ? 
-                    `VoucherController.php?action=showAll&page=${pagination.current_page - 1}&search=${encodeURIComponent($('#simple-search').val())}&sortBy=${response.sortBy}&sortOrder=${response.sortOrder}` : '#';
+                    `VoucherController.php?action=showAll&page=${pagination.current_page - 1}&search=${encodeURIComponent(searchTerm)}&status=${status}&type=${type}&sortBy=${sortBy}&sortOrder=${sortOrder}` : '#';
                 paginationList.append(`
                     <li>
                         ${pagination.current_page > 1 ? 
@@ -715,7 +861,7 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                 
                 for (let i = startPage; i <= endPage; i++) {
                     const activeClass = i === pagination.current_page ? 'pagination-active' : '';
-                    const pageUrl = `VoucherController.php?action=showAll&page=${i}&search=${encodeURIComponent($('#simple-search').val())}&sortBy=${response.sortBy}&sortOrder=${response.sortOrder}`;
+                    const pageUrl = `VoucherController.php?action=showAll&page=${i}&search=${encodeURIComponent(searchTerm)}&status=${status}&type=${type}&sortBy=${sortBy}&sortOrder=${sortOrder}`;
                     paginationList.append(`
                         <li>
                             <a href="${pageUrl}" class="pagination-link ${activeClass}">${i}</a>
@@ -724,9 +870,8 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                 }
                 
                 // Next button
-                const nextDisabled = pagination.current_page >= pagination.total_pages ? 'pagination-disabled' : '';
                 const nextUrl = pagination.current_page < pagination.total_pages ? 
-                    `VoucherController.php?action=showAll&page=${pagination.current_page + 1}&search=${encodeURIComponent($('#simple-search').val())}&sortBy=${response.sortBy}&sortOrder=${response.sortOrder}` : '#';
+                    `VoucherController.php?action=showAll&page=${pagination.current_page + 1}&search=${encodeURIComponent(searchTerm)}&status=${status}&type=${type}&sortBy=${sortBy}&sortOrder=${sortOrder}` : '#';
                 paginationList.append(`
                     <li>
                         ${pagination.current_page < pagination.total_pages ? 
@@ -735,6 +880,8 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                         }
                     </li>
                 `);
+                
+                paginationNav.show();
             } else {
                 paginationNav.hide();
             }
