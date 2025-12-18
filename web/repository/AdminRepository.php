@@ -59,11 +59,12 @@ class AdminRepository
         return ['exists' => false];
     }
 
-    public function getAllAdmins($limit = 10, $offset = 0, $searchTerm = '', $sortBy = 'created_at', $sortOrder = 'DESC'): array
+    public function getAllAdmins($limit = 10, $offset = 0, $searchTerm = '', $sortBy = 'created_at', $sortOrder = 'DESC', $statusFilter = ''): array
     {
         $limit = (int)$limit;
         $offset = (int)$offset;
         $searchTerm = trim($searchTerm);
+        $statusFilter = trim($statusFilter);
 
         $allowedSortColumns = ['username', 'full_name', 'email', 'contact_no', 'gender', 'created_at', 'status'];
         if (!in_array($sortBy, $allowedSortColumns, true)) {
@@ -80,6 +81,14 @@ class AdminRepository
             $params[':search'] = "%{$searchTerm}%";
         }
 
+        if (!empty($statusFilter)) {
+            $allowedStatuses = ['active', 'inactive', 'banned', 'blocked'];
+            if (in_array($statusFilter, $allowedStatuses, true)) {
+                $sql .= " AND status = :status";
+                $params[':status'] = $statusFilter;
+            }
+        }
+
         $sql .= " ORDER BY $sortBy $sortOrder LIMIT $limit OFFSET $offset";
 
         $stmt = $this->db->prepare($sql);
@@ -88,9 +97,10 @@ class AdminRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getTotalAdminsCount($searchTerm = ''): int
+    public function getTotalAdminsCount($searchTerm = '', $statusFilter = ''): int
     {
         $searchTerm = trim($searchTerm);
+        $statusFilter = trim($statusFilter);
         $sql = "SELECT COUNT(*) as total FROM users WHERE role = 'admin'";
         $params = [];
 
@@ -98,6 +108,14 @@ class AdminRepository
             $sql .= " AND (username LIKE ? OR full_name LIKE ? OR email LIKE ? OR contact_no LIKE ?)";
             $search = "%{$searchTerm}%";
             $params = [$search, $search, $search, $search];
+        }
+
+        if (!empty($statusFilter)) {
+            $allowedStatuses = ['active', 'inactive', 'banned', 'blocked'];
+            if (in_array($statusFilter, $allowedStatuses, true)) {
+                $sql .= " AND status = ?";
+                $params[] = $statusFilter;
+            }
         }
 
         $stmt = $this->db->prepare($sql);
@@ -187,7 +205,7 @@ class AdminRepository
 
     public function updateAdminStatus($userId, $status): bool
     {
-        $allowedStatuses = ['active', 'inactive', 'banned'];
+        $allowedStatuses = ['active', 'inactive', 'banned', 'blocked'];
         if (!in_array($status, $allowedStatuses, true)) {
             throw new Exception('Invalid status value');
         }

@@ -170,15 +170,16 @@ class MembershipRepository
         return ['exists' => false];
     }
 
-    public function getAllMembers($limit = 10, $offset = 0, $searchTerm = '', $sortBy = 'created_at', $sortOrder = 'DESC'): array
+    public function getAllMembers($limit = 10, $offset = 0, $searchTerm = '', $sortBy = 'created_at', $sortOrder = 'DESC', $statusFilter = ''): array
     {
         try {
             // Ensure limit and offset are integers
             $limit = (int)$limit;
             $offset = (int)$offset;
 
-            // Trim and normalize search term
+            // Trim and normalize search term and status
             $searchTerm = trim($searchTerm);
+            $statusFilter = trim($statusFilter);
 
             // Validate sort column to prevent SQL injection
             $allowedSortColumns = ['username', 'full_name', 'email', 'contact_no', 'gender', 'created_at'];
@@ -220,6 +221,16 @@ class MembershipRepository
                 $params[':search'] = "%{$searchTerm}%";
             }
 
+            // Add status filter if provided and valid
+            if (!empty($statusFilter)) {
+                // Only allow known statuses to avoid SQL injection / invalid values
+                $allowedStatuses = ['active', 'inactive', 'banned', 'blocked'];
+                if (in_array($statusFilter, $allowedStatuses, true)) {
+                    $sql .= " AND status = :status";
+                    $params[':status'] = $statusFilter;
+                }
+            }
+
             // Add ordering and pagination (safe integers and validated columns, not bound as parameters)
             $sql .= " ORDER BY $sortBy $sortOrder LIMIT $limit OFFSET $offset";
 
@@ -243,11 +254,12 @@ class MembershipRepository
     }
 
 
-    public function getTotalMembersCount($searchTerm = '')
+    public function getTotalMembersCount($searchTerm = '', $statusFilter = '')
     {
         try {
-            // Trim and normalize search term
+            // Trim and normalize search term and status
             $searchTerm = trim($searchTerm);
+            $statusFilter = trim($statusFilter);
 
             $sql = "SELECT COUNT(*) as total FROM users WHERE role ='member'";
             $params = [];
@@ -261,6 +273,15 @@ class MembershipRepository
                 )";
                 $searchParam = "%{$searchTerm}%";
                 $params = array_fill(0, 4, $searchParam);
+            }
+
+            // Add status filter if provided and valid
+            if (!empty($statusFilter)) {
+                $allowedStatuses = ['active', 'inactive', 'banned', 'blocked'];
+                if (in_array($statusFilter, $allowedStatuses, true)) {
+                    $sql .= " AND status = ?";
+                    $params[] = $statusFilter;
+                }
             }
 
             $stmt = $this->db->prepare($sql);

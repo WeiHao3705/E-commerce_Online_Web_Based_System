@@ -39,13 +39,14 @@ class AdminController
         $searchTerm = isset($_GET['search']) ? trim($_GET['search']) : '';
         $sortBy = isset($_GET['sortBy']) ? $_GET['sortBy'] : 'created_at';
         $sortOrder = isset($_GET['sortOrder']) ? strtoupper($_GET['sortOrder']) : 'DESC';
+        $status = isset($_GET['status']) ? trim($_GET['status']) : '';
 
         if ($page < 1) { $page = 1; }
         if ($limit < 1) { $limit = 10; }
         if ($sortOrder !== 'ASC' && $sortOrder !== 'DESC') { $sortOrder = 'DESC'; }
 
         try {
-            $data = $this->adminService->getAllAdmins($page, $limit, $searchTerm, $sortBy, $sortOrder);
+            $data = $this->adminService->getAllAdmins($page, $limit, $searchTerm, $sortBy, $sortOrder, $status);
             $admins = $data['admins'];
             $pagination = $data['pagination'];
             $currentSort = ['sortBy' => $sortBy, 'sortOrder' => $sortOrder];
@@ -68,20 +69,22 @@ class AdminController
         $searchTerm = isset($_GET['search']) ? trim($_GET['search']) : '';
         $sortBy = isset($_GET['sortBy']) ? $_GET['sortBy'] : 'created_at';
         $sortOrder = isset($_GET['sortOrder']) ? strtoupper($_GET['sortOrder']) : 'DESC';
+        $status = isset($_GET['status']) ? trim($_GET['status']) : '';
 
         if ($page < 1) { $page = 1; }
         if ($limit < 1) { $limit = 10; }
         if ($sortOrder !== 'ASC' && $sortOrder !== 'DESC') { $sortOrder = 'DESC'; }
 
         try {
-            $data = $this->adminService->getAllAdmins($page, $limit, $searchTerm, $sortBy, $sortOrder);
+            $data = $this->adminService->getAllAdmins($page, $limit, $searchTerm, $sortBy, $sortOrder, $status);
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => true,
                 'admins' => $data['admins'],
                 'pagination' => $data['pagination'],
                 'sortBy' => $sortBy,
-                'sortOrder' => $sortOrder
+                'sortOrder' => $sortOrder,
+                'status' => $status
             ]);
             exit;
         } catch (Exception $e) {

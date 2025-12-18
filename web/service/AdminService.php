@@ -56,7 +56,7 @@ class AdminService
         return $lengthOk && $hasUpper && $hasLower && $hasNumber && $hasSpecial;
     }
 
-    public function getAllAdmins($page = 1, $limit = 10, $searchTerm = '', $sortBy = 'created_at', $sortOrder = 'DESC'): array
+    public function getAllAdmins($page = 1, $limit = 10, $searchTerm = '', $sortBy = 'created_at', $sortOrder = 'DESC', $statusFilter = ''): array
     {
         $page = (int)$page;
         $limit = (int)$limit;
@@ -65,9 +65,10 @@ class AdminService
 
         $offset = ($page - 1) * $limit;
         $searchTerm = trim($searchTerm);
+        $statusFilter = trim($statusFilter);
 
-        $admins = $this->adminRepository->getAllAdmins($limit, $offset, $searchTerm, $sortBy, $sortOrder);
-        $total = $this->adminRepository->getTotalAdminsCount($searchTerm);
+        $admins = $this->adminRepository->getAllAdmins($limit, $offset, $searchTerm, $sortBy, $sortOrder, $statusFilter);
+        $total = $this->adminRepository->getTotalAdminsCount($searchTerm, $statusFilter);
         $totalPages = $limit > 0 ? (int)ceil($total / $limit) : 1;
 
         return [

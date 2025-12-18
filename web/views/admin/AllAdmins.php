@@ -385,6 +385,10 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
             background: #fee2e2;
             color: #991b1b;
         }
+        .status-badge.status-blocked {
+            background: #e5e7eb;
+            color: #111827;
+        }
         
         /* Empty State */
         .empty-state {
@@ -997,6 +1001,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                         <option value="active" <?= (isset($_GET['status']) && $_GET['status'] === 'active') ? 'selected' : '' ?>>Active</option>
                         <option value="inactive" <?= (isset($_GET['status']) && $_GET['status'] === 'inactive') ? 'selected' : '' ?>>Inactive</option>
                         <option value="banned" <?= (isset($_GET['status']) && $_GET['status'] === 'banned') ? 'selected' : '' ?>>Banned</option>
+                        <option value="blocked" <?= (isset($_GET['status']) && $_GET['status'] === 'blocked') ? 'selected' : '' ?>>Blocked</option>
                     </select>
                 </div>
 
@@ -1105,6 +1110,9 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                                     break;
                                                 case 'banned':
                                                     $statusClass = 'status-badge status-banned';
+                                                    break;
+                                                case 'blocked':
+                                                    $statusClass = 'status-badge status-blocked';
                                                     break;
                                                 default:
                                                     $statusClass = 'status-badge status-active';
@@ -1391,7 +1399,8 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
             const statusLabels = {
                 'active': { class: 'status-active', text: 'Active' },
                 'inactive': { class: 'status-inactive', text: 'Inactive' },
-                'banned': { class: 'status-banned', text: 'Banned' }
+                'banned': { class: 'status-banned', text: 'Banned' },
+                'blocked': { class: 'status-blocked', text: 'Blocked' }
             };
             const statusInfo = statusLabels[status] || statusLabels['active'];
 
@@ -1462,8 +1471,13 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                 const paginationList = $('.pagination-list');
                 paginationList.empty();
 
+                const status = $('#filterStatus').val();
+                const sortBy = response.sortBy || 'created_at';
+                const sortOrder = response.sortOrder || 'DESC';
+                const searchTerm = $('#simple-search').val();
+
                 const prevUrl = pagination.current_page > 1 ?
-                    `AdminController.php?action=showAll&page=${pagination.current_page - 1}&search=${encodeURIComponent($('#simple-search').val())}&sortBy=${response.sortBy}&sortOrder=${response.sortOrder}` : '#';
+                    `AdminController.php?action=showAll&page=${pagination.current_page - 1}&search=${encodeURIComponent(searchTerm)}&status=${status}&sortBy=${sortBy}&sortOrder=${sortOrder}` : '#';
                 paginationList.append(`
                     <li>
                         ${pagination.current_page > 1 ?
@@ -1478,7 +1492,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
 
                 for (let i = startPage; i <= endPage; i++) {
                     const activeClass = i === pagination.current_page ? 'pagination-active' : '';
-                    const pageUrl = `AdminController.php?action=showAll&page=${i}&search=${encodeURIComponent($('#simple-search').val())}&sortBy=${response.sortBy}&sortOrder=${response.sortOrder}`;
+                    const pageUrl = `AdminController.php?action=showAll&page=${i}&search=${encodeURIComponent(searchTerm)}&status=${status}&sortBy=${sortBy}&sortOrder=${sortOrder}`;
                     paginationList.append(`
                         <li>
                             <a href="${pageUrl}" class="pagination-link ${activeClass}">${i}</a>
@@ -1487,7 +1501,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                 }
 
                 const nextUrl = pagination.current_page < pagination.total_pages ?
-                    `AdminController.php?action=showAll&page=${pagination.current_page + 1}&search=${encodeURIComponent($('#simple-search').val())}&sortBy=${response.sortBy}&sortOrder=${response.sortOrder}` : '#';
+                    `AdminController.php?action=showAll&page=${pagination.current_page + 1}&search=${encodeURIComponent(searchTerm)}&status=${status}&sortBy=${sortBy}&sortOrder=${sortOrder}` : '#';
                 paginationList.append(`
                     <li>
                         ${pagination.current_page < pagination.total_pages ?

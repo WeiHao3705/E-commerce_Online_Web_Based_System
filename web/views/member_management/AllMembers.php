@@ -31,19 +31,20 @@ $currentSortBy = isset($currentSort['sortBy']) ? $currentSort['sortBy'] : 'creat
 $currentSortOrder = isset($currentSort['sortOrder']) ? $currentSort['sortOrder'] : 'DESC';
 
 // Helper function to generate sort URL
-function getSortUrl($column, $currentSortBy, $currentSortOrder) {
+function getSortUrl($column, $currentSortBy, $currentSortOrder)
+{
     $params = ['action' => 'showAll'];
-    
+
     // Preserve search parameter
     if (!empty($_GET['search'])) {
         $params['search'] = $_GET['search'];
     }
-    
+
     // Preserve page parameter
     if (!empty($_GET['page'])) {
         $params['page'] = $_GET['page'];
     }
-    
+
     // Determine sort order
     if ($currentSortBy === $column && $currentSortOrder === 'ASC') {
         $params['sortBy'] = $column;
@@ -52,12 +53,13 @@ function getSortUrl($column, $currentSortBy, $currentSortOrder) {
         $params['sortBy'] = $column;
         $params['sortOrder'] = 'ASC';
     }
-    
+
     return 'MemberController.php?' . http_build_query($params);
 }
 
 // Helper function to get sort arrow icon
-function getSortArrow($column, $currentSortBy, $currentSortOrder) {
+function getSortArrow($column, $currentSortBy, $currentSortOrder)
+{
     if ($currentSortBy !== $column) {
         // No sort - show both arrows (neutral)
         return '<span class="material-symbols-outlined sort-icon-neutral">unfold_more</span>';
@@ -72,7 +74,8 @@ function getSortArrow($column, $currentSortBy, $currentSortOrder) {
 }
 
 // Helper function to get profile photo URL
-function getProfilePhotoUrl($photoPath, $imageBasePath) {
+function getProfilePhotoUrl($photoPath, $imageBasePath)
+{
     // Default image if no photo path
     if (empty($photoPath) || $photoPath === null || trim($photoPath) === '') {
         return $imageBasePath . 'images/defaultUserImage.jpg';
@@ -82,15 +85,15 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
     if (strpos($photoPath, 'http://') === 0 || strpos($photoPath, 'https://') === 0) {
         return $photoPath;
     }
-    
+
     // Remove 'web/' prefix if present
     if (strpos($photoPath, 'web/') === 0) {
         $photoPath = substr($photoPath, 4);
     }
-    
+
     // Remove leading slash if present
     $photoPath = ltrim($photoPath, '/');
-    
+
     return $imageBasePath . $photoPath;
 }
 ?>
@@ -108,79 +111,481 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
     <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AllTables.css">
     <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AllMembers.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Poppins', sans-serif; background: transparent; color: #0f172a; }
-        .page-container { max-width: 100%; margin: 0; padding: 20px; }
-        .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-        .stat-card { display: flex; align-items: center; gap: 1.25rem; background: white; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.3s; }
-        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-color: #FF523B; }
-        .stat-icon { width: 3.5rem; height: 3.5rem; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-size: 1.5rem; color: white; flex-shrink: 0; }
-        .stat-icon.blue { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
-        .stat-icon.green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-        .stat-icon.orange { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
-        .stat-icon.red { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
-        .stat-info h3 { font-size: 1.875rem; font-weight: 700; color: #0f172a; margin: 0; }
-        .stat-info p { font-size: 0.875rem; color: #6b7280; margin: 0; }
-        .filters-section { background: white; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; margin-bottom: 1.5rem; }
-        .filters-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: end; }
-        .filter-group { display: flex; flex-direction: column; gap: 0.5rem; }
-        .filter-group label { font-size: 0.875rem; font-weight: 600; color: #374151; display: flex; align-items: center; gap: 0.5rem; }
-        .filter-group label i { color: #FF523B; }
-        .filter-group input, .filter-group select { padding: 0.625rem 0.875rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 0.875rem; transition: all 0.2s; }
-        .filter-group input:focus, .filter-group select:focus { outline: none; border-color: #FF523B; box-shadow: 0 0 0 3px rgba(255, 82, 59, 0.1); }
-        .filter-actions { display: flex; gap: 0.5rem; align-items: flex-end; }
-        .btn { padding: 0.625rem 1.25rem; border-radius: 0.5rem; font-weight: 600; font-size: 0.875rem; cursor: pointer; transition: all 0.2s; border: none; display: flex; align-items: center; gap: 0.5rem; }
-        .btn-primary { background: #FF523B; color: white; }
-        .btn-primary:hover { background: #e64a35; }
-        .btn-secondary { background: #6b7280; color: white; }
-        .btn-secondary:hover { background: #4b5563; }
-        .table-container { background: white; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; overflow: hidden; }
-        .orders-table { width: 100%; border-collapse: collapse; }
-        .orders-table thead { background: #f9fafb; }
-        .orders-table thead th { padding: 1rem; text-align: left; font-weight: 600; font-size: 0.875rem; color: #374151; border-bottom: 2px solid #e5e7eb; }
-        .orders-table tbody td { padding: 1rem; border-bottom: 1px solid #f3f4f6; font-size: 0.875rem; }
-        .orders-table tbody tr:hover { background: #f9fafb; }
-        .orders-table tbody tr:last-child td { border-bottom: none; }
-        .action-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-        .action-btn { width: 2rem !important; height: 2rem !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; border-radius: 0.375rem !important; border: 1px solid #d1d5db !important; background: white !important; cursor: pointer !important; transition: all 0.2s !important; color: #6b7280 !important; margin-right: 0.25rem; padding: 0 !important; }
-        .action-btn:hover { background: #f3f4f6 !important; border-color: #9ca3af !important; color: #374151 !important; }
-        .action-btn.edit-btn { background: #fffbeb !important; border-color: #f59e0b !important; color: #f59e0b !important; }
-        .action-btn.edit-btn:hover { background: #fef3c7 !important; border-color: #d97706 !important; color: #d97706 !important; }
-        .action-btn.ban-btn { background: #fef2f2 !important; border-color: #ef4444 !important; color: #ef4444 !important; }
-        .action-btn.ban-btn:hover { background: #fee2e2 !important; border-color: #dc2626 !important; color: #dc2626 !important; }
-        .action-btn.inactive-btn { background: #fffbeb !important; border-color: #f59e0b !important; color: #f59e0b !important; }
-        .action-btn.inactive-btn:hover { background: #fef3c7 !important; border-color: #d97706 !important; color: #d97706 !important; }
-        .action-btn.activate-btn { background: #f0fdf4 !important; border-color: #10b981 !important; color: #10b981 !important; }
-        .action-btn.activate-btn:hover { background: #d1fae5 !important; border-color: #059669 !important; color: #059669 !important; }
-        .action-btn.delete-btn { background: #fef2f2 !important; border-color: #ef4444 !important; color: #ef4444 !important; }
-        .action-btn.delete-btn:hover { background: #fee2e2 !important; border-color: #dc2626 !important; color: #dc2626 !important; }
-        .action-btn .material-symbols-outlined { font-size: 1.125rem !important; }
-        .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
-        .status-badge.status-active { background: #d1fae5; color: #065f46; }
-        .status-badge.status-inactive { background: #fef3c7; color: #92400e; }
-        .status-badge.status-banned { background: #fee2e2; color: #991b1b; }
-        .empty-state { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 3rem; color: #9ca3af; }
-        .empty-state i { font-size: 3rem; }
-        .empty-state p { font-size: 1rem; font-weight: 500; }
-        .bulk-actions-section { margin-top: 1rem; padding: 1rem; background: #fef3c7; border-radius: 0.5rem; border: 1px solid #fcd34d; }
-        .btn-danger { background: #ef4444; color: white; }
-        .btn-danger:hover { background: #dc2626; }
-        .col-checkbox { width: 40px; }
-        .member-profile-photo { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
-        .pagination { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; background: white; border-top: 1px solid #e5e7eb; }
-        .pagination-info { font-size: 0.875rem; color: #6b7280; }
-        .pagination-number { font-weight: 600; color: #0f172a; }
-        .pagination-list { display: flex; gap: 0.25rem; list-style: none; }
-        .pagination-link { padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; color: #374151; text-decoration: none; transition: all 0.2s; }
-        .pagination-link:hover:not(.pagination-disabled) { background: #f3f4f6; border-color: #9ca3af; }
-        .pagination-link.pagination-active { background: #FF523B; color: white; border-color: #FF523B; }
-        .pagination-link.pagination-disabled { opacity: 0.5; cursor: not-allowed; }
-        .text-center { text-align: center; }
-        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0; }
-        .message { padding: 1rem 1.5rem; border-radius: 0.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; font-weight: 500; }
-        .message-success { background: #d1fae5; color: #065f46; border: 1px solid #10b981; }
-        .message-error { background: #fee2e2; color: #991b1b; border: 1px solid #ef4444; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: transparent;
+            color: #0f172a;
+        }
+
+        .page-container {
+            max-width: 100%;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: #FF523B;
+        }
+
+        .stat-icon {
+            width: 3.5rem;
+            height: 3.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.75rem;
+            font-size: 1.5rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .stat-icon.blue {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+
+        .stat-icon.green {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .stat-icon.orange {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .stat-icon.red {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .stat-info h3 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+        }
+
+        .stat-info p {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin: 0;
+        }
+
+        .filters-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+            margin-bottom: 1.5rem;
+        }
+
+        .filters-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-group label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-group label i {
+            color: #FF523B;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 0.625rem 0.875rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: #FF523B;
+            box-shadow: 0 0 0 3px rgba(255, 82, 59, 0.1);
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: flex-end;
+        }
+
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: #FF523B;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #e64a35;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+        }
+
+        .orders-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .orders-table thead {
+            background: #f9fafb;
+        }
+
+        .orders-table thead th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .orders-table tbody td {
+            padding: 1rem;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.875rem;
+        }
+
+        .orders-table tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .orders-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            width: 2rem !important;
+            height: 2rem !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 0.375rem !important;
+            border: 1px solid #d1d5db !important;
+            background: white !important;
+            cursor: pointer !important;
+            transition: all 0.2s !important;
+            color: #6b7280 !important;
+            margin-right: 0.25rem;
+            padding: 0 !important;
+        }
+
+        .action-btn:hover {
+            background: #f3f4f6 !important;
+            border-color: #9ca3af !important;
+            color: #374151 !important;
+        }
+
+        .action-btn.edit-btn {
+            background: #fffbeb !important;
+            border-color: #f59e0b !important;
+            color: #f59e0b !important;
+        }
+
+        .action-btn.edit-btn:hover {
+            background: #fef3c7 !important;
+            border-color: #d97706 !important;
+            color: #d97706 !important;
+        }
+
+        .action-btn.ban-btn {
+            background: #fef2f2 !important;
+            border-color: #ef4444 !important;
+            color: #ef4444 !important;
+        }
+
+        .action-btn.ban-btn:hover {
+            background: #fee2e2 !important;
+            border-color: #dc2626 !important;
+            color: #dc2626 !important;
+        }
+
+        .action-btn.inactive-btn {
+            background: #fffbeb !important;
+            border-color: #f59e0b !important;
+            color: #f59e0b !important;
+        }
+
+        .action-btn.inactive-btn:hover {
+            background: #fef3c7 !important;
+            border-color: #d97706 !important;
+            color: #d97706 !important;
+        }
+
+        .action-btn.activate-btn {
+            background: #f0fdf4 !important;
+            border-color: #10b981 !important;
+            color: #10b981 !important;
+        }
+
+        .action-btn.activate-btn:hover {
+            background: #d1fae5 !important;
+            border-color: #059669 !important;
+            color: #059669 !important;
+        }
+
+        .action-btn.delete-btn {
+            background: #fef2f2 !important;
+            border-color: #ef4444 !important;
+            color: #ef4444 !important;
+        }
+
+        .action-btn.delete-btn:hover {
+            background: #fee2e2 !important;
+            border-color: #dc2626 !important;
+            color: #dc2626 !important;
+        }
+
+        .action-btn .material-symbols-outlined {
+            font-size: 1.125rem !important;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge.status-active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.status-inactive {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-badge.status-banned {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-badge.status-blocked {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            padding: 3rem;
+            color: #9ca3af;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+        }
+
+        .empty-state p {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .bulk-actions-section {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #fef3c7;
+            border-radius: 0.5rem;
+            border: 1px solid #fcd34d;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .col-checkbox {
+            width: 40px;
+        }
+
+        .member-profile-photo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .pagination-info {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .pagination-number {
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .pagination-list {
+            display: flex;
+            gap: 0.25rem;
+            list-style: none;
+        }
+
+        .pagination-link {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            color: #374151;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .pagination-link:hover:not(.pagination-disabled) {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+        }
+
+        .pagination-link.pagination-active {
+            background: #FF523B;
+            color: white;
+            border-color: #FF523B;
+        }
+
+        .pagination-link.pagination-disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        .message {
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 500;
+        }
+
+        .message-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+
+        .message-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
     </style>
 </head>
 
@@ -215,12 +620,14 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
             $activeCount = 0;
             $inactiveCount = 0;
             $bannedCount = 0;
+            $blockedCount = 0;
             if (!empty($members)) {
                 foreach ($members as $member) {
                     $status = $member['status'] ?? 'active';
                     if ($status === 'active') $activeCount++;
                     elseif ($status === 'inactive') $inactiveCount++;
                     elseif ($status === 'banned') $bannedCount++;
+                    elseif ($status === 'blocked') $blockedCount++;
                 }
             }
             ?>
@@ -252,6 +659,13 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                     <p>Banned Members</p>
                 </div>
             </div>
+            <div class="stat-card">
+                <div class="stat-icon red"><i class="fas fa-user-lock"></i></div>
+                <div class="stat-info">
+                    <h3><?= number_format($blockedCount) ?></h3>
+                    <p>Blocked Members</p>
+                </div>
+            </div>
         </section>
 
         <!-- Filters -->
@@ -260,7 +674,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                 <input type="hidden" name="action" value="showAll">
                 <input type="hidden" name="sortBy" id="filterSortBy" value="<?= $currentSortBy ?>">
                 <input type="hidden" name="sortOrder" id="filterSortOrder" value="<?= $currentSortOrder ?>">
-                
+
                 <div class="filter-group">
                     <label><i class="fas fa-search"></i> Search</label>
                     <input type="text" name="search" id="filterSearch" placeholder="Username, Email, Name..." value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>">
@@ -273,6 +687,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                         <option value="active" <?= (isset($_GET['status']) && $_GET['status'] === 'active') ? 'selected' : '' ?>>Active</option>
                         <option value="inactive" <?= (isset($_GET['status']) && $_GET['status'] === 'inactive') ? 'selected' : '' ?>>Inactive</option>
                         <option value="banned" <?= (isset($_GET['status']) && $_GET['status'] === 'banned') ? 'selected' : '' ?>>Banned</option>
+                        <option value="blocked" <?= (isset($_GET['status']) && $_GET['status'] === 'blocked') ? 'selected' : '' ?>>Blocked</option>
                     </select>
                 </div>
 
@@ -316,167 +731,170 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
         <!-- Members Table -->
         <section class="table-container" id="members-table-wrapper">
             <table class="orders-table" id="members-table">
-                        <thead>
+                <thead>
+                    <tr>
+                        <th class="col-checkbox">
+                            <input type="checkbox" id="selectAllCheckbox" title="Select all">
+                        </th>
+                        <th>Photo</th>
+                        <th>Member Info</th>
+                        <th>Contact</th>
+                        <th>Gender</th>
+                        <th>DOB</th>
+                        <th>Joined</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (!empty($members)): ?>
+                        <?php foreach ($members as $member): ?>
                             <tr>
-                                <th class="col-checkbox">
-                                    <input type="checkbox" id="selectAllCheckbox" title="Select all">
-                                </th>
-                                <th>Photo</th>
-                                <th>Member Info</th>
-                                <th>Contact</th>
-                                <th>Gender</th>
-                                <th>DOB</th>
-                                <th>Joined</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (!empty($members)): ?>
-                                <?php foreach ($members as $member): ?>
-                                    <tr>
-                                        <td class="col-checkbox">
-                                            <input type="checkbox" class="member-checkbox" name="member_ids[]" value="<?php echo $member['user_id']; ?>" data-member-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>">
-                                        </td>
-                                        <td>
-                                            <?php
-                                            $photoUrl = getProfilePhotoUrl($member['profile_photo'] ?? '', $imageBasePath);
-                                            $defaultPhotoUrl = $imageBasePath . 'images/defaultUserImage.jpg';
-                                            ?>
-                                            <img src="<?php echo htmlspecialchars($photoUrl); ?>" 
-                                                 alt="Profile photo"
-                                                 class="member-profile-photo clickable-image"
-                                                 data-image-url="<?php echo htmlspecialchars($photoUrl, ENT_QUOTES); ?>"
-                                                 data-member-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>"
-                                                 onerror="this.onerror=null; this.src='<?php echo htmlspecialchars($defaultPhotoUrl); ?>';"
-                                                 style="cursor: pointer;"
-                                                 title="Click to view full size">
-                                        </td>
-                                        <td>
-                                            <div>
-                                                <strong><?php echo htmlspecialchars($member['username']); ?></strong>
-                                                <br><small style="color: #6b7280;"><?php echo htmlspecialchars($member['full_name']); ?></small>
-                                                <br><small style="color: #9ca3af;"><?php echo htmlspecialchars($member['email']); ?></small>
-                                            </div>
-                                        </td>
-                                        <td><?php echo htmlspecialchars($member['contact_no']); ?></td>
-                                        <td><?php echo htmlspecialchars($member['gender']); ?></td>
-                                        <td>
-                                            <?php
-                                            if (!empty($member['DateOfBirth'])) {
-                                                $dob = new DateTime($member['DateOfBirth']);
-                                                echo $dob->format('M d, Y');
-                                            } else {
-                                                echo '-';
-                                            }
-                                            ?>
-                                        </td>
-                                        <td>
-                                            <?php
-                                            $date = new DateTime($member['created_at']);
-                                            echo $date->format('M d, Y');
-                                            ?>
-                                        </td>
-                                        <td>
-                                            <?php
-                                            $status = $member['status'] ?? 'active';
-                                            $statusClass = '';
-                                            $statusText = ucfirst($status);
-                                            
-                                            switch($status) {
-                                                case 'active':
-                                                    $statusClass = 'status-badge status-active';
-                                                    break;
-                                                case 'inactive':
-                                                    $statusClass = 'status-badge status-inactive';
-                                                    break;
-                                                case 'banned':
-                                                    $statusClass = 'status-badge status-banned';
-                                                    break;
-                                                default:
-                                                    $statusClass = 'status-badge status-active';
-                                            }
-                                            ?>
-                                            <span class="<?php echo $statusClass; ?>"><?php echo htmlspecialchars($statusText); ?></span>
-                                        </td>
-                                        <td class="col-actions">
-                                            <div class="action-buttons">
-                                            <button
-                                                class="action-btn edit-btn"
-                                                data-user-id="<?php echo $member['user_id']; ?>"
-                                                data-username="<?php echo htmlspecialchars($member['username'], ENT_QUOTES); ?>"
-                                                data-full-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>"
-                                                data-email="<?php echo htmlspecialchars($member['email'], ENT_QUOTES); ?>"
-                                                data-contact-no="<?php echo htmlspecialchars($member['contact_no'], ENT_QUOTES); ?>"
-                                                data-gender="<?php echo htmlspecialchars($member['gender'], ENT_QUOTES); ?>"
-                                                data-date-of-birth="<?php echo !empty($member['DateOfBirth']) ? htmlspecialchars($member['DateOfBirth'], ENT_QUOTES) : ''; ?>"
-                                                title="Edit member">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
+                                <td class="col-checkbox">
+                                    <input type="checkbox" class="member-checkbox" name="member_ids[]" value="<?php echo $member['user_id']; ?>" data-member-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>">
+                                </td>
+                                <td>
+                                    <?php
+                                    $photoUrl = getProfilePhotoUrl($member['profile_photo'] ?? '', $imageBasePath);
+                                    $defaultPhotoUrl = $imageBasePath . 'images/defaultUserImage.jpg';
+                                    ?>
+                                    <img src="<?php echo htmlspecialchars($photoUrl); ?>"
+                                        alt="Profile photo"
+                                        class="member-profile-photo clickable-image"
+                                        data-image-url="<?php echo htmlspecialchars($photoUrl, ENT_QUOTES); ?>"
+                                        data-member-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>"
+                                        onerror="this.onerror=null; this.src='<?php echo htmlspecialchars($defaultPhotoUrl); ?>';"
+                                        style="cursor: pointer;"
+                                        title="Click to view full size">
+                                </td>
+                                <td>
+                                    <div>
+                                        <strong><?php echo htmlspecialchars($member['username']); ?></strong>
+                                        <br><small style="color: #6b7280;"><?php echo htmlspecialchars($member['full_name']); ?></small>
+                                        <br><small style="color: #9ca3af;"><?php echo htmlspecialchars($member['email']); ?></small>
+                                    </div>
+                                </td>
+                                <td><?php echo htmlspecialchars($member['contact_no']); ?></td>
+                                <td><?php echo htmlspecialchars($member['gender']); ?></td>
+                                <td>
+                                    <?php
+                                    if (!empty($member['DateOfBirth'])) {
+                                        $dob = new DateTime($member['DateOfBirth']);
+                                        echo $dob->format('M d, Y');
+                                    } else {
+                                        echo '-';
+                                    }
+                                    ?>
+                                </td>
+                                <td>
+                                    <?php
+                                    $date = new DateTime($member['created_at']);
+                                    echo $date->format('M d, Y');
+                                    ?>
+                                </td>
+                                <td>
+                                    <?php
+                                    $status = $member['status'] ?? 'active';
+                                    $statusClass = '';
+                                    $statusText = ucfirst($status);
 
-                                            <?php
-                                            $currentStatus = $member['status'] ?? 'active';
-                                            ?>
-                                            <?php if ($currentStatus !== 'banned'): ?>
-                                                <button
-                                                    class="action-btn ban-btn"
-                                                    data-action="status"
-                                                    data-user-id="<?php echo $member['user_id']; ?>"
-                                                    data-user-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>"
-                                                    data-status="banned"
-                                                    title="Ban member">
-                                                    <i class="fas fa-ban"></i>
-                                                </button>
-                                            <?php endif; ?>
-                                            
-                                            <?php if ($currentStatus !== 'inactive'): ?>
-                                                <button
-                                                    class="action-btn inactive-btn"
-                                                    data-action="status"
-                                                    data-user-id="<?php echo $member['user_id']; ?>"
-                                                    data-user-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>"
-                                                    data-status="inactive"
-                                                    title="Set to inactive">
-                                                    <i class="fas fa-pause-circle"></i>
-                                                </button>
-                                            <?php endif; ?>
-                                            
-                                            <?php if ($currentStatus !== 'active'): ?>
-                                                <button
-                                                    class="action-btn activate-btn"
-                                                    data-action="status"
-                                                    data-user-id="<?php echo $member['user_id']; ?>"
-                                                    data-user-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>"
-                                                    data-status="active"
-                                                    title="Activate member">
-                                                    <i class="fas fa-check-circle"></i>
-                                                </button>
-                                            <?php endif; ?>
+                                    switch ($status) {
+                                        case 'active':
+                                            $statusClass = 'status-badge status-active';
+                                            break;
+                                        case 'inactive':
+                                            $statusClass = 'status-badge status-inactive';
+                                            break;
+                                        case 'banned':
+                                            $statusClass = 'status-badge status-banned';
+                                            break;
+                                        case 'blocked':
+                                            $statusClass = 'status-badge status-blocked';
+                                            break;
+                                        default:
+                                            $statusClass = 'status-badge status-active';
+                                    }
+                                    ?>
+                                    <span class="<?php echo $statusClass; ?>"><?php echo htmlspecialchars($statusText); ?></span>
+                                </td>
+                                <td class="col-actions">
+                                    <div class="action-buttons">
+                                        <button
+                                            class="action-btn edit-btn"
+                                            data-user-id="<?php echo $member['user_id']; ?>"
+                                            data-username="<?php echo htmlspecialchars($member['username'], ENT_QUOTES); ?>"
+                                            data-full-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>"
+                                            data-email="<?php echo htmlspecialchars($member['email'], ENT_QUOTES); ?>"
+                                            data-contact-no="<?php echo htmlspecialchars($member['contact_no'], ENT_QUOTES); ?>"
+                                            data-gender="<?php echo htmlspecialchars($member['gender'], ENT_QUOTES); ?>"
+                                            data-date-of-birth="<?php echo !empty($member['DateOfBirth']) ? htmlspecialchars($member['DateOfBirth'], ENT_QUOTES) : ''; ?>"
+                                            title="Edit member">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
 
+                                        <?php
+                                        $currentStatus = $member['status'] ?? 'active';
+                                        ?>
+                                        <?php if ($currentStatus !== 'banned'): ?>
                                             <button
-                                                class="action-btn delete-btn"
-                                                data-action="delete"
+                                                class="action-btn ban-btn"
+                                                data-action="status"
                                                 data-user-id="<?php echo $member['user_id']; ?>"
                                                 data-user-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>"
-                                                title="Delete member">
-                                                <i class="fas fa-trash"></i>
+                                                data-status="banned"
+                                                title="Ban member">
+                                                <i class="fas fa-ban"></i>
                                             </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="9" class="text-center">
-                                        <div class="empty-state">
-                                            <i class="fas fa-inbox"></i>
-                                            <p>No members found<?php echo !empty($_GET['search']) ? '. Try a different search term.' : ''; ?></p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+                                        <?php endif; ?>
+
+                                        <?php if ($currentStatus !== 'inactive'): ?>
+                                            <button
+                                                class="action-btn inactive-btn"
+                                                data-action="status"
+                                                data-user-id="<?php echo $member['user_id']; ?>"
+                                                data-user-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>"
+                                                data-status="inactive"
+                                                title="Set to inactive">
+                                                <i class="fas fa-pause-circle"></i>
+                                            </button>
+                                        <?php endif; ?>
+
+                                        <?php if ($currentStatus !== 'active'): ?>
+                                            <button
+                                                class="action-btn activate-btn"
+                                                data-action="status"
+                                                data-user-id="<?php echo $member['user_id']; ?>"
+                                                data-user-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>"
+                                                data-status="active"
+                                                title="Activate member">
+                                                <i class="fas fa-check-circle"></i>
+                                            </button>
+                                        <?php endif; ?>
+
+                                        <button
+                                            class="action-btn delete-btn"
+                                            data-action="delete"
+                                            data-user-id="<?php echo $member['user_id']; ?>"
+                                            data-user-name="<?php echo htmlspecialchars($member['full_name'], ENT_QUOTES); ?>"
+                                            title="Delete member">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="9" class="text-center">
+                                <div class="empty-state">
+                                    <i class="fas fa-inbox"></i>
+                                    <p>No members found<?php echo !empty($_GET['search']) ? '. Try a different search term.' : ''; ?></p>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
 
             <?php if (!empty($members)): ?>
                 <nav class="pagination" aria-label="Table navigation">
@@ -486,65 +904,68 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                         of
                         <span class="pagination-number"><?php echo $pagination['total_members']; ?></span>
                     </span>
-                        <ul class="pagination-list">
-                            <!-- Previous Button -->
-                            <li>
+                    <ul class="pagination-list">
+                        <!-- Previous Button -->
+                        <li>
                                 <?php 
                                 $prevParams = ['action' => 'showAll', 'page' => $pagination['current_page'] - 1];
                                 if (!empty($_GET['search'])) $prevParams['search'] = $_GET['search'];
+                                if (!empty($_GET['status'])) $prevParams['status'] = $_GET['status'];
                                 if (!empty($_GET['sortBy'])) $prevParams['sortBy'] = $_GET['sortBy'];
                                 if (!empty($_GET['sortOrder'])) $prevParams['sortOrder'] = $_GET['sortOrder'];
                                 $prevUrl = 'MemberController.php?' . http_build_query($prevParams);
                                 ?>
-                                <?php if ($pagination['current_page'] > 1): ?>
-                                    <a href="<?php echo $prevUrl; ?>" class="pagination-link pagination-prev">
-                                        <span class="material-symbols-outlined">chevron_left</span>
-                                    </a>
-                                <?php else: ?>
-                                    <span class="pagination-link pagination-prev pagination-disabled">
-                                        <span class="material-symbols-outlined">chevron_left</span>
-                                    </span>
-                                <?php endif; ?>
-                            </li>
+                            <?php if ($pagination['current_page'] > 1): ?>
+                                <a href="<?php echo $prevUrl; ?>" class="pagination-link pagination-prev">
+                                    <span class="material-symbols-outlined">chevron_left</span>
+                                </a>
+                            <?php else: ?>
+                                <span class="pagination-link pagination-prev pagination-disabled">
+                                    <span class="material-symbols-outlined">chevron_left</span>
+                                </span>
+                            <?php endif; ?>
+                        </li>
 
-                            <!-- Page Numbers -->
-                            <?php
-                            $startPage = max(1, $pagination['current_page'] - 2);
-                            $endPage = min($pagination['total_pages'], $pagination['current_page'] + 2);
+                        <!-- Page Numbers -->
+                        <?php
+                        $startPage = max(1, $pagination['current_page'] - 2);
+                        $endPage = min($pagination['total_pages'], $pagination['current_page'] + 2);
 
-                            for ($i = $startPage; $i <= $endPage; $i++):
+                        for ($i = $startPage; $i <= $endPage; $i++):
                                 $pageParams = ['action' => 'showAll', 'page' => $i];
                                 if (!empty($_GET['search'])) $pageParams['search'] = $_GET['search'];
+                                if (!empty($_GET['status'])) $pageParams['status'] = $_GET['status'];
                                 if (!empty($_GET['sortBy'])) $pageParams['sortBy'] = $_GET['sortBy'];
                                 if (!empty($_GET['sortOrder'])) $pageParams['sortOrder'] = $_GET['sortOrder'];
                                 $pageUrl = 'MemberController.php?' . http_build_query($pageParams);
-                            ?>
-                                <li>
-                                    <a href="<?php echo $pageUrl; ?>" class="pagination-link <?php echo $i == $pagination['current_page'] ? 'pagination-active' : ''; ?>">
-                                        <?php echo $i; ?>
-                                    </a>
-                                </li>
-                            <?php endfor; ?>
-
-                            <!-- Next Button -->
+                        ?>
                             <li>
-                                <?php 
+                                <a href="<?php echo $pageUrl; ?>" class="pagination-link <?php echo $i == $pagination['current_page'] ? 'pagination-active' : ''; ?>">
+                                    <?php echo $i; ?>
+                                </a>
+                            </li>
+                        <?php endfor; ?>
+
+                        <!-- Next Button -->
+                        <li>
+                            <?php
                                 $nextParams = ['action' => 'showAll', 'page' => $pagination['current_page'] + 1];
                                 if (!empty($_GET['search'])) $nextParams['search'] = $_GET['search'];
+                                if (!empty($_GET['status'])) $nextParams['status'] = $_GET['status'];
                                 if (!empty($_GET['sortBy'])) $nextParams['sortBy'] = $_GET['sortBy'];
                                 if (!empty($_GET['sortOrder'])) $nextParams['sortOrder'] = $_GET['sortOrder'];
                                 $nextUrl = 'MemberController.php?' . http_build_query($nextParams);
-                                ?>
-                                <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
-                                    <a href="<?php echo $nextUrl; ?>" class="pagination-link pagination-next">
-                                        <span class="material-symbols-outlined">chevron_right</span>
-                                    </a>
-                                <?php else: ?>
-                                    <span class="pagination-link pagination-next pagination-disabled">
-                                        <span class="material-symbols-outlined">chevron_right</span>
-                                    </span>
-                                <?php endif; ?>
-                            </li>
+                            ?>
+                            <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
+                                <a href="<?php echo $nextUrl; ?>" class="pagination-link pagination-next">
+                                    <span class="material-symbols-outlined">chevron_right</span>
+                                </a>
+                            <?php else: ?>
+                                <span class="pagination-link pagination-next pagination-disabled">
+                                    <span class="material-symbols-outlined">chevron_right</span>
+                                </span>
+                            <?php endif; ?>
+                        </li>
                     </ul>
                 </nav>
             <?php endif; ?>
@@ -639,12 +1060,12 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
         function updateTable(response) {
             const tbody = $('#members-table tbody');
             tbody.empty();
-            
+
             // Clear selection when table updates
             selectedMembers.clear();
             $('#selectAllCheckbox').prop('checked', false);
             updateBulkActions();
-            
+
             if (response.members && response.members.length > 0) {
                 response.members.forEach(function(member) {
                     const row = buildMemberRow(member);
@@ -679,7 +1100,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                 photoUrl = imageBasePath + 'images/defaultUserImage.jpg';
             }
             const defaultPhotoUrl = imageBasePath + 'images/defaultUserImage.jpg';
-            
+
             // Format date of birth
             let dobDisplay = '-';
             if (member.DateOfBirth) {
@@ -688,7 +1109,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                     dobDisplay = dob.toISOString().split('T')[0];
                 }
             }
-            
+
             // Format created date
             let createdDateDisplay = '-';
             if (member.created_at) {
@@ -697,16 +1118,29 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                     createdDateDisplay = createdDate.toISOString().split('T')[0];
                 }
             }
-            
+
             // Status badge
             const status = member.status || 'active';
             const statusLabels = {
-                'active': { class: 'status-active', text: 'Active' },
-                'inactive': { class: 'status-inactive', text: 'Inactive' },
-                'banned': { class: 'status-banned', text: 'Banned' }
+                'active': {
+                    class: 'status-active',
+                    text: 'Active'
+                },
+                'inactive': {
+                    class: 'status-inactive',
+                    text: 'Inactive'
+                },
+                'banned': {
+                    class: 'status-banned',
+                    text: 'Banned'
+                },
+                'blocked': {
+                    class: 'status-blocked',
+                    text: 'Blocked'
+                }
             };
             const statusInfo = statusLabels[status] || statusLabels['active'];
-            
+
             // Build status buttons
             let statusButtons = '';
             if (status !== 'banned') {
@@ -718,7 +1152,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
             if (status !== 'active') {
                 statusButtons += '<button class="action-btn activate-btn" data-action="status" data-user-id="' + member.user_id + '" data-user-name="' + escapeHtml(member.full_name) + '" data-status="active" title="Activate member"><i class="fas fa-check-circle"></i></button>';
             }
-            
+
             const row = `
                 <tr>
                     <td class="col-checkbox">
@@ -767,24 +1201,24 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
         function updatePagination(response) {
             const pagination = response.pagination;
             const paginationNav = $('.pagination');
-            
+
             if (pagination.total_members > 0) {
                 // Update pagination info
                 $('.pagination-info').html(`
                     Showing <span class="pagination-number">${pagination.showing_from}-${pagination.showing_to}</span> of <span class="pagination-number">${pagination.total_members}</span>
                 `);
-                
+
                 // Update pagination links
                 const paginationList = $('.pagination-list');
                 paginationList.empty();
-                
+
                 const searchTerm = $('#filterSearch').val();
                 const status = $('#filterStatus').val();
                 const sortBy = response.sortBy || 'created_at';
                 const sortOrder = response.sortOrder || 'DESC';
-                
+
                 // Previous button
-                const prevUrl = pagination.current_page > 1 ? 
+                const prevUrl = pagination.current_page > 1 ?
                     `MemberController.php?action=showAll&page=${pagination.current_page - 1}&search=${encodeURIComponent(searchTerm)}&status=${status}&sortBy=${sortBy}&sortOrder=${sortOrder}` : '#';
                 paginationList.append(`
                     <li>
@@ -794,11 +1228,11 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                         }
                     </li>
                 `);
-                
+
                 // Page numbers
                 const startPage = Math.max(1, pagination.current_page - 2);
                 const endPage = Math.min(pagination.total_pages, pagination.current_page + 2);
-                
+
                 for (let i = startPage; i <= endPage; i++) {
                     const activeClass = i === pagination.current_page ? 'pagination-active' : '';
                     const pageUrl = `MemberController.php?action=showAll&page=${i}&search=${encodeURIComponent(searchTerm)}&status=${status}&sortBy=${sortBy}&sortOrder=${sortOrder}`;
@@ -808,9 +1242,9 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                         </li>
                     `);
                 }
-                
+
                 // Next button
-                const nextUrl = pagination.current_page < pagination.total_pages ? 
+                const nextUrl = pagination.current_page < pagination.total_pages ?
                     `MemberController.php?action=showAll&page=${pagination.current_page + 1}&search=${encodeURIComponent(searchTerm)}&status=${status}&sortBy=${sortBy}&sortOrder=${sortOrder}` : '#';
                 paginationList.append(`
                     <li>
@@ -820,7 +1254,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                         }
                     </li>
                 `);
-                
+
                 paginationNav.show();
             } else {
                 paginationNav.hide();
@@ -840,17 +1274,20 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
             };
             return String(text).replace(/[&<>"']/g, m => map[m]);
         }
-        
+
         function parseContactNumber(contactNo) {
             if (!contactNo) {
-                return { countryCode: '+60', phoneNumber: '' };
+                return {
+                    countryCode: '+60',
+                    phoneNumber: ''
+                };
             }
-            
+
             // Try to extract country code (format: "+60 11-5550 5761" or "+60 1155505761")
             const countryCodes = ['+60', '+1', '+44', '+65', '+86', '+81', '+61', '+33', '+49'];
             let countryCode = '+60'; // default
             let phoneNumber = contactNo;
-            
+
             for (const code of countryCodes) {
                 if (contactNo.startsWith(code)) {
                     countryCode = code;
@@ -858,8 +1295,11 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                     break;
                 }
             }
-            
-            return { countryCode, phoneNumber };
+
+            return {
+                countryCode,
+                phoneNumber
+            };
         }
 
         function openEditModal(userId, username, fullName, email, contactNo, gender, dateOfBirth) {
@@ -867,13 +1307,13 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
             $('#editUsername').val(username);
             $('#editFullName').val(fullName);
             $('#editEmail').val(email);
-            
+
             // Parse contact number
             const parsed = parseContactNumber(contactNo);
             $('#editCountryCode').val(parsed.countryCode);
             $('#editPhoneNumber').val(parsed.phoneNumber);
             updateEditPhoneFormatHint();
-            
+
             $('#editGender').val(gender);
             $('#editDateOfBirth').val(dateOfBirth || '');
 
@@ -958,7 +1398,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
 
             // Remove spaces and dashes for validation
             const cleanPhone = phoneNumber.replace(/[- ]/g, '');
-            
+
             // Check length
             if (cleanPhone.length < config.minLength || cleanPhone.length > config.maxLength) {
                 $phoneNumber.addClass('input-error').removeClass('input-success');
@@ -978,11 +1418,11 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
             // Valid phone number
             $phoneNumber.removeClass('input-error').addClass('input-success');
             $phoneValidationError.text('').hide();
-            
+
             // Combine country code and phone number
             const fullPhoneNumber = countryCode + ' ' + phoneNumber;
             $('#editContactNo').val(fullPhoneNumber);
-            
+
             return true;
         }
 
@@ -1023,7 +1463,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                 'banned': 'ban'
             };
             var action = statusLabels[newStatus] || newStatus;
-            
+
             if (confirm('Are you sure you want to ' + action + ' member: ' + userName + '?')) {
                 $('#statusUserId').val(userId);
                 $('#statusValue').val(newStatus);
@@ -1125,7 +1565,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
         $('#selectAllCheckbox').on('change', function() {
             const isChecked = $(this).is(':checked');
             $('.member-checkbox').prop('checked', isChecked);
-            
+
             if (isChecked) {
                 $('.member-checkbox').each(function() {
                     selectedMembers.add($(this).val());
@@ -1133,7 +1573,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
             } else {
                 selectedMembers.clear();
             }
-            
+
             updateBulkActions();
         });
 
@@ -1153,7 +1593,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
         function updateBulkActions() {
             const count = selectedMembers.size;
             $('#selectedCount').text(count);
-            
+
             if (count > 0) {
                 $('#bulkActionsSection').show();
             } else {
@@ -1180,12 +1620,12 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
             if (confirm(`Are you sure you want to delete ${count} member(s)?\n\nThis action cannot be undone.`)) {
                 // Clear existing hidden inputs
                 $('#bulkDeleteForm input[name="user_ids[]"]').remove();
-                
+
                 // Add selected member IDs
                 selectedMembers.forEach(function(memberId) {
                     $('#bulkDeleteForm').append(`<input type="hidden" name="user_ids[]" value="${memberId}">`);
                 });
-                
+
                 $('#bulkDeleteForm').submit();
             }
         });
@@ -1207,17 +1647,17 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                         <label class="form-label">Username</label>
                         <input type="text" name="username" id="editUsername" readonly
                             class="form-input form-input-readonly"
-                            title="Username cannot be changed"/>
+                            title="Username cannot be changed" />
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Full Name</label>
-                        <input type="text" name="full_name" id="editFullName" class="form-input"/>
+                        <input type="text" name="full_name" id="editFullName" class="form-input" />
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Email</label>
-                        <input type="email" name="email" id="editEmail" class="form-input"/>
+                        <input type="email" name="email" id="editEmail" class="form-input" />
                     </div>
 
                     <div class="form-group">
@@ -1241,7 +1681,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                 <input type="tel" id="editPhoneNumber" name="phone_number" class="form-input phone-number-input" placeholder="e.g., 11-5550 5761" required>
                             </div>
                         </div>
-                        <input type="hidden" name="contact_no" id="editContactNo"/>
+                        <input type="hidden" name="contact_no" id="editContactNo" />
                         <div id="editPhoneValidationError" class="phone-validation-error"></div>
                         <small class="input-hint" id="editPhoneFormatHint">Enter phone number without country code</small>
                     </div>
@@ -1257,7 +1697,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
 
                     <div class="form-group">
                         <label class="form-label">Date of Birth</label>
-                        <input type="date" name="DateOfBirth" id="editDateOfBirth" class="form-input"/>
+                        <input type="date" name="DateOfBirth" id="editDateOfBirth" class="form-input" />
                     </div>
 
                     <div class="form-actions">

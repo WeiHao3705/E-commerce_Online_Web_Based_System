@@ -135,17 +135,18 @@ class MembershipServices
         return $this->membershipRepository->verifyEmail($token);
     }
 
-    public function getAllMembers($page = 1, $limit = 10, $searchTerm = '', $sortBy = 'created_at', $sortOrder = 'DESC'): array
+    public function getAllMembers($page = 1, $limit = 10, $searchTerm = '', $sortBy = 'created_at', $sortOrder = 'DESC', $statusFilter = ''): array
     {
         // Service responsibility: Calculate pagination offset
         $offset = ($page - 1) * $limit;
 
-        // Service responsibility: Sanitize search term
+        // Service responsibility: Sanitize search term and status
         $searchTerm = trim($searchTerm);
+        $statusFilter = trim($statusFilter);
 
         // Get members from repository
-        $members = $this->membershipRepository->getAllMembers($limit, $offset, $searchTerm, $sortBy, $sortOrder);
-        $totalMembers = $this->membershipRepository->getTotalMembersCount($searchTerm);
+        $members = $this->membershipRepository->getAllMembers($limit, $offset, $searchTerm, $sortBy, $sortOrder, $statusFilter);
+        $totalMembers = $this->membershipRepository->getTotalMembersCount($searchTerm, $statusFilter);
 
         // Service responsibility: Calculate pagination data
         $totalPages = ceil($totalMembers / $limit);

@@ -318,12 +318,13 @@ class MemberController
                 return;
             }
 
-            // Get pagination, search, and sort parameters
+            // Get pagination, search, sort and status parameters
             $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
             $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
             $searchTerm = isset($_GET['search']) ? trim($_GET['search']) : '';
             $sortBy = isset($_GET['sortBy']) ? $_GET['sortBy'] : 'created_at';
             $sortOrder = isset($_GET['sortOrder']) ? strtoupper($_GET['sortOrder']) : 'DESC';
+            $status = isset($_GET['status']) ? trim($_GET['status']) : '';
 
             // Validate page number
             if ($page < 1) $page = 1;
@@ -335,7 +336,7 @@ class MemberController
             }
 
             // Get members data from service
-            $data = $this->membershipServices->getAllMembers($page, $limit, $searchTerm, $sortBy, $sortOrder);
+            $data = $this->membershipServices->getAllMembers($page, $limit, $searchTerm, $sortBy, $sortOrder, $status);
 
             // Store data in variable to be used in view
             $members = $data['members'];
@@ -357,12 +358,13 @@ class MemberController
     private function getMembersAjax()
     {
         try {
-            // Get pagination, search, and sort parameters
+            // Get pagination, search, sort and status parameters
             $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
             $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
             $searchTerm = isset($_GET['search']) ? trim($_GET['search']) : '';
             $sortBy = isset($_GET['sortBy']) ? $_GET['sortBy'] : 'created_at';
             $sortOrder = isset($_GET['sortOrder']) ? strtoupper($_GET['sortOrder']) : 'DESC';
+            $status = isset($_GET['status']) ? trim($_GET['status']) : '';
 
             // Validate page number
             if ($page < 1) $page = 1;
@@ -374,7 +376,7 @@ class MemberController
             }
 
             // Get members data from service
-            $data = $this->membershipServices->getAllMembers($page, $limit, $searchTerm, $sortBy, $sortOrder);
+            $data = $this->membershipServices->getAllMembers($page, $limit, $searchTerm, $sortBy, $sortOrder, $status);
 
             // Return JSON response
             header('Content-Type: application/json');
@@ -383,7 +385,8 @@ class MemberController
                 'members' => $data['members'],
                 'pagination' => $data['pagination'],
                 'sortBy' => $sortBy,
-                'sortOrder' => $sortOrder
+                'sortOrder' => $sortOrder,
+                'status' => $status
             ]);
             exit;
         } catch (Exception $e) {
