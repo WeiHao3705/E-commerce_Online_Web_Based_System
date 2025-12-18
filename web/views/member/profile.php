@@ -96,7 +96,7 @@ include __DIR__ . '/../../general/_navbar.php';
   <?php endif; ?>
 
   <div class="breadcrumb">
-    <a href="<?php echo $prefix; ?>index.php"><i class="fas fa-home"></i> Home</a>
+    <a href="/index.php"><i class="fas fa-home"></i> Home</a>
     <span>/</span>
     <span>Profile</span>
   </div>
