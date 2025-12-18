@@ -132,7 +132,7 @@ $recentOrders = [
     <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AdminDashboard.css">
 </head>
 
-<body>
+<body data-user-role="admin" data-user-id="<?php echo htmlspecialchars($_SESSION['user']->user_id ?? ''); ?>">
     <?php
     // Display and clear success/error messages
     if (isset($_SESSION['success_message'])) {

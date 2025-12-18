@@ -71,6 +71,11 @@ $(document).ready(function() {
                     self.createNewChatRoom();
                 }
             });
+            
+            // Back to chat rooms button
+            $('#backToChatRoomsBtn').on('click', function() {
+                self.showChatRoomsList();
+            });
         },
         
         toggle: function() {
@@ -244,17 +249,38 @@ $(document).ready(function() {
             $('#chatInterface').hide();
         },
         
+        showChatRoomsList: function() {
+            this.currentChatRoomId = null;
+            $('#chatRoomsList').show();
+            $('#chatInterface').hide();
+            $('#chatInterfaceHeader').hide();
+            $('#newChatForm').hide();
+            
+            // Reload chat rooms
+            if (this.userRole === 'admin') {
+                this.loadAdminChatRooms();
+            } else {
+                this.loadChatRooms();
+            }
+        },
+        
         loadChatRoom: function(chatRoomId) {
             const self = this;
             this.currentChatRoomId = chatRoomId;
             
             // Update active chat room
             $('.chat-room-item').removeClass('active');
-            $(`.chat-room-item[data-chat-room-id="${chatRoomId}"]`).addClass('active');
+            const $activeRoom = $(`.chat-room-item[data-chat-room-id="${chatRoomId}"]`);
+            $activeRoom.addClass('active');
+            
+            // Update chat interface title
+            const roomTitle = $activeRoom.find('.chat-room-item-title').text() || 'Chat';
+            $('#chatInterfaceTitle').text(roomTitle);
             
             // Hide chat rooms list, show chat interface
             $('#chatRoomsList').hide();
             $('#chatInterface').show();
+            $('#chatInterfaceHeader').show();
             $('#newChatForm').hide();
             
             // Show loading
