@@ -613,10 +613,11 @@
         'opsz' 24;
 }
 
-/* Dark Mode Support */
+/* Dark Mode Support
+   Force voucher list background to stay white on all devices/browsers */
 @media (prefers-color-scheme: dark) {
     .voucher-list-container {
-        background-color: #221010;
+        background-color: #ffffff;
     }
 
     .brand-title {
