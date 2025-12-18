@@ -80,6 +80,8 @@ include __DIR__ . '/../../general/_navbar.php';
 <link rel="stylesheet" href="<?php echo $prefix; ?>css/profile.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+<!-- Leaflet CSS for Map -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
 <main class="profile-page">
   <?php if (!empty($_SESSION['success_message'])): ?>
@@ -389,6 +391,24 @@ include __DIR__ . '/../../general/_navbar.php';
       <input type="hidden" name="address_id" value="" id="address_id" />
       
       <div class="modal-body">
+        <!-- Get Current Location Button -->
+        <div class="form-row">
+          <button type="button" class="btn-get-location" id="btnGetCurrentLocation">
+            <i class="fas fa-map-marker-alt"></i>
+            <span id="locationBtnText">Get Current Location</span>
+            <span class="location-spinner" id="locationSpinner" style="display:none;">
+              <i class="fas fa-spinner fa-spin"></i>
+            </span>
+          </button>
+          <div class="location-status" id="locationStatus" style="display:none;"></div>
+        </div>
+        
+        <!-- Map Container -->
+        <div class="form-row map-container-wrapper" id="mapWrapper" style="display:none;">
+          <div id="locationMap" class="location-map"></div>
+          <p class="map-hint"><i class="fas fa-info-circle"></i> Drag the pin to adjust your exact location</p>
+        </div>
+        
         <div class="form-row">
           <label for="address1">Address Line 1 <span class="required">*</span></label>
           <div class="input-with-icon">
@@ -497,6 +517,8 @@ include __DIR__ . '/../../general/_navbar.php';
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<!-- Leaflet JS for Map -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="<?php echo $prefix; ?>js/profile.js"></script>
 
 </body>

@@ -210,6 +210,12 @@
       document.querySelector('.label-btn[data-label="home"]').classList.add('active');
       document.getElementById('address_label').value = 'home';
       
+      // Hide map and reset location status when opening modal
+      var mapWrapperEl = document.getElementById('mapWrapper');
+      var locationStatusEl = document.getElementById('locationStatus');
+      if(mapWrapperEl) mapWrapperEl.style.display = 'none';
+      if(locationStatusEl) locationStatusEl.style.display = 'none';
+      
       addAddressModal.classList.add('open');
       addAddressModal.setAttribute('aria-hidden', 'false');
     });
@@ -225,6 +231,11 @@
       document.getElementById('address_id').value = '';
       document.querySelectorAll('.label-btn').forEach(b => b.classList.remove('active'));
       document.querySelector('.label-btn[data-label="home"]').classList.add('active');
+      // Hide map when closing modal
+      var mapWrapperEl = document.getElementById('mapWrapper');
+      var locationStatusEl = document.getElementById('locationStatus');
+      if(mapWrapperEl) mapWrapperEl.style.display = 'none';
+      if(locationStatusEl) locationStatusEl.style.display = 'none';
     });
   }
 
@@ -368,6 +379,368 @@
     saveBtn.addEventListener('click', function(e){
       var ok = validateForm();
       if(!ok){ e.preventDefault(); }
+    });
+  }
+
+  // ===== Get Current Location (Google Maps Integration) =====
+  var btnGetLocation = document.getElementById('btnGetCurrentLocation');
+  var locationStatus = document.getElementById('locationStatus');
+  var locationSpinner = document.getElementById('locationSpinner');
+  var locationBtnText = document.getElementById('locationBtnText');
+  var mapWrapper = document.getElementById('mapWrapper');
+  var locationMap = null;
+  var locationMarker = null;
+
+  // Malaysian state mapping for geocoding results
+  var malaysianStates = {
+    'johor': 'Johor',
+    'kedah': 'Kedah',
+    'kelantan': 'Kelantan',
+    'kuala lumpur': 'Kuala Lumpur',
+    'wilayah persekutuan kuala lumpur': 'Kuala Lumpur',
+    'federal territory of kuala lumpur': 'Kuala Lumpur',
+    'labuan': 'Labuan',
+    'wilayah persekutuan labuan': 'Labuan',
+    'federal territory of labuan': 'Labuan',
+    'melaka': 'Melaka',
+    'malacca': 'Melaka',
+    'negeri sembilan': 'Negeri Sembilan',
+    'pahang': 'Pahang',
+    'penang': 'Penang',
+    'pulau pinang': 'Penang',
+    'perak': 'Perak',
+    'perlis': 'Perlis',
+    'putrajaya': 'Putrajaya',
+    'wilayah persekutuan putrajaya': 'Putrajaya',
+    'federal territory of putrajaya': 'Putrajaya',
+    'sabah': 'Sabah',
+    'sarawak': 'Sarawak',
+    'selangor': 'Selangor',
+    'terengganu': 'Terengganu'
+  };
+
+  // Initialize or update the map
+  function initializeMap(lat, lng) {
+    if(mapWrapper) {
+      mapWrapper.style.display = 'block';
+    }
+
+    // Create custom icon for the marker
+    var customIcon = L.divIcon({
+      className: 'custom-marker-container',
+      html: '<div class="custom-marker" style="width: 24px; height: 24px;"></div>',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    });
+
+    if(!locationMap) {
+      // Initialize map
+      locationMap = L.map('locationMap').setView([lat, lng], 17);
+      
+      // Add OpenStreetMap tile layer
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+      }).addTo(locationMap);
+
+      // Create draggable marker
+      locationMarker = L.marker([lat, lng], {
+        draggable: true,
+        icon: customIcon
+      }).addTo(locationMap);
+
+      // When marker is dragged, update address
+      locationMarker.on('dragend', function(e) {
+        var position = e.target.getLatLng();
+        showLocationStatus('Updating address...', 'loading');
+        reverseGeocode(position.lat, position.lng);
+      });
+
+      // Also allow clicking on map to move marker
+      locationMap.on('click', function(e) {
+        locationMarker.setLatLng(e.latlng);
+        showLocationStatus('Updating address...', 'loading');
+        reverseGeocode(e.latlng.lat, e.latlng.lng);
+      });
+    } else {
+      // Update existing map and marker position
+      locationMap.setView([lat, lng], 17);
+      locationMarker.setLatLng([lat, lng]);
+    }
+
+    // Invalidate size to fix rendering issues
+    setTimeout(function() {
+      locationMap.invalidateSize();
+    }, 100);
+  }
+
+  function showLocationStatus(message, type) {
+    if(locationStatus) {
+      locationStatus.textContent = message;
+      locationStatus.className = 'location-status ' + type;
+      locationStatus.style.display = 'flex';
+    }
+  }
+
+  function hideLocationStatus() {
+    if(locationStatus) {
+      locationStatus.style.display = 'none';
+    }
+  }
+
+  function setLocationLoading(isLoading) {
+    if(btnGetLocation) {
+      btnGetLocation.disabled = isLoading;
+    }
+    if(locationSpinner) {
+      locationSpinner.style.display = isLoading ? 'inline-flex' : 'none';
+    }
+    if(locationBtnText) {
+      locationBtnText.textContent = isLoading ? 'Getting Location...' : 'Get Current Location';
+    }
+  }
+
+  function matchMalaysianState(stateName) {
+    if(!stateName) return '';
+    var lowerState = stateName.toLowerCase().trim();
+    return malaysianStates[lowerState] || '';
+  }
+
+  function fillAddressFromGeocodeResult(results) {
+    if(!results || results.length === 0) {
+      showLocationStatus('Could not find address for this location.', 'error');
+      return;
+    }
+
+    var address = results[0];
+    var components = address.address_components;
+    
+    var streetNumber = '';
+    var route = '';
+    var sublocality = '';
+    var locality = '';
+    var adminArea2 = '';
+    var adminArea1 = '';
+    var postalCode = '';
+    var premise = '';
+    var neighborhood = '';
+
+    components.forEach(function(component) {
+      var types = component.types;
+      if(types.includes('street_number')) streetNumber = component.long_name;
+      if(types.includes('route')) route = component.long_name;
+      if(types.includes('sublocality') || types.includes('sublocality_level_1')) sublocality = component.long_name;
+      if(types.includes('locality')) locality = component.long_name;
+      if(types.includes('administrative_area_level_2')) adminArea2 = component.long_name;
+      if(types.includes('administrative_area_level_1')) adminArea1 = component.long_name;
+      if(types.includes('postal_code')) postalCode = component.long_name;
+      if(types.includes('premise')) premise = component.long_name;
+      if(types.includes('neighborhood')) neighborhood = component.long_name;
+    });
+
+    // Build address line 1
+    var addressLine1Parts = [];
+    if(streetNumber) addressLine1Parts.push(streetNumber);
+    if(route) addressLine1Parts.push(route);
+    if(addressLine1Parts.length === 0 && premise) addressLine1Parts.push(premise);
+    if(addressLine1Parts.length === 0 && sublocality) addressLine1Parts.push(sublocality);
+    
+    var addressLine1 = addressLine1Parts.join(' ') || address.formatted_address.split(',')[0];
+    
+    // Build address line 2
+    var addressLine2Parts = [];
+    if(sublocality && !addressLine1.includes(sublocality)) addressLine2Parts.push(sublocality);
+    if(neighborhood && !addressLine1.includes(neighborhood)) addressLine2Parts.push(neighborhood);
+    var addressLine2 = addressLine2Parts.join(', ');
+
+    // Determine city
+    var city = locality || adminArea2 || sublocality || '';
+
+    // Match state to dropdown options
+    var matchedState = matchMalaysianState(adminArea1);
+
+    // Fill form fields
+    var address1Input = document.getElementById('address1');
+    var address2Input = document.getElementById('address2');
+    var cityInput = document.getElementById('city');
+    var stateSelect = document.getElementById('state');
+    var postcodeInput = document.getElementById('postcode');
+
+    if(address1Input) address1Input.value = addressLine1;
+    if(address2Input) address2Input.value = addressLine2;
+    if(cityInput) cityInput.value = city;
+    if(stateSelect && matchedState) {
+      // Try to select the matching state option
+      for(var i = 0; i < stateSelect.options.length; i++) {
+        if(stateSelect.options[i].value === matchedState) {
+          stateSelect.selectedIndex = i;
+          break;
+        }
+      }
+    }
+    if(postcodeInput && postalCode) {
+      // Ensure postcode is 5 digits for Malaysia
+      var cleanPostcode = postalCode.replace(/\D/g, '').slice(0, 5);
+      postcodeInput.value = cleanPostcode;
+    }
+
+    showLocationStatus('Address filled successfully! Please verify and adjust if needed.', 'success');
+  }
+
+  function reverseGeocode(lat, lng) {
+    // Using Google Maps Geocoding API
+    var apiKey = 'YOUR_GOOGLE_MAPS_API_KEY'; // Replace with your API key
+    var geocodeUrl = 'https://maps.googleapis.com/maps/api/geocode/json?latlng=' + lat + ',' + lng + '&key=' + apiKey;
+
+    // If no API key is set, use the free Nominatim service as fallback
+    if(apiKey === 'YOUR_GOOGLE_MAPS_API_KEY') {
+      // Use OpenStreetMap Nominatim (free, no API key needed)
+      var nominatimUrl = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&addressdetails=1';
+      
+      fetch(nominatimUrl, {
+        headers: {
+          'Accept-Language': 'en'
+        }
+      })
+      .then(function(response) { return response.json(); })
+      .then(function(data) {
+        setLocationLoading(false);
+        if(data && data.address) {
+          fillAddressFromNominatim(data);
+        } else {
+          showLocationStatus('Could not find address for this location.', 'error');
+        }
+      })
+      .catch(function(error) {
+        setLocationLoading(false);
+        console.error('Geocoding error:', error);
+        showLocationStatus('Failed to get address. Please try again.', 'error');
+      });
+      return;
+    }
+
+    // Use Google Maps API if key is provided
+    fetch(geocodeUrl)
+      .then(function(response) { return response.json(); })
+      .then(function(data) {
+        setLocationLoading(false);
+        if(data.status === 'OK') {
+          fillAddressFromGeocodeResult(data.results);
+        } else {
+          showLocationStatus('Geocoding failed: ' + data.status, 'error');
+        }
+      })
+      .catch(function(error) {
+        setLocationLoading(false);
+        console.error('Geocoding error:', error);
+        showLocationStatus('Failed to get address. Please try again.', 'error');
+      });
+  }
+
+  function fillAddressFromNominatim(data) {
+    var addr = data.address;
+    
+    // Build address line 1
+    var addressLine1Parts = [];
+    if(addr.house_number) addressLine1Parts.push(addr.house_number);
+    if(addr.road) addressLine1Parts.push(addr.road);
+    if(addressLine1Parts.length === 0 && addr.building) addressLine1Parts.push(addr.building);
+    if(addressLine1Parts.length === 0 && addr.amenity) addressLine1Parts.push(addr.amenity);
+    
+    var addressLine1 = addressLine1Parts.join(' ') || data.display_name.split(',')[0];
+    
+    // Build address line 2
+    var addressLine2Parts = [];
+    if(addr.suburb) addressLine2Parts.push(addr.suburb);
+    if(addr.neighbourhood && addr.neighbourhood !== addr.suburb) addressLine2Parts.push(addr.neighbourhood);
+    var addressLine2 = addressLine2Parts.join(', ');
+
+    // Determine city
+    var city = addr.city || addr.town || addr.municipality || addr.village || addr.county || '';
+
+    // Match state
+    var stateName = addr.state || '';
+    var matchedState = matchMalaysianState(stateName);
+
+    // Get postcode
+    var postcode = addr.postcode || '';
+
+    // Fill form fields
+    var address1Input = document.getElementById('address1');
+    var address2Input = document.getElementById('address2');
+    var cityInput = document.getElementById('city');
+    var stateSelect = document.getElementById('state');
+    var postcodeInput = document.getElementById('postcode');
+
+    if(address1Input) address1Input.value = addressLine1;
+    if(address2Input) address2Input.value = addressLine2;
+    if(cityInput) cityInput.value = city;
+    if(stateSelect && matchedState) {
+      for(var i = 0; i < stateSelect.options.length; i++) {
+        if(stateSelect.options[i].value === matchedState) {
+          stateSelect.selectedIndex = i;
+          break;
+        }
+      }
+    }
+    if(postcodeInput && postcode) {
+      var cleanPostcode = postcode.replace(/\D/g, '').slice(0, 5);
+      postcodeInput.value = cleanPostcode;
+    }
+
+    showLocationStatus('Address filled successfully! Please verify and adjust if needed.', 'success');
+  }
+
+  function getCurrentLocation() {
+    hideLocationStatus();
+    
+    if(!navigator.geolocation) {
+      showLocationStatus('Geolocation is not supported by your browser.', 'error');
+      return;
+    }
+
+    setLocationLoading(true);
+    showLocationStatus('Getting your location...', 'loading');
+
+    navigator.geolocation.getCurrentPosition(
+      function(position) {
+        var lat = position.coords.latitude;
+        var lng = position.coords.longitude;
+        showLocationStatus('Location found! Getting address...', 'loading');
+        // Initialize/update the map with the current position
+        initializeMap(lat, lng);
+        reverseGeocode(lat, lng);
+      },
+      function(error) {
+        setLocationLoading(false);
+        var errorMessage = 'Unable to get your location. ';
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage += 'Please allow location access in your browser settings.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage += 'Location information is unavailable.';
+            break;
+          case error.TIMEOUT:
+            errorMessage += 'The request timed out. Please try again.';
+            break;
+          default:
+            errorMessage += 'An unknown error occurred.';
+        }
+        showLocationStatus(errorMessage, 'error');
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
+      }
+    );
+  }
+
+  if(btnGetLocation) {
+    btnGetLocation.addEventListener('click', function(e) {
+      e.preventDefault();
+      getCurrentLocation();
     });
   }
 })();
