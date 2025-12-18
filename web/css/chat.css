@@ -235,6 +235,41 @@
     overflow: hidden;
 }
 
+.chat-interface-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    background: linear-gradient(135deg, #FF5252 0%, #e04848 100%);
+    color: white;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-back {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    font-size: 16px;
+}
+
+.btn-back:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateX(-2px);
+}
+
+.chat-interface-title {
+    font-size: 15px;
+    font-weight: 600;
+    flex: 1;
+}
+
 .chat-messages {
     flex: 1;
     overflow-y: auto;

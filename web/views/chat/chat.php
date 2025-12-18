@@ -46,6 +46,12 @@ $prefix = $webBasePath;
             
             <!-- Chat Interface -->
             <div class="chat-interface" id="chatInterface">
+                <div class="chat-interface-header" id="chatInterfaceHeader" style="display: none;">
+                    <button class="btn-back" id="backToChatRoomsBtn" title="Back to chat rooms">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <span class="chat-interface-title" id="chatInterfaceTitle">Chat</span>
+                </div>
                 <div class="chat-messages" id="chatMessages"></div>
                 <div class="chat-input-container">
                     <form id="chatForm">
