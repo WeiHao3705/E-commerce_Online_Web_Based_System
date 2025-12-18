@@ -339,3 +339,29 @@ body {
     align-items: center;
     margin-bottom: 12px;
 }
+
+/* Remember Me Checkbox */
+.remember-me {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.remember-me input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.remember-me label {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 14px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.remember-me label:hover {
+    color: #fff;
+}

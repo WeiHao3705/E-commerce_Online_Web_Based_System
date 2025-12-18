@@ -89,7 +89,10 @@ $pageTitle = 'Member Login';
                 </div>
 
                 <div class="forgot-password-row">
-                    <div></div>
+                    <div class="remember-me">
+                        <input type="checkbox" id="remember_me" name="remember_me" value="1">
+                        <label for="remember_me">Remember me</label>
+                    </div>
                     <div class="forgot-link"><a href="<?php echo $prefix; ?>views/security/forgot_password.php?start=1">Forgot your password?</a></div>
                 </div>
 

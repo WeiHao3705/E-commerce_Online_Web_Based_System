@@ -1,6 +1,14 @@
 <?php 
 session_start();
 
+// Check for Remember Me auto-login
+if (empty($_SESSION['user']) && isset($_COOKIE['remember_token'])) {
+    require_once __DIR__ . '/web/controller/MemberController.php';
+    
+    $memberController = new MemberController();
+    $memberController->checkRememberMe();
+}
+
 // Generate device fingerprint for tracking
 $device_fingerprint = md5($_SERVER['HTTP_USER_AGENT'] . $_SERVER['REMOTE_ADDR']);
 

@@ -551,4 +551,36 @@ class MembershipRepository
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([$username]);
     }
+
+    /**
+     * Save remember me token for persistent login
+     */
+    public function saveRememberToken(int $userId, string $hashedToken, string $expiry): bool
+    {
+        $sql = "UPDATE users SET remember_token = ?, token_expires_at = ? WHERE user_id = ?";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$hashedToken, $expiry, $userId]);
+    }
+
+    /**
+     * Get remember me token data for a user
+     */
+    public function getRememberToken(int $userId): ?array
+    {
+        $sql = "SELECT remember_token, token_expires_at FROM users WHERE user_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$userId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ?: null;
+    }
+
+    /**
+     * Clear remember me token for a user
+     */
+    public function clearRememberToken(int $userId): bool
+    {
+        $sql = "UPDATE users SET remember_token = NULL WHERE user_id = ?";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$userId]);
+    }
 }

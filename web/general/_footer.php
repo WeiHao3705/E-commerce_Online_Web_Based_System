@@ -11,7 +11,9 @@
                     $relativePath = str_replace($docRoot, '', $webRootDir);
                     $webBasePath = str_replace('\\', '/', $relativePath) . '/';
                     ?>
-                    <img src="<?php echo $webBasePath; ?>images/logo/logo2.png" alt="NGEAR">
+                    <a href="/index.php">
+                        <img src="<?php echo $webBasePath; ?>images/logo/logo2.png" alt="NGEAR">
+                    </a>
                 </div>
                 <p class="footer-purpose">Our Purpose Is To Provide Affordable Sports Equipment to all.</p>
                 <div class="footer-social">

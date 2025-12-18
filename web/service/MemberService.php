@@ -444,4 +444,28 @@ class MembershipServices
             'is_base64' => true
         ];
     }
+
+    /**
+     * Save remember me token for persistent login
+     */
+    public function saveRememberToken(int $userId, string $hashedToken, string $expiry): bool
+    {
+        return $this->membershipRepository->saveRememberToken($userId, $hashedToken, $expiry);
+    }
+
+    /**
+     * Get remember me token data for a user
+     */
+    public function getRememberToken(int $userId): ?array
+    {
+        return $this->membershipRepository->getRememberToken($userId);
+    }
+
+    /**
+     * Clear remember me token for a user
+     */
+    public function clearRememberToken(int $userId): bool
+    {
+        return $this->membershipRepository->clearRememberToken($userId);
+    }
 }

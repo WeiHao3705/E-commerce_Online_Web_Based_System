@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 require_once __DIR__ . '/../database/connection.php';
 require_once __DIR__ . '/../repository/MemberRepository.php';
 require_once __DIR__ . '/../service/MemberService.php';
@@ -34,6 +36,7 @@ class MemberController
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $username = isset($_POST['username']) ? trim($_POST['username']) : '';
                 $password = isset($_POST['password']) ? $_POST['password'] : '';
+                $rememberMe = isset($_POST['remember_me']) && $_POST['remember_me'] == '1';
 
                 $userDTO = $this->membershipServices->authenticate($username, $password);
 
@@ -55,6 +58,15 @@ class MemberController
                 $_SESSION['user']->role = $userDTO->getRole();
                 $_SESSION['user']->profile_photo = null;
 
+                // Handle Remember Me functionality
+                if ($rememberMe) {
+                    $this->setRememberMeToken($userDTO->getUserId());
+                } else {
+                    // Clear any existing remember token if user didn't check "remember me"
+                    $this->membershipServices->clearRememberToken($userDTO->getUserId());
+                    $this->clearRememberMeCookie();
+                }
+
                 // Redirect based on user role
                 if ($userDTO->getRole() === 'admin') {
                     header('Location: ../views/admin/AdminDashboard.php');
@@ -70,8 +82,95 @@ class MemberController
         }
     }
 
+    /**
+     * Set remember me token for persistent login
+     */
+    private function setRememberMeToken($userId)
+    {
+        $token = bin2hex(random_bytes(32));
+        $hashedToken = password_hash($token, PASSWORD_DEFAULT);
+        $expiry = date('Y-m-d H:i:s', strtotime('+30 days'));
+        
+        // Store hashed token in database
+        $this->membershipServices->saveRememberToken($userId, $hashedToken, $expiry);
+        
+        // Set cookie with plain token (30 days)
+        $cookieExpiry = time() + (30 * 24 * 60 * 60);
+        setcookie('remember_token', $userId . ':' . $token, $cookieExpiry, '/', '', false, true);
+    }
+
+    /**
+     * Check and auto-login from remember me cookie
+     */
+    public function checkRememberMe()
+    {
+        if (isset($_SESSION['user'])) {
+            return true; // Already logged in
+        }
+
+        if (!isset($_COOKIE['remember_token'])) {
+            return false;
+        }
+
+        $parts = explode(':', $_COOKIE['remember_token'], 2);
+        if (count($parts) !== 2) {
+            $this->clearRememberMeCookie();
+            return false;
+        }
+
+        $userId = (int)$parts[0];
+        $token = $parts[1];
+
+        $tokenData = $this->membershipServices->getRememberToken($userId);
+        
+        if (!$tokenData || strtotime($tokenData['token_expires_at']) < time()) {
+            $this->clearRememberMeCookie();
+            return false;
+        }
+
+        if (!password_verify($token, $tokenData['remember_token'])) {
+            $this->clearRememberMeCookie();
+            return false;
+        }
+
+        // Token is valid - auto login
+        $user = $this->membershipServices->getMemberById($userId);
+        if (!$user || $user['status'] !== 'active') {
+            $this->clearRememberMeCookie();
+            return false;
+        }
+
+        // Set session
+        $_SESSION['user'] = new stdClass();
+        $_SESSION['user']->user_id = $user['user_id'];
+        $_SESSION['user']->username = $user['username'];
+        $_SESSION['user']->full_name = $user['full_name'];
+        $_SESSION['user']->email = $user['email'];
+        $_SESSION['user']->role = $user['role'];
+        $_SESSION['user']->profile_photo = null;
+
+        // Refresh the token for security
+        $this->setRememberMeToken($userId);
+
+        return true;
+    }
+
+    /**
+     * Clear remember me cookie
+     */
+    private function clearRememberMeCookie()
+    {
+        setcookie('remember_token', '', time() - 3600, '/', '', false, true);
+    }
+
     public function logout()
     {
+        // Clear remember me token from database and cookie
+        if (isset($_SESSION['user']->user_id)) {
+            $this->membershipServices->clearRememberToken($_SESSION['user']->user_id);
+        }
+        $this->clearRememberMeCookie();
+        
         session_unset();
         session_destroy();
         session_start();
