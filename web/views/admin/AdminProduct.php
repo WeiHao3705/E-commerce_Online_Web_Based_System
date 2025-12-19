@@ -50,6 +50,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		exit;
 	};
 
+	if ($action === 'update_product') {
+		$productId = isset($_POST['product_id']) ? (int)$_POST['product_id'] : 0;
+		$name = trim($_POST['product_name'] ?? '');
+		$category = trim($_POST['category'] ?? '');
+		$description = trim($_POST['description'] ?? '');
+		$cost = $_POST['cost'] ?? null;
+		$originalPrice = $_POST['original_price'] ?? null;
+		$sellingPrice = $_POST['selling_price'] ?? null;
+
+		try {
+			if ($productId <= 0) {
+				throw new Exception('Invalid product ID.');
+			}
+
+			if ($name === '' || $category === '') {
+				throw new Exception('Product name and category are required.');
+			}
+
+			foreach ([['Cost', $cost], ['Original price', $originalPrice], ['Selling price', $sellingPrice]] as [$label, $value]) {
+				if ($value === null || $value === '' || !is_numeric($value) || (float)$value < 0) {
+					throw new Exception($label . ' must be a non-negative number.');
+				}
+			}
+
+			$conn->beginTransaction();
+
+			// Update product
+			$stmt = $conn->prepare('UPDATE product SET product_name = :name, category = :category, description = :description WHERE product_id = :id');
+			$stmt->execute([
+				':name' => $name,
+				':category' => $category,
+				':description' => $description,
+				':id' => $productId,
+			]);
+
+			// Update product price
+			$stmt = $conn->prepare('UPDATE product_price SET cost = :cost, original_price = :original, selling_price = :selling WHERE product_id = :id');
+			$stmt->execute([
+				':cost' => $cost,
+				':original' => $originalPrice,
+				':selling' => $sellingPrice,
+				':id' => $productId,
+			]);
+
+			$conn->commit();
+			$_SESSION['success_message'] = 'Product updated successfully.';
+		} catch (Exception $e) {
+			if ($conn->inTransaction()) {
+				$conn->rollBack();
+			}
+			$_SESSION['error_message'] = $e->getMessage();
+		}
+
+		$redirect();
+	}
+
 	if ($action === 'create_product') {
 		$name = trim($_POST['product_name'] ?? '');
 		$category = trim($_POST['category'] ?? '');
@@ -349,8 +405,17 @@ $pageTitle = 'Admin Products';
 										<div class="action-buttons">
 											<a class="action-btn btn-view" href="<?php echo $viewsBasePath; ?>product/ProductDetails.php?id=<?php echo (int)$product['product_id']; ?>" target="_blank" title="View">
 												<i class="fas fa-eye"></i>
-											</a>
-											<form method="POST" action="AdminProduct.php" class="delete-form" style="margin:0;display:inline;">
+											</a>										<button class="action-btn btn-edit" 
+											data-id="<?php echo (int)$product['product_id']; ?>"
+											data-name="<?php echo html_escape($product['product_name']); ?>"
+											data-category="<?php echo html_escape($product['category']); ?>"
+											data-description="<?php echo html_escape($product['description'] ?? ''); ?>"
+											data-cost="<?php echo $product['cost'] ?? ''; ?>"
+											data-original="<?php echo $product['original_price'] ?? ''; ?>"
+											data-selling="<?php echo $product['selling_price'] ?? ''; ?>"
+											title="Edit">
+											<i class="fas fa-edit"></i>
+										</button>											<form method="POST" action="AdminProduct.php" class="delete-form" style="margin:0;display:inline;">
 												<input type="hidden" name="action" value="delete_product">
 												<input type="hidden" name="product_id" value="<?php echo (int)$product['product_id']; ?>">
 												<button type="submit" class="action-btn btn-delete" title="Delete">
@@ -382,6 +447,54 @@ $pageTitle = 'Admin Products';
 					<?php endfor; ?>
 				</div>
 			<?php endif; ?>
+		</div>
+	</div>
+
+	<div class="modal-overlay" id="editModal">
+		<div class="modal">
+			<div class="modal-header">
+				<h3>Edit Product</h3>
+				<button class="btn btn-ghost" id="closeEditModal">Close</button>
+			</div>
+			<form method="POST" action="AdminProduct.php">
+				<input type="hidden" name="action" value="update_product">
+				<input type="hidden" name="product_id" id="edit_product_id">
+				<div class="form-grid">
+					<div class="form-group">
+						<label for="edit_product_name">Product name</label>
+						<input type="text" id="edit_product_name" name="product_name" required>
+					</div>
+					<div class="form-group">
+						<label for="edit_category">Category</label>
+						<input type="text" id="edit_category" name="category" list="editCategoryList" required>
+						<datalist id="editCategoryList">
+							<?php foreach ($categories as $cat): ?>
+								<option value="<?php echo html_escape($cat); ?>">
+							<?php endforeach; ?>
+						</datalist>
+					</div>
+					<div class="form-group">
+						<label for="edit_cost">Cost (RM)</label>
+						<input type="number" step="0.01" min="0" id="edit_cost" name="cost" required>
+					</div>
+					<div class="form-group">
+						<label for="edit_original_price">Original price (RM)</label>
+						<input type="number" step="0.01" min="0" id="edit_original_price" name="original_price" required>
+					</div>
+					<div class="form-group">
+						<label for="edit_selling_price">Selling price (RM)</label>
+						<input type="number" step="0.01" min="0" id="edit_selling_price" name="selling_price" required>
+					</div>
+				</div>
+				<div class="form-group" style="margin-top:10px;">
+					<label for="edit_description">Description</label>
+					<textarea id="edit_description" name="description" placeholder="Short description"></textarea>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-ghost" id="cancelEdit">Cancel</button>
+					<button type="submit" class="btn btn-primary">Update</button>
+				</div>
+			</form>
 		</div>
 	</div>
 

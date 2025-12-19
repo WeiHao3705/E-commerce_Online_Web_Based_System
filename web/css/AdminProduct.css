@@ -135,6 +135,18 @@ body {
     color: #d97706 !important;
 }
 
+.action-btn.btn-edit {
+    background: #dbeafe !important;
+    border-color: #3b82f6 !important;
+    color: #3b82f6 !important;
+}
+
+.action-btn.btn-edit:hover {
+    background: #bfdbfe !important;
+    border-color: #2563eb !important;
+    color: #2563eb !important;
+}
+
 .action-btn.btn-delete {
     background: #fef2f2 !important;
     border-color: #ef4444 !important;
@@ -321,6 +333,31 @@ tbody tr:hover {
 }
 
 #createModal .modal {
+    display: block; /* Override AdminOrder.css .modal { display:none } */
+    background: #fff;
+    border-radius: 14px;
+    max-width: 640px;
+    width: 100%;
+    padding: 20px;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
+    position: relative;
+    z-index: 3002;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+#editModal.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.48);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 3001;
+    padding: 16px;
+}
+
+#editModal .modal {
     display: block; /* Override AdminOrder.css .modal { display:none } */
     background: #fff;
     border-radius: 14px;
