@@ -121,4 +121,146 @@ class ProductService {
         // 3. Use first variant as fallback
         return $variantsList[0];
     }
+
+    /**
+     * Handle file upload and return relative path
+     * @param array $file $_FILES array element
+     * @param string $productName Product name to use in filename
+     * @param string $uploadDir Directory to save file (with trailing slash)
+     * @return string|null Relative path to saved file or null if upload failed
+     * @throws Exception On validation or file system errors
+     */
+    public function handleProductImageUpload($file, $productName, $uploadDir) {
+        $allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        $maxFileSize = 5 * 1024 * 1024; // 5MB
+
+        // Validate file upload status
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception('File upload failed with error code: ' . $file['error']);
+        }
+
+        // Validate MIME type
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+
+        if (!in_array($mimeType, $allowedMimeTypes)) {
+            throw new Exception('Invalid image type. Only JPG, PNG, GIF, and WebP are allowed.');
+        }
+
+        // Validate file size
+        if ($file['size'] > $maxFileSize) {
+            throw new Exception('Image size must be less than 5MB.');
+        }
+
+        // Get and validate file extension
+        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
+            $extension = 'jpg'; // Default fallback
+        }
+
+        // Generate safe filename: product_name_with_underscores.ext
+        $safeName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $productName);
+        $safeName = preg_replace('/_+/', '_', $safeName); // Remove duplicate underscores
+        $safeName = trim($safeName, '_');
+        $fileName = $safeName . '.' . $extension;
+
+        // Ensure unique filename if it already exists
+        $targetPath = $uploadDir . $fileName;
+        $counter = 1;
+        while (file_exists($targetPath)) {
+            $fileName = $safeName . '_' . $counter . '.' . $extension;
+            $targetPath = $uploadDir . $fileName;
+            $counter++;
+        }
+
+        // Create directory if it doesn't exist
+        if (!is_dir($uploadDir)) {
+            if (!mkdir($uploadDir, 0755, true)) {
+                throw new Exception('Failed to create upload directory.');
+            }
+        }
+
+        // Move uploaded file to destination
+        if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+            throw new Exception('Failed to upload image. Please try again.');
+        }
+
+        // Return relative path for database storage
+        return 'web/images/products/' . $fileName;
+    }
+
+    /**
+     * Create a new product with its price and optional image
+     * @param array $productData ['name', 'category', 'description', 'cost', 'original_price', 'selling_price']
+     * @param string|null $imagePath Optional image path
+     * @param PDO $conn Database connection
+     * @return int|null Product ID on success, null on failure
+     * @throws Exception On database or validation errors
+     */
+    public function createProduct($productData, $imagePath = null, $conn) {
+        // Validate required fields
+        $required = ['name', 'category', 'cost', 'original_price', 'selling_price'];
+        foreach ($required as $field) {
+            if (empty($productData[$field])) {
+                throw new Exception('Missing required field: ' . $field);
+            }
+        }
+
+        // Validate prices are numeric and non-negative
+        foreach (['cost', 'original_price', 'selling_price'] as $priceField) {
+            if (!is_numeric($productData[$priceField]) || (float)$productData[$priceField] < 0) {
+                throw new Exception(ucfirst($priceField) . ' must be a non-negative number.');
+            }
+        }
+
+        try {
+            $conn->beginTransaction();
+
+            // Insert product
+            $stmt = $conn->prepare('INSERT INTO product (product_name, category, description) VALUES (:name, :category, :description)');
+            $stmt->execute([
+                ':name' => $productData['name'],
+                ':category' => $productData['category'],
+                ':description' => $productData['description'] ?? '',
+            ]);
+
+            $productId = (int)$conn->lastInsertId();
+
+            // Insert product price
+            $stmt = $conn->prepare('INSERT INTO product_price (product_id, cost, original_price, selling_price) VALUES (:id, :cost, :original, :selling)');
+            $stmt->execute([
+                ':id' => $productId,
+                ':cost' => $productData['cost'],
+                ':original' => $productData['original_price'],
+                ':selling' => $productData['selling_price'],
+            ]);
+
+            // Insert product image if provided
+            if (!empty($imagePath)) {
+                $stmt = $conn->prepare('INSERT INTO product_image (product_id, variant_id, image_path, type) VALUES (:id, NULL, :path, :type)');
+                $stmt->execute([
+                    ':id' => $productId,
+                    ':path' => $imagePath,
+                    ':type' => 'main',
+                ]);
+            }
+
+            $conn->commit();
+            return $productId;
+        } catch (Exception $e) {
+            if ($conn->inTransaction()) {
+                $conn->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * Get all distinct product categories
+     * @return array List of category names
+     */
+    public function getCategories() {
+        return $this->productRepository->getAllCategories();
+    }
 }

@@ -142,4 +142,15 @@ class ProductRepository {
         
         return $products;
     }
+
+    /**
+     * Get all distinct product categories
+     * @return array Array of category names
+     */
+    public function getAllCategories() {
+        $sql = "SELECT DISTINCT category FROM product ORDER BY category";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
 }
