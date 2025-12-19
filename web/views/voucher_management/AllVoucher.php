@@ -178,6 +178,293 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
         .message-success { background: #d1fae5; color: #065f46; border: 1px solid #10b981; }
         .message-error { background: #fee2e2; color: #991b1b; border: 1px solid #ef4444; }
         .voucher-code { font-family: 'Courier New', monospace; background: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-weight: 600; }
+
+        /* Confirmation Modal Styles */
+        .confirmation-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .confirmation-modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .confirmation-modal-content {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 500px;
+            width: 90%;
+            padding: 0;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+
+        .confirmation-modal-overlay.show .confirmation-modal-content {
+            transform: scale(1);
+        }
+
+        .confirmation-modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .confirmation-modal-icon {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .confirmation-modal-icon.warning {
+            background: #fef3c7;
+            color: #f59e0b;
+        }
+
+        .confirmation-modal-icon.danger {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .confirmation-modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #0f172a;
+            margin: 0;
+        }
+
+        .confirmation-modal-body {
+            padding: 1.5rem;
+        }
+
+        .confirmation-modal-message {
+            color: #6b7280;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .confirmation-modal-actions {
+            padding: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        .confirmation-modal-btn {
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .confirmation-modal-btn-cancel {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .confirmation-modal-btn-cancel:hover {
+            background: #e5e7eb;
+        }
+
+        .confirmation-modal-btn-confirm {
+            background: #ef4444;
+            color: white;
+        }
+
+        .confirmation-modal-btn-confirm:hover {
+            background: #dc2626;
+        }
+
+        .confirmation-modal-btn-confirm.warning {
+            background: #f59e0b;
+        }
+
+        .confirmation-modal-btn-confirm.warning:hover {
+            background: #d97706;
+        }
+
+        /* Enhanced Edit Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .modal-overlay:not(.hidden) {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-overlay.hidden {
+            display: none;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 1rem;
+            max-width: 900px;
+            width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+            margin: 2rem;
+        }
+
+        .modal-overlay:not(.hidden) .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .modal-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 1.5rem 0;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .modal-title::before {
+            content: '';
+            width: 4px;
+            height: 2rem;
+            background: linear-gradient(135deg, #FF523B 0%, #e64a35 100%);
+            border-radius: 2px;
+        }
+
+        .modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .modal-form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group-full {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-label::before {
+            content: '';
+            width: 3px;
+            height: 1rem;
+            background: #FF523B;
+            border-radius: 2px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.625rem;
+            font-size: 0.9375rem;
+            transition: all 0.2s ease;
+            background: white;
+            color: #0f172a;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #FF523B;
+            box-shadow: 0 0 0 4px rgba(255, 82, 59, 0.1);
+        }
+
+        .form-input-readonly {
+            background: #f9fafb;
+            cursor: not-allowed;
+            color: #6b7280;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid #e5e7eb;
+        }
+
+        @media (max-width: 768px) {
+            .modal-content {
+                max-width: 100%;
+                width: 100%;
+                margin: 1rem;
+                max-height: 95vh;
+            }
+
+            .modal-body {
+                padding: 1.5rem;
+            }
+
+            .modal-form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 
@@ -941,11 +1228,15 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                 };
                 var action = statusLabels[newStatus] || newStatus;
                 
-                if (confirm('Are you sure you want to ' + action + ' voucher: ' + voucherCode + '?')) {
-                    $('#statusVoucherId').val(voucherId);
-                    $('#statusValue').val(newStatus);
-                    $('#statusForm').submit();
-                }
+                showConfirmationModal(
+                    'Are you sure you want to ' + action + ' voucher: ' + voucherCode + '?',
+                    'warning',
+                    function() {
+                        $('#statusVoucherId').val(voucherId);
+                        $('#statusValue').val(newStatus);
+                        $('#statusForm').submit();
+                    }
+                );
             });
             
             // Delete button handler
@@ -954,10 +1245,14 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                 var voucherId = $btn.data('voucher-id');
                 var voucherCode = $btn.data('code');
                 
-                if (confirm('Are you sure you want to delete voucher: ' + voucherCode + '?\n\nThis action cannot be undone.')) {
-                    $('#deleteVoucherId').val(voucherId);
-                    $('#deleteForm').submit();
-                }
+                showConfirmationModal(
+                    'Are you sure you want to delete voucher: ' + voucherCode + '?<br><br>This action cannot be undone.',
+                    'danger',
+                    function() {
+                        $('#deleteVoucherId').val(voucherId);
+                        $('#deleteForm').submit();
+                    }
+                );
             });
             
             // Assign button handler
@@ -1018,18 +1313,51 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
             };
             var action = statusLabels[newStatus] || newStatus;
 
-            if (confirm('Are you sure you want to ' + action + ' voucher: ' + voucherCode + '?')) {
-                $('#statusVoucherId').val(voucherId);
-                $('#statusValue').val(newStatus);
-                $('#statusForm').submit();
-            }
+            showConfirmationModal(
+                'Are you sure you want to ' + action + ' voucher: ' + voucherCode + '?',
+                'warning',
+                function() {
+                    $('#statusVoucherId').val(voucherId);
+                    $('#statusValue').val(newStatus);
+                    $('#statusForm').submit();
+                }
+            );
         }
 
         function confirmDelete(voucherId, voucherCode) {
-            if (confirm('Are you sure you want to delete voucher: ' + voucherCode + '?\n\nThis action cannot be undone.')) {
-                $('#deleteVoucherId').val(voucherId);
-                $('#deleteForm').submit();
-            }
+            showConfirmationModal(
+                'Are you sure you want to delete voucher: ' + voucherCode + '?<br><br>This action cannot be undone.',
+                'danger',
+                function() {
+                    $('#deleteVoucherId').val(voucherId);
+                    $('#deleteForm').submit();
+                }
+            );
+        }
+
+        function showConfirmationModal(message, type, onConfirm) {
+            type = type || 'warning';
+            const iconClass = type === 'danger' ? 'danger' : 'warning';
+            const confirmBtnClass = type === 'danger' ? 'confirmation-modal-btn-confirm' : 'confirmation-modal-btn-confirm warning';
+            const confirmText = type === 'danger' ? 'Delete' : 'Confirm';
+
+            $('#confirmationModalMessage').html(message);
+            $('#confirmationModalIcon').removeClass('warning danger').addClass(iconClass);
+            $('#confirmationModalConfirmBtn').removeClass('warning confirmation-modal-btn-confirm').addClass(confirmBtnClass).text(confirmText);
+
+            // Store the confirm callback
+            $('#confirmationModalConfirmBtn').off('click').on('click', function() {
+                hideConfirmationModal();
+                if (onConfirm) onConfirm();
+            });
+
+            $('#confirmationModal').addClass('show');
+            $('body').css('overflow', 'hidden');
+        }
+
+        function hideConfirmationModal() {
+            $('#confirmationModal').removeClass('show');
+            $('body').css('overflow', 'auto');
         }
 
         function openAssignModal(voucherId, voucherCode) {
@@ -1153,9 +1481,13 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                     ? `Are you sure you want to assign voucher "${voucherCode}" to ALL active members?`
                     : `Are you sure you want to assign voucher "${voucherCode}" to the selected members?`;
                     
-                if (confirm(confirmMsg)) {
-                    $('#assignForm').submit();
-                }
+                showConfirmationModal(
+                    confirmMsg,
+                    'warning',
+                    function() {
+                        $('#assignForm').submit();
+                    }
+                );
             });
 
             // Member search functionality
@@ -1238,17 +1570,21 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                 return;
             }
 
-            if (confirm(`Are you sure you want to delete ${count} voucher(s)?\n\nThis action cannot be undone.`)) {
-                // Clear existing hidden inputs
-                $('#bulkDeleteForm input[name="voucher_ids[]"]').remove();
-                
-                // Add selected voucher IDs
-                selectedVouchers.forEach(function(voucherId) {
-                    $('#bulkDeleteForm').append(`<input type="hidden" name="voucher_ids[]" value="${voucherId}">`);
-                });
-                
-                $('#bulkDeleteForm').submit();
-            }
+            showConfirmationModal(
+                `Are you sure you want to delete ${count} voucher(s)?<br><br>This action cannot be undone.`,
+                'danger',
+                function() {
+                    // Clear existing hidden inputs
+                    $('#bulkDeleteForm input[name="voucher_ids[]"]').remove();
+                    
+                    // Add selected voucher IDs
+                    selectedVouchers.forEach(function(voucherId) {
+                        $('#bulkDeleteForm').append(`<input type="hidden" name="voucher_ids[]" value="${voucherId}">`);
+                    });
+                    
+                    $('#bulkDeleteForm').submit();
+                }
+            );
         });
     </script>
 
@@ -1308,56 +1644,58 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                     <input type="hidden" name="action" value="update">
                     <input type="hidden" name="voucher_id" id="editVoucherId">
 
-                    <div class="form-group">
-                        <label class="form-label">Code</label>
-                        <input type="text" name="code" id="editCode" class="form-input">
-                    </div>
+                    <div class="modal-form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Code</label>
+                            <input type="text" name="code" id="editCode" class="form-input">
+                        </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Description</label>
-                        <input type="text" name="description" id="editDescription" class="form-input">
-                    </div>
+                        <div class="form-group">
+                            <label class="form-label">Type</label>
+                            <select name="type" id="editType" class="form-input">
+                                <option value="percent">Percent</option>
+                                <option value="fixed">Fixed</option>
+                                <option value="freeshipping">Free Shipping</option>
+                            </select>
+                        </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Type</label>
-                        <select name="type" id="editType" class="form-input">
-                            <option value="percent">Percent</option>
-                            <option value="fixed">Fixed</option>
-                            <option value="freeshipping">Free Shipping</option>
-                        </select>
-                    </div>
+                        <div class="form-group form-group-full">
+                            <label class="form-label">Description</label>
+                            <input type="text" name="description" id="editDescription" class="form-input">
+                        </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Discount Value</label>
-                        <input type="number" name="discount_value" id="editDiscountValue" step="0.01" min="0" class="form-input">
-                    </div>
+                        <div class="form-group">
+                            <label class="form-label">Discount Value</label>
+                            <input type="number" name="discount_value" id="editDiscountValue" step="0.01" min="0" class="form-input">
+                        </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Min Spend (RM)</label>
-                        <input type="number" name="min_spend" id="editMinSpend" step="0.01" min="0" class="form-input">
-                    </div>
+                        <div class="form-group">
+                            <label class="form-label">Min Spend (RM)</label>
+                            <input type="number" name="min_spend" id="editMinSpend" step="0.01" min="0" class="form-input">
+                        </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Max Discount (RM) - Optional</label>
-                        <input type="number" name="max_discount" id="editMaxDiscount" step="0.01" min="0" class="form-input">
-                    </div>
+                        <div class="form-group">
+                            <label class="form-label">Max Discount (RM) - Optional</label>
+                            <input type="number" name="max_discount" id="editMaxDiscount" step="0.01" min="0" class="form-input">
+                        </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Start Date</label>
-                        <input type="date" name="start_date" id="editStartDate" class="form-input">
-                    </div>
+                        <div class="form-group">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" name="start_date" id="editStartDate" class="form-input">
+                        </div>
 
-                    <div class="form-group">
-                        <label class="form-label">End Date</label>
-                        <input type="date" name="end_date" id="editEndDate" class="form-input">
-                    </div>
+                        <div class="form-group">
+                            <label class="form-label">End Date</label>
+                            <input type="date" name="end_date" id="editEndDate" class="form-input">
+                        </div>
 
-                    <div class="form-group">
-                        <label class="form-label">
-                            <input type="checkbox" name="is_redeemable" id="editIsRedeemable" value="1" checked>
-                            <span>Allow members to redeem this voucher</span>
-                        </label>
-                        <small style="display: block; margin-top: 0.5rem; color: #6b7280;">If unchecked, only admins can assign this voucher to members.</small>
+                        <div class="form-group form-group-full">
+                            <label class="form-label" style="flex-direction: row; align-items: center; cursor: pointer;">
+                                <input type="checkbox" name="is_redeemable" id="editIsRedeemable" value="1" checked style="width: auto; margin-right: 0.5rem;">
+                                <span>Allow members to redeem this voucher</span>
+                            </label>
+                            <small style="display: block; margin-top: 0.5rem; color: #6b7280; font-size: 0.8125rem;">If unchecked, only admins can assign this voucher to members.</small>
+                        </div>
                     </div>
 
                     <div class="form-actions">
@@ -1374,6 +1712,45 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
             </div>
         </div>
     </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="confirmation-modal-overlay">
+        <div class="confirmation-modal-content">
+            <div class="confirmation-modal-header">
+                <div class="confirmation-modal-icon" id="confirmationModalIcon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3 class="confirmation-modal-title">Confirm Action</h3>
+            </div>
+            <div class="confirmation-modal-body">
+                <p class="confirmation-modal-message" id="confirmationModalMessage"></p>
+            </div>
+            <div class="confirmation-modal-actions">
+                <button type="button" class="confirmation-modal-btn confirmation-modal-btn-cancel" onclick="hideConfirmationModal()">
+                    <span>Cancel</span>
+                </button>
+                <button type="button" class="confirmation-modal-btn confirmation-modal-btn-confirm" id="confirmationModalConfirmBtn">
+                    <span>Confirm</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Close confirmation modal on overlay click
+        $(document).on('click', '#confirmationModal', function(e) {
+            if ($(e.target).hasClass('confirmation-modal-overlay')) {
+                hideConfirmationModal();
+            }
+        });
+
+        // Close confirmation modal on Escape key
+        $(document).on('keydown', function(e) {
+            if (e.key === 'Escape' && $('#confirmationModal').hasClass('show')) {
+                hideConfirmationModal();
+            }
+        });
+    </script>
 
 </body>
 

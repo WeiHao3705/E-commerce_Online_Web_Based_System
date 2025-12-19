@@ -592,6 +592,372 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
             color: #991b1b;
             border: 1px solid #ef4444;
         }
+
+        /* Confirmation Modal Styles */
+        .confirmation-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .confirmation-modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .confirmation-modal-content {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 500px;
+            width: 90%;
+            padding: 0;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+
+        .confirmation-modal-overlay.show .confirmation-modal-content {
+            transform: scale(1);
+        }
+
+        .confirmation-modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .confirmation-modal-icon {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .confirmation-modal-icon.warning {
+            background: #fef3c7;
+            color: #f59e0b;
+        }
+
+        .confirmation-modal-icon.danger {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .confirmation-modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #0f172a;
+            margin: 0;
+        }
+
+        .confirmation-modal-body {
+            padding: 1.5rem;
+        }
+
+        .confirmation-modal-message {
+            color: #6b7280;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .confirmation-modal-actions {
+            padding: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        .confirmation-modal-btn {
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .confirmation-modal-btn-cancel {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .confirmation-modal-btn-cancel:hover {
+            background: #e5e7eb;
+        }
+
+        .confirmation-modal-btn-confirm {
+            background: #ef4444;
+            color: white;
+        }
+
+        .confirmation-modal-btn-confirm:hover {
+            background: #dc2626;
+        }
+
+        .confirmation-modal-btn-confirm.warning {
+            background: #f59e0b;
+        }
+
+        .confirmation-modal-btn-confirm.warning:hover {
+            background: #d97706;
+        }
+
+        /* Enhanced Edit Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .modal-overlay:not(.hidden) {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-overlay.hidden {
+            display: none;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 1rem;
+            max-width: 900px;
+            width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+            margin: 2rem;
+        }
+
+        .modal-overlay:not(.hidden) .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .modal-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 1.5rem 0;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .modal-title::before {
+            content: '';
+            width: 4px;
+            height: 2rem;
+            background: linear-gradient(135deg, #FF523B 0%, #e64a35 100%);
+            border-radius: 2px;
+        }
+
+        .modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .modal-form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group-full {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-label::before {
+            content: '';
+            width: 3px;
+            height: 1rem;
+            background: #FF523B;
+            border-radius: 2px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.625rem;
+            font-size: 0.9375rem;
+            transition: all 0.2s ease;
+            background: white;
+            color: #0f172a;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #FF523B;
+            box-shadow: 0 0 0 4px rgba(255, 82, 59, 0.1);
+        }
+
+        .form-input-readonly {
+            background: #f9fafb;
+            cursor: not-allowed;
+            color: #6b7280;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid #e5e7eb;
+        }
+
+        .phone-input-group {
+            display: flex;
+            gap: 0.75rem;
+            align-items: stretch;
+        }
+
+        .country-code-wrapper {
+            flex-shrink: 0;
+            display: flex;
+        }
+
+        .country-code-select {
+            padding: 0.875rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.625rem;
+            font-size: 0.9375rem;
+            background: white;
+            color: #0f172a;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            min-height: 48px;
+            line-height: 1.5;
+            box-sizing: border-box;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+        }
+
+        .country-code-select:focus {
+            outline: none;
+            border-color: #FF523B;
+            box-shadow: 0 0 0 4px rgba(255, 82, 59, 0.1);
+        }
+
+        .phone-number-wrapper {
+            flex: 1;
+            position: relative;
+            display: flex;
+        }
+
+        .phone-number-input {
+            padding: 0.875rem 1rem;
+            padding-left: 2.75rem;
+            width: 100%;
+            min-height: 48px;
+            box-sizing: border-box;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            font-size: 1rem;
+        }
+
+        .input-hint {
+            font-size: 0.8125rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+
+        .phone-validation-error {
+            color: #ef4444;
+            font-size: 0.8125rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .phone-validation-error:not(:empty) {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .modal-content {
+                max-width: 100%;
+                width: 100%;
+                margin: 1rem;
+                max-height: 95vh;
+            }
+
+            .modal-body {
+                padding: 1.5rem;
+            }
+
+            .modal-form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .phone-input-group {
+                flex-direction: column;
+            }
+        }
         
     </style>
     <style>
@@ -1712,18 +2078,51 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
             };
             const action = statusLabels[newStatus] || newStatus;
 
-            if (confirm('Are you sure you want to ' + action + ' admin: ' + adminName + '?')) {
-                $('#statusUserId').val(userId);
-                $('#statusValue').val(newStatus);
-                $('#statusForm').submit();
-            }
+            showConfirmationModal(
+                'Are you sure you want to ' + action + ' admin: ' + adminName + '?',
+                'warning',
+                function() {
+                    $('#statusUserId').val(userId);
+                    $('#statusValue').val(newStatus);
+                    $('#statusForm').submit();
+                }
+            );
         }
 
         function confirmDelete(userId, adminName) {
-            if (confirm('Are you sure you want to delete admin: ' + adminName + '?\n\nThis action cannot be undone.')) {
-                $('#deleteUserId').val(userId);
-                $('#deleteForm').submit();
-            }
+            showConfirmationModal(
+                'Are you sure you want to delete admin: ' + adminName + '?<br><br>This action cannot be undone.',
+                'danger',
+                function() {
+                    $('#deleteUserId').val(userId);
+                    $('#deleteForm').submit();
+                }
+            );
+        }
+
+        function showConfirmationModal(message, type, onConfirm) {
+            type = type || 'warning';
+            const iconClass = type === 'danger' ? 'danger' : 'warning';
+            const confirmBtnClass = type === 'danger' ? 'confirmation-modal-btn-confirm' : 'confirmation-modal-btn-confirm warning';
+            const confirmText = type === 'danger' ? 'Delete' : 'Confirm';
+
+            $('#confirmationModalMessage').html(message);
+            $('#confirmationModalIcon').removeClass('warning danger').addClass(iconClass);
+            $('#confirmationModalConfirmBtn').removeClass('warning confirmation-modal-btn-confirm').addClass(confirmBtnClass).text(confirmText);
+
+            // Store the confirm callback
+            $('#confirmationModalConfirmBtn').off('click').on('click', function() {
+                hideConfirmationModal();
+                if (onConfirm) onConfirm();
+            });
+
+            $('#confirmationModal').addClass('show');
+            $('body').css('overflow', 'hidden');
+        }
+
+        function hideConfirmationModal() {
+            $('#confirmationModal').removeClass('show');
+            $('body').css('overflow', 'auto');
         }
 
         function viewAdminImage(imageUrl, adminName) {
@@ -1848,15 +2247,19 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                 return;
             }
 
-            if (confirm(`Are you sure you want to delete ${count} admin(s)?\n\nThis action cannot be undone.`)) {
-                $('#bulkDeleteForm input[name="user_ids[]"]').remove();
+            showConfirmationModal(
+                `Are you sure you want to delete ${count} admin(s)?<br><br>This action cannot be undone.`,
+                'danger',
+                function() {
+                    $('#bulkDeleteForm input[name="user_ids[]"]').remove();
 
-                selectedAdmins.forEach(function(adminId) {
-                    $('#bulkDeleteForm').append(`<input type="hidden" name="user_ids[]" value="${adminId}">`);
-                });
+                    selectedAdmins.forEach(function(adminId) {
+                        $('#bulkDeleteForm').append(`<input type="hidden" name="user_ids[]" value="${adminId}">`);
+                    });
 
-                $('#bulkDeleteForm').submit();
-            }
+                    $('#bulkDeleteForm').submit();
+                }
+            );
         });
 
         // Phone validation for add admin form
@@ -2434,56 +2837,58 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                     <input type="hidden" name="action" value="update">
                     <input type="hidden" name="user_id" id="editUserId">
 
-                    <div class="form-group">
-                        <label class="form-label">Username</label>
-                        <input type="text" name="username" id="editUsername" readonly
-                            class="form-input form-input-readonly"
-                            title="Username cannot be changed"/>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Full Name</label>
-                        <input type="text" name="full_name" id="editFullName" class="form-input"/>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Email</label>
-                        <input type="email" name="email" id="editEmail" class="form-input"/>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Contact Number</label>
-                        <div class="phone-input-group">
-                            <div class="country-code-wrapper">
-                                <select id="editCountryCode" name="country_code" class="country-code-select" required>
-                                    <option value="+60">🇲🇾 +60 (MY)</option>
-                                    <option value="+1">🇺🇸 +1 (US)</option>
-                                    <option value="+44">🇬🇧 +44 (UK)</option>
-                                    <option value="+65">🇸🇬 +65 (SG)</option>
-                                    <option value="+86">🇨🇳 +86 (CN)</option>
-                                    <option value="+81">🇯🇵 +81 (JP)</option>
-                                    <option value="+61">🇦🇺 +61 (AU)</option>
-                                    <option value="+33">🇫🇷 +33 (FR)</option>
-                                    <option value="+49">🇩🇪 +49 (DE)</option>
-                                </select>
-                            </div>
-                            <div class="phone-number-wrapper">
-                                <i class="fas fa-phone input-icon"></i>
-                                <input type="tel" id="editPhoneNumber" name="phone_number" class="form-input phone-number-input" placeholder="e.g., 11-5550 5761" required>
-                            </div>
+                    <div class="modal-form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Username</label>
+                            <input type="text" name="username" id="editUsername" readonly
+                                class="form-input form-input-readonly"
+                                title="Username cannot be changed"/>
                         </div>
-                        <input type="hidden" name="contact_no" id="editContactNo"/>
-                        <div id="editPhoneValidationError" class="phone-validation-error"></div>
-                        <small class="input-hint" id="editPhoneFormatHint">Enter phone number without country code</small>
-                    </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Gender</label>
-                        <select name="gender" id="editGender" class="form-input">
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                            <option value="Other">Other</option>
-                        </select>
+                        <div class="form-group">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" name="full_name" id="editFullName" class="form-input"/>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" id="editEmail" class="form-input"/>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Gender</label>
+                            <select name="gender" id="editGender" class="form-input">
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group form-group-full">
+                            <label class="form-label">Contact Number</label>
+                            <div class="phone-input-group">
+                                <div class="country-code-wrapper">
+                                    <select id="editCountryCode" name="country_code" class="country-code-select" required>
+                                        <option value="+60">🇲🇾 +60 (MY)</option>
+                                        <option value="+1">🇺🇸 +1 (US)</option>
+                                        <option value="+44">🇬🇧 +44 (UK)</option>
+                                        <option value="+65">🇸🇬 +65 (SG)</option>
+                                        <option value="+86">🇨🇳 +86 (CN)</option>
+                                        <option value="+81">🇯🇵 +81 (JP)</option>
+                                        <option value="+61">🇦🇺 +61 (AU)</option>
+                                        <option value="+33">🇫🇷 +33 (FR)</option>
+                                        <option value="+49">🇩🇪 +49 (DE)</option>
+                                    </select>
+                                </div>
+                                <div class="phone-number-wrapper">
+                                    <i class="fas fa-phone input-icon"></i>
+                                    <input type="tel" id="editPhoneNumber" name="phone_number" class="form-input phone-number-input" placeholder="e.g., 11-5550 5761" required>
+                                </div>
+                            </div>
+                            <input type="hidden" name="contact_no" id="editContactNo"/>
+                            <div id="editPhoneValidationError" class="phone-validation-error"></div>
+                            <small class="input-hint" id="editPhoneFormatHint">Enter phone number without country code</small>
+                        </div>
                     </div>
 
                     <div class="form-actions">
@@ -2514,6 +2919,45 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
             </div>
         </div>
     </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="confirmation-modal-overlay">
+        <div class="confirmation-modal-content">
+            <div class="confirmation-modal-header">
+                <div class="confirmation-modal-icon" id="confirmationModalIcon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3 class="confirmation-modal-title">Confirm Action</h3>
+            </div>
+            <div class="confirmation-modal-body">
+                <p class="confirmation-modal-message" id="confirmationModalMessage"></p>
+            </div>
+            <div class="confirmation-modal-actions">
+                <button type="button" class="confirmation-modal-btn confirmation-modal-btn-cancel" onclick="hideConfirmationModal()">
+                    <span>Cancel</span>
+                </button>
+                <button type="button" class="confirmation-modal-btn confirmation-modal-btn-confirm" id="confirmationModalConfirmBtn">
+                    <span>Confirm</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Close confirmation modal on overlay click
+        $(document).on('click', '#confirmationModal', function(e) {
+            if ($(e.target).hasClass('confirmation-modal-overlay')) {
+                hideConfirmationModal();
+            }
+        });
+
+        // Close confirmation modal on Escape key
+        $(document).on('keydown', function(e) {
+            if (e.key === 'Escape' && $('#confirmationModal').hasClass('show')) {
+                hideConfirmationModal();
+            }
+        });
+    </script>
 
 </body>
 
