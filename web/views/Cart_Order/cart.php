@@ -14,7 +14,7 @@ if (isset($_SESSION['user']) && isset($_SESSION['user']->role) && $_SESSION['use
 if (isset($_SESSION['user']) && isset($_SESSION['user']->user_id)) {
     $_SESSION['user_id'] = $_SESSION['user']->user_id;
 } elseif (!isset($_SESSION['user_id'])) {
-    header('Location: ../member/login.php');
+    header('Location: ../security/login.php');
     exit;
 }
 

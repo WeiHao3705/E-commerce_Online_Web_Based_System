@@ -3,7 +3,7 @@ session_start();
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id']) && !isset($_SESSION['user'])) {
-    header('Location: ../member/login.php');
+    header('Location: ../security/login.php');
     exit;
 }
 
