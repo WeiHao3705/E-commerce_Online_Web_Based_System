@@ -31,6 +31,7 @@ $docRoot = $_SERVER['DOCUMENT_ROOT'];
 $relativePath = str_replace($docRoot, '', $webRootDir);
 $webBasePath = str_replace('\\', '/', $relativePath) . '/';
 $cssBasePath = $webBasePath . 'css/';
+$jsBasePath = $webBasePath . 'js/';
 $viewsBasePath = $webBasePath . 'views/';
 
 $db = new Database();
@@ -232,120 +233,10 @@ $pageTitle = 'Admin Products';
 	<title><?php echo html_escape($pageTitle); ?> - NGEAR</title>
 	<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 	<link rel="stylesheet" href="<?php echo $cssBasePath; ?>AllTables.css">
-	<style>
-		* {
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-		body {
-			font-family: 'Poppins', sans-serif;
-			background: transparent;
-			color: #0f172a;
-		}
-		.page-container {
-			max-width: 100%;
-			margin: 0;
-			padding: 20px;
-		}
-		.page-header {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			margin-bottom: 18px;
-		}
-		.page-title {
-			margin: 0;
-			font-size: 26px;
-			letter-spacing: -0.3px;
-		}
-		.content-card {
-			background: transparent;
-			border: none;
-			border-radius: 0;
-			box-shadow: none;
-			padding: 0;
-		}
-		.toolbar {
-			display: flex;
-			flex-wrap: wrap;
-			gap: 12px;
-			align-items: center;
-			margin-bottom: 14px;
-		}
-		.search-input {
-			width: 240px;
-			padding: 10px 12px;
-			border: 1px solid #d7dde5;
-			border-radius: 10px;
-			font-size: 14px;
-		}
-		.select-input {
-			padding: 10px 12px;
-			border: 1px solid #d7dde5;
-			border-radius: 10px;
-			font-size: 14px;
-			background: #fff;
-		}
-		.btn {
-			display: inline-flex;
-			align-items: center;
-			gap: 6px;
-			padding: 10px 14px;
-			border: none;
-			border-radius: 10px;
-			font-weight: 600;
-			cursor: pointer;
-			text-decoration: none;
-		}
-		.btn-primary { background: #ef8324; color: #fff; }
-		.btn-secondary { background: #0ea5e9; color: #fff; }
-		.btn-ghost { background: #f1f5f9; color: #0f172a; }
-		.btn-danger { background: #ef4444; color: #fff; }
-		.table-wrapper { overflow-x: auto; }
-		table { width: 100%; border-collapse: collapse; }
-		th, td { padding: 12px 10px; text-align: left; }
-		thead th { font-size: 13px; color: #475569; border-bottom: 1px solid #e2e8f0; }
-		tbody tr { border-bottom: 1px solid #e2e8f0; }
-		tbody tr:hover { background: #f8fafc; }
-		.product-cell { display: flex; align-items: center; gap: 10px; }
-		.product-thumb {
-			width: 52px;
-			height: 52px;
-			border-radius: 10px;
-			background: #f8fafc;
-			border: 1px solid #e2e8f0;
-			object-fit: cover;
-		}
-		.badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-		.badge-gray { background: #f1f5f9; color: #0f172a; }
-		.badge-green { background: #dcfce7; color: #166534; }
-		.badge-amber { background: #fff7ed; color: #c2410c; }
-		.badge-red { background: #fef2f2; color: #b91c1c; }
-		.message { padding: 12px 14px; border-radius: 10px; margin-bottom: 12px; font-weight: 600; }
-		.message-success { background: #ecfdf3; color: #166534; border: 1px solid #bbf7d0; }
-		.message-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecdd3; }
-		.actions { display: flex; gap: 8px; }
-		.pagination { display: flex; gap: 8px; align-items: center; margin-top: 16px; }
-		.pagination a, .pagination span { padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0; text-decoration: none; color: #0f172a; font-weight: 600; }
-		.pagination .active { background: #ef8324; border-color: #ef8324; color: #fff; }
-		.modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.48); display: none; align-items: center; justify-content: center; z-index: 20; padding: 16px; }
-		.modal { background: #fff; border-radius: 14px; max-width: 640px; width: 100%; padding: 20px; box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25); }
-		.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-		.modal h3 { margin: 0; }
-		.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
-		.form-group { display: flex; flex-direction: column; gap: 6px; }
-		.form-group label { font-size: 13px; font-weight: 600; color: #334155; }
-		.form-group input, .form-group textarea { padding: 10px 12px; border: 1px solid #d7dde5; border-radius: 10px; font-size: 14px; }
-		.form-group textarea { min-height: 90px; resize: vertical; }
-		.modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
-		@media (max-width: 720px) {
-			.page-header { flex-direction: column; align-items: flex-start; gap: 8px; }
-			.toolbar { flex-direction: column; align-items: flex-start; }
-			.search-input { width: 100%; }
-		}
-	</style>
+	<link rel="stylesheet" href="<?php echo $cssBasePath; ?>AdminOrder.css">
+	<link rel="stylesheet" href="<?php echo $cssBasePath; ?>AdminProduct.css?v=<?php echo filemtime(__DIR__ . '/../../css/AdminProduct.css'); ?>">
 </head>
 
 <body>
@@ -405,8 +296,8 @@ $pageTitle = 'Admin Products';
 				</form>
 			</div>
 
-			<div class="table-wrapper">
-				<table>
+			<section class="table-container">
+				<table class="orders-table">
 					<thead>
 						<tr>
 							<th>ID</th>
@@ -421,7 +312,12 @@ $pageTitle = 'Admin Products';
 					<tbody>
 						<?php if (empty($products)): ?>
 							<tr>
-								<td colspan="7" style="text-align:center;padding:30px;color:#94a3b8;font-weight:600;">No products found.</td>
+								<td colspan="7" class="text-center" style="padding:30px;">
+									<div class="empty-state">
+										<i class="fas fa-inbox"></i>
+										<p>No products found</p>
+									</div>
+								</td>
 							</tr>
 						<?php else: ?>
 							<?php foreach ($products as $product): ?>
@@ -436,7 +332,7 @@ $pageTitle = 'Admin Products';
 									<td><?php echo (int)$product['product_id']; ?></td>
 									<td>
 										<div class="product-cell">
-											<img src="<?php echo html_escape($imageUrl); ?>" alt="Image" class="product-thumb">
+											<!-- <img src="<?php echo html_escape($imageUrl); ?>" alt="Image" class="product-thumb"> -->
 											<div>
 												<div style="font-weight:700;"><?php echo html_escape($product['product_name']); ?></div>
 												<div style="font-size:12px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;">
@@ -450,12 +346,16 @@ $pageTitle = 'Admin Products';
 									<td><span class="badge badge-gray"><?php echo (int)$product['variant_count']; ?> variants</span></td>
 									<td><span class="badge <?php echo $stockBadge; ?>"><?php echo $stockText; ?> (<?php echo $stock; ?>)</span></td>
 									<td style="text-align:right;">
-										<div class="actions">
-											<a class="btn btn-ghost" href="<?php echo $viewsBasePath; ?>product/ProductDetails.php?id=<?php echo (int)$product['product_id']; ?>" target="_blank">View</a>
-											<form method="POST" action="AdminProduct.php" class="delete-form" style="margin:0;">
+										<div class="action-buttons">
+											<a class="action-btn btn-view" href="<?php echo $viewsBasePath; ?>product/ProductDetails.php?id=<?php echo (int)$product['product_id']; ?>" target="_blank" title="View">
+												<i class="fas fa-eye"></i>
+											</a>
+											<form method="POST" action="AdminProduct.php" class="delete-form" style="margin:0;display:inline;">
 												<input type="hidden" name="action" value="delete_product">
 												<input type="hidden" name="product_id" value="<?php echo (int)$product['product_id']; ?>">
-												<button type="submit" class="btn btn-danger">Delete</button>
+												<button type="submit" class="action-btn btn-delete" title="Delete">
+													<i class="fas fa-trash"></i>
+												</button>
 											</form>
 										</div>
 									</td>
@@ -464,7 +364,7 @@ $pageTitle = 'Admin Products';
 						<?php endif; ?>
 					</tbody>
 				</table>
-			</div>
+				</section>
 
 			<?php if ($totalPages > 1): ?>
 				<div class="pagination">
@@ -531,44 +431,7 @@ $pageTitle = 'Admin Products';
 		</div>
 	</div>
 
-	<script>
-		(function() {
-			var modal = document.getElementById('createModal');
-			var openBtn = document.getElementById('openCreateModal');
-			var closeBtn = document.getElementById('closeCreateModal');
-			var cancelBtn = document.getElementById('cancelCreate');
-			if (openBtn && modal) {
-				openBtn.addEventListener('click', function() {
-					modal.style.display = 'flex';
-				});
-			}
-			[closeBtn, cancelBtn].forEach(function(btn) {
-				if (btn) {
-					btn.addEventListener('click', function(event) {
-						event.preventDefault();
-						modal.style.display = 'none';
-					});
-				}
-			});
-			if (modal) {
-				modal.addEventListener('click', function(event) {
-					if (event.target === modal) {
-						modal.style.display = 'none';
-					}
-				});
-			}
-
-			var deleteForms = document.querySelectorAll('.delete-form');
-			deleteForms.forEach(function(form) {
-				form.addEventListener('submit', function(event) {
-					var ok = confirm('Delete this product? This cannot be undone.');
-					if (!ok) {
-						event.preventDefault();
-					}
-				});
-			});
-		})();
-	</script>
+    <script src="<?php echo $jsBasePath; ?>adminProduct.js?v=<?php echo filemtime(__DIR__ . '/../../js/adminProduct.js'); ?>"></script>
 </body>
 
 </html>
