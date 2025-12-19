@@ -173,6 +173,7 @@ async function processStripePayment() {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
+                orderId: ORDER_DATA.orderId,
                 amount: ORDER_DATA.total_amount,
                 orderData: ORDER_DATA
             })

@@ -46,9 +46,10 @@ try {
         ]
     ]);
     
-    // Store payment intent ID in session for later verification
+    // Store payment intent ID and order ID in session for later verification
     $_SESSION['payment_intent_id'] = $paymentIntent->id;
     $_SESSION['pending_order_data'] = $orderData;
+    $_SESSION['pending_order_id'] = $input['orderId'] ?? null;
     
     echo json_encode([
         'success' => true,

@@ -3,7 +3,7 @@ CREATE TABLE orders (
     user_id INT(20) NOT NULL,
     voucher_id INT(20),
     total_amount DECIMAL(10, 2) NOT NULL CHECK(total_amount >= 0),
-    order_status ENUM('pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled', 'refunded') DEFAULT 'pending',
+    order_status ENUM('pending', 'paid', 'processing', 'shipped', 'delivered', 'refund_requested', 'canceled', 'refunded') DEFAULT 'pending',
     payment_method VARCHAR(50) DEFAULT 'credit_card',
     payment_status VARCHAR(50) DEFAULT 'pending',
     shipping_address TEXT DEFAULT NULL,

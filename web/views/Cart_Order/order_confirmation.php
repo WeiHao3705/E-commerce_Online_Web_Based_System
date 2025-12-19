@@ -155,11 +155,14 @@ include '../../general/_header.php';
     </div>
 
     <div class="action-buttons">
+        <a href="../../orders.php" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Orders
+        </a>
         <a href="generate_receipt.php?order_id=<?= $orderId ?>" class="btn btn-success" target="_blank">
             <i class="fas fa-receipt"></i> Generate E-Receipt
         </a>
         <a href="../../index.php" class="btn btn-primary">Continue Shopping</a>
-        <a href="../../orders.php" class="btn btn-secondary">View All Orders</a>
+        
     </div>
 </div>
 
@@ -177,7 +180,7 @@ function showSlides() {
         slideIndex = 1;
     }
     slides[slideIndex - 1].style.display = "block";
-    setTimeout(showSlides, 4000); // Change image every 4 seconds
+    setTimeout(showSlides, 3000); // Change image every 3 seconds
 }
 </script>
 

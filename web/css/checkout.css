@@ -79,26 +79,83 @@
     }
 }
 
-.place-order-btn {
-    display: block;
-    background: #4dac63;
-    color: white;
+/* Checkout Action Buttons */
+.checkout-actions {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.cancel-order-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f8f9fa;
+    color: #6c757d;
     padding: 15px 25px;
     border-radius: 8px;
     text-decoration: none;
+    font-size: 16px;
+    border: 2px solid #dee2e6;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.cancel-order-btn:hover {
+    background: #e9ecef;
+    color: #495057;
+    border-color: #adb5bd;
+    transform: translateY(-2px);
+}
+
+.place-order-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #4dac63;
+    color: white;
+    padding: 15px 30px;
+    border-radius: 8px;
+    text-decoration: none;
     font-size: 18px;
-    margin-top: 20px;
     border: none;
     cursor: pointer;
     transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(77, 172, 99, 0.2);
+    font-weight: 600;
+    flex: 1;
+    justify-content: center;
+    max-width: 300px;
     margin-left: auto;
-    margin-right: auto;
-    box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2);
 }
 
 .place-order-btn:hover {
     background: #56c26f;
-    transform: scale(1.2);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(77, 172, 99, 0.3);
+}
+
+.place-order-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+@media (max-width: 768px) {
+    .checkout-actions {
+        flex-direction: column-reverse;
+    }
+    
+    .cancel-order-btn,
+    .place-order-btn {
+        width: 100%;
+        max-width: 100%;
+        justify-content: center;
+    }
 }
 
 .payment-methods {

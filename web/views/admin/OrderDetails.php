@@ -266,7 +266,7 @@ $pageTitle = "Order #" . str_pad($orderId, 6, '0', STR_PAD_LEFT);
                 </div>
 
                 <!-- Shipping Address -->
-                <div class="details-card" style="margin-top: 2rem;">
+                <div class="details-card" style="margin-top: 2rem;">@%!#$
                     <div class="card-header">
                         <i class="fas fa-truck"></i>
                         <h2>Shipping Address</h2>

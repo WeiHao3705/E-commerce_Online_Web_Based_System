@@ -18,29 +18,10 @@ if (isset($_SESSION['user']) && isset($_SESSION['user']->user_id)) {
     exit;
 }
 
-$pageTitle = "Shopping Cart";
-include '../../general/_header.php'; 
-include '../../general/_navbar.php';
-?>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-<?php 
-
 // Get user_id from session
 $userId = $_SESSION['user_id'];
 
-// query of fetching vouchers from db
-$voucherQuery = "SELECT * FROM voucher 
-WHERE status = 'active' 
-AND start_date <= CURDATE() 
-AND end_date >= CURDATE() 
-ORDER BY type, min_spend";
-$voucherStmt = $conn->prepare($voucherQuery);
-$voucherStmt->execute();
-// fetch all vouchers as an array
-$vouchers = $voucherStmt->fetchAll(PDO::FETCH_ASSOC);
-
-// ----------------- Accept incoming item from ProductDetails -----------------
-$incomingItem = null;
+// ----------------- Accept incoming item from ProductDetails (BEFORE ANY OUTPUT) -----------------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['product_id'])) {
     $pid = (int) ($_POST['product_id'] ?? 0);
     $vid = isset($_POST['variant_id']) && $_POST['variant_id'] !== '' ? (int) $_POST['variant_id'] : null;
@@ -53,45 +34,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['product_id'])) {
     $pRow = $pStmt->fetch(PDO::FETCH_ASSOC);
 
     if ($pRow) {
-        // try variant image first (by variant_id), fallback to product image, fallback to placeholder
-        $imgPath = null;
-        if ($vid) {
-            $imgStmt = $conn->prepare("SELECT image_path FROM product_image WHERE variant_id = :vid LIMIT 1");
-            $imgStmt->execute([':vid' => $vid]);
-            $imgRow = $imgStmt->fetch(PDO::FETCH_ASSOC);
-            if ($imgRow && !empty($imgRow['image_path'])) $imgPath = $imgRow['image_path'];
-        }
-        if (!$imgPath) {
-            $imgStmt = $conn->prepare("SELECT image_path FROM product_image WHERE product_id = :pid LIMIT 1");
-            $imgStmt->execute([':pid' => $pid]);
-            $imgRow = $imgStmt->fetch(PDO::FETCH_ASSOC);
-            if ($imgRow && !empty($imgRow['image_path'])) $imgPath = $imgRow['image_path'];
-        }
-        if (!$imgPath) $imgPath = '../../images/no-image.png'; // adjust placeholder path as needed
-
-        // build variant label (color - size) if possible (size now lives in inventory)
-        $variantLabel = '';
-        if ($vid) {
-            // fetch color from product_variant; size comes from the incoming POST or inventory, but we use incoming $size to keep the user's selection
-            $vStmt = $conn->prepare("SELECT color FROM product_variant WHERE variant_id = :vid LIMIT 1");
-            $vStmt->execute([':vid' => $vid]);
-            $vRow = $vStmt->fetch(PDO::FETCH_ASSOC);
-            $color = $vRow['color'] ?? '';
-            $variantLabel = trim($color . ($size ? ' - ' . $size : ''));
+        // First, ensure user has a shopping cart
+        $cartCheckStmt = $conn->prepare("SELECT cart_id FROM shopping_cart WHERE user_id = :user_id");
+        $cartCheckStmt->execute([':user_id' => $userId]);
+        $cartRow = $cartCheckStmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$cartRow) {
+            // Create shopping cart for user
+            $createCartStmt = $conn->prepare("INSERT INTO shopping_cart (user_id) VALUES (:user_id)");
+            $createCartStmt->execute([':user_id' => $userId]);
+            $cartId = $conn->lastInsertId();
         } else {
-            $variantLabel = $size ?: '';
+            $cartId = $cartRow['cart_id'];
         }
-
-        $incomingItem = [
-            'id' => $pid,
-            'image' => $imgPath,
-            'name' => $pRow['product_name'],
-            'variant' => $variantLabel,
-            'price' => (float) ($pRow['original_price'] ?? 0),
-            'quantity' => $qty
-        ];
+        
+        // Insert item into cart_item table
+        $insertStmt = $conn->prepare("INSERT INTO cart_item (cart_id, product_id, quantity) VALUES (:cart_id, :product_id, :quantity)");
+        $insertStmt->execute([
+            ':cart_id' => $cartId,
+            ':product_id' => $pid,
+            ':quantity' => $qty
+        ]);
+        
+        // Redirect to cart page to avoid form resubmission and show updated cart
+        header('Location: cart.php');
+        exit;
     }
 }
+
+// Now include header and navbar AFTER redirect logic
+$pageTitle = "Shopping Cart";
+include '../../general/_header.php'; 
+include '../../general/_navbar.php';
+?>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<?php 
+
+// query of fetching vouchers from db
+$voucherQuery = "SELECT * FROM voucher 
+WHERE status = 'active' 
+AND start_date <= CURDATE() 
+AND end_date >= CURDATE() 
+ORDER BY type, min_spend";
+$voucherStmt = $conn->prepare($voucherQuery);
+$voucherStmt->execute();
+// fetch all vouchers as an array
+$vouchers = $voucherStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch cart items from database
 $cartItems = [];
@@ -133,11 +121,6 @@ if (isset($_SESSION['user_id'])) {
             'quantity' => (int) $item['quantity']
         ];
     }
-}
-
-// if an incoming item exists, add it to the top of cart items
-if ($incomingItem) {
-    array_unshift($cartItems, $incomingItem);
 }
 
 // calculate initial values from the cart items
@@ -221,7 +204,7 @@ $grandTotal = $subtotal + $shippingFee + $tax;
             
             <!-- Continue Shopping Section -->
             <div class="continue-shopping">
-                <a href="../../index.php" class="continue-shopping-link">
+                <a href="/index.php" class="continue-shopping-link">
                     <span class="arrow-left">←</span>
                     <span>Continue Shopping</span>
                 </a>

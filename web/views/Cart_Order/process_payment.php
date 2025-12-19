@@ -33,12 +33,12 @@ try {
         throw new Exception('Payment not completed');
     }
     
-    // Get order data from session
-    $orderData = $_SESSION['pending_order_data'] ?? null;
+    // Get order ID from session
+    $orderId = $_SESSION['pending_order_id'] ?? null;
     $userId = $_SESSION['user_id'] ?? null;
     
-    if (!$orderData || !$userId) {
-        throw new Exception('Order data not found');
+    if (!$orderId || !$userId) {
+        throw new Exception('Order ID not found in session');
     }
     
     // Start database transaction
@@ -46,18 +46,25 @@ try {
     $conn = $db->getConnection();
     $conn->beginTransaction();
     
-    // Insert order
+    // Verify order exists and is pending
+    $verifyStmt = $conn->prepare("
+        SELECT order_id, total_amount FROM orders 
+        WHERE order_id = :order_id AND user_id = :user_id AND order_status = 'pending'
+    ");
+    $verifyStmt->execute([':order_id' => $orderId, ':user_id' => $userId]);
+    $order = $verifyStmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$order) {
+        throw new Exception('Order not found or already processed');
+    }
+    
+    // Update order status to paid
     $orderStmt = $conn->prepare("
-        INSERT INTO orders (user_id, total_amount, order_status, create_at)
-        VALUES (:user_id, :total_amount, 'paid', NOW())
+        UPDATE orders SET order_status = 'paid', update_at = NOW()
+        WHERE order_id = :order_id
     ");
     
-    $orderStmt->execute([
-        ':user_id' => $userId,
-        ':total_amount' => $orderData['total_amount']
-    ]);
-    
-    $orderId = $conn->lastInsertId();
+    $orderStmt->execute([':order_id' => $orderId]);
     
     // Insert payment record
     $paymentStmt = $conn->prepare("
@@ -71,30 +78,27 @@ try {
         ':paid_amount' => $paymentIntent->amount / 100 // Convert from cents
     ]);
     
-    // Insert order items
-    $itemStmt = $conn->prepare("
-        INSERT INTO order_item (order_id, product_id, product_name_snapshot, product_price_snapshot, quantity, subtotal)
-        VALUES (:order_id, :product_id, :product_name, :product_price, :quantity, :subtotal)
+    // Get cart items from order_items to delete from cart
+    $itemsStmt = $conn->prepare("
+        SELECT oi.product_id, oi.quantity 
+        FROM order_item oi 
+        WHERE oi.order_id = :order_id
     ");
+    $itemsStmt->execute([':order_id' => $orderId]);
+    $orderItems = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
     
-    foreach ($orderData['items'] as $item) {
-        $subtotal = $item['price'] * $item['quantity'];
-        $itemStmt->execute([
-            ':order_id' => $orderId,
-            ':product_id' => $item['product_id'],
-            ':product_name' => $item['name'],
-            ':product_price' => $item['price'],
-            ':quantity' => $item['quantity'],
-            ':subtotal' => $subtotal
-        ]);
-    }
-    
-    // Delete items from cart
-    $cartItemIds = array_column($orderData['items'], 'id');
-    if (!empty($cartItemIds)) {
-        $placeholders = implode(',', array_fill(0, count($cartItemIds), '?'));
-        $deleteStmt = $conn->prepare("DELETE FROM cart_item WHERE cart_item_id IN ($placeholders)");
-        $deleteStmt->execute($cartItemIds);
+    // Delete corresponding items from cart
+    foreach ($orderItems as $item) {
+        $deleteStmt = $conn->prepare("
+            DELETE FROM cart_item 
+            WHERE user_id = :user_id 
+            AND product_id = :product_id 
+            LIMIT :quantity
+        ");
+        $deleteStmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $deleteStmt->bindValue(':product_id', $item['product_id'], PDO::PARAM_INT);
+        $deleteStmt->bindValue(':quantity', $item['quantity'], PDO::PARAM_INT);
+        $deleteStmt->execute();
     }
     
     $conn->commit();
@@ -102,6 +106,7 @@ try {
     // Clear session data
     unset($_SESSION['payment_intent_id']);
     unset($_SESSION['pending_order_data']);
+    unset($_SESSION['pending_order_id']);
     unset($_SESSION['checkout_items']);
     
     echo json_encode([

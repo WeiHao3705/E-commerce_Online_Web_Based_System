@@ -560,19 +560,40 @@ $pageTitle = "Order Analytics - Admin";
     let paymentColors = [];
     
     const colorMap = {
-        'credit_card': '#3b82f6',
-        'fpx': '#10b981',
-        'e_wallet': '#8b5cf6',
-        'COD': '#f59e0b',
-        'debit_card': '#06b6d4'
+        'Card': '#3b82f6',           
+        'Online Banking': '#10b981',  
+        'E-Wallet': '#8b5cf6'        
     };
 
     if (paymentMethods.length > 0) {
+        // Aggregate payment methods by type
+        const aggregated = {
+            'Card': 0,
+            'Online Banking': 0,
+            'E-Wallet': 0
+        };
+        
         paymentMethods.forEach(item => {
-            const label = item.payment_method.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            paymentLabels.push(label);
-            paymentData.push(parseFloat(item.percentage));
-            paymentColors.push(colorMap[item.payment_method] || '#6b7280');
+            const method = item.payment_method.toLowerCase();
+            const percentage = parseFloat(item.percentage);
+            
+            // Categorize payment methods
+            if (method === 'credit_card' || method === 'debit_card' || method === 'card') {
+                aggregated['Card'] += percentage;
+            } else if (method === 'online-banking' || method === 'fpx' || method === 'online_banking') {
+                aggregated['Online Banking'] += percentage;
+            } else if (method === 'e_wallet' || method === 'ewallet' || method === 'e-wallet') {
+                aggregated['E-Wallet'] += percentage;
+            }
+        });
+        
+        // Convert aggregated data to arrays, excluding zero values
+        Object.keys(aggregated).forEach(key => {
+            if (aggregated[key] > 0) {
+                paymentLabels.push(key);
+                paymentData.push(aggregated[key]);
+                paymentColors.push(colorMap[key]);
+            }
         });
     } else {
         // Fallback if no data
@@ -588,8 +609,9 @@ $pageTitle = "Order Analytics - Admin";
             datasets: [{
                 data: paymentData,
                 backgroundColor: paymentColors,
-                borderWidth: 2,
-                borderColor: '#fff'
+                borderWidth: 3,
+                borderColor: '#fff',
+                hoverOffset: 10
             }]
         },
         options: {
@@ -600,10 +622,20 @@ $pageTitle = "Order Analytics - Admin";
                     position: 'bottom',
                     labels: {
                         padding: 15,
-                        font: { size: 12, family: 'Poppins' }
+                        font: { 
+                            size: 12, 
+                            family: 'Poppins',
+                            weight: '500'
+                        },
+                        usePointStyle: true,
+                        pointStyle: 'circle'
                     }
                 },
                 tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    padding: 12,
+                    titleFont: { size: 14, family: 'Poppins', weight: '600' },
+                    bodyFont: { size: 13, family: 'Poppins' },
                     callbacks: {
                         label: function(context) {
                             const label = context.label || '';
@@ -613,7 +645,11 @@ $pageTitle = "Order Analytics - Admin";
                     }
                 }
             },
-            cutout: '60%'
+            cutout: '65%',
+            animation: {
+                animateRotate: true,
+                animateScale: true
+            }
         }
     });
     </script>

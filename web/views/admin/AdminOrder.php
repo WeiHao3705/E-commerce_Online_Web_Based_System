@@ -153,6 +153,7 @@ $pageTitle = "Manage Orders - Admin";
                         <option value="paid" <?= $status_filter === 'paid' ? 'selected' : '' ?>>Paid</option>
                         <option value="shipped" <?= $status_filter === 'shipped' ? 'selected' : '' ?>>Shipped</option>
                         <option value="delivered" <?= $status_filter === 'delivered' ? 'selected' : '' ?>>Delivered</option>
+                        <option value="refund_requested" <?= $status_filter === 'refund_requested' ? 'selected' : '' ?>>Refund Requested</option>
                         <option value="canceled" <?= $status_filter === 'canceled' ? 'selected' : '' ?>>Canceled</option>
                         <option value="refunded" <?= $status_filter === 'refunded' ? 'selected' : '' ?>>Refunded</option>
                     </select>
@@ -234,9 +235,21 @@ $pageTitle = "Manage Orders - Admin";
                                         <a href="OrderDetails.php?id=<?= $order['order_id'] ?>" class="btn-action btn-view" title="View Details">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <button onclick="updateOrderStatus(<?= $order['order_id'] ?>)" class="btn-action btn-edit" title="Update Status">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
+                                        <?php if ($order['order_status'] === 'refund_requested'): ?>
+                                            <button onclick="viewRefundReason(<?= $order['order_id'] ?>)" class="btn-action btn-info" title="View Refund Reason">
+                                                <i class="fas fa-info-circle"></i>
+                                            </button>
+                                            <button onclick="approveRefund(<?= $order['order_id'] ?>)" class="btn-action btn-success" title="Approve Refund">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button onclick="rejectRefund(<?= $order['order_id'] ?>)" class="btn-action btn-danger" title="Reject Refund">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        <?php else: ?>
+                                            <button onclick="updateOrderStatus(<?= $order['order_id'] ?>)" class="btn-action btn-edit" title="Update Status">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>
@@ -245,6 +258,27 @@ $pageTitle = "Manage Orders - Admin";
                 </tbody>
             </table>
         </section>
+    </div>
+
+    <!-- View Refund Reason Modal -->
+    <div id="refundReasonModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-info-circle"></i> Refund Request Details</h2>
+                <button class="close-btn" onclick="closeRefundReasonModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="refundReasonContent">
+                    <div style="text-align: center; padding: 2rem;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary);"></i>
+                        <p>Loading refund details...</p>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeRefundReasonModal()">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Update Order Status Modal -->
@@ -266,6 +300,7 @@ $pageTitle = "Manage Orders - Admin";
                             <option value="processing">Processing</option>
                             <option value="shipped">Shipped</option>
                             <option value="delivered">Delivered</option>
+                            <option value="refund_requested">Refund Requested</option>
                             <option value="canceled">Canceled</option>
                             <option value="refunded">Refunded</option>
                         </select>
@@ -309,6 +344,62 @@ $pageTitle = "Manage Orders - Admin";
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+    function viewRefundReason(orderId) {
+        document.getElementById('refundReasonModal').style.display = 'block';
+        
+        // Fetch refund reason from order notes
+        $.ajax({
+            url: '<?php echo $controllerBasePath; ?>AdminController.php?action=getRefundReason',
+            method: 'GET',
+            data: { order_id: orderId },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    let content = `
+                        <div class="refund-details">
+                            <div class="form-group">
+                                <label><i class="fas fa-hashtag"></i> Order ID</label>
+                                <p>#${orderId}</p>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-calendar"></i> Request Date</label>
+                                <p>${response.data.created_at || 'N/A'}</p>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-tag"></i> Reason</label>
+                                <p><strong>${response.data.reason || 'Not specified'}</strong></p>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-comment-alt"></i> Additional Details</label>
+                                <p style="white-space: pre-wrap;">${response.data.details || 'No additional details provided'}</p>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('refundReasonContent').innerHTML = content;
+                } else {
+                    document.getElementById('refundReasonContent').innerHTML = `
+                        <div style="text-align: center; padding: 2rem; color: var(--danger);">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 2rem;"></i>
+                            <p>${response.message || 'Failed to load refund details'}</p>
+                        </div>
+                    `;
+                }
+            },
+            error: function() {
+                document.getElementById('refundReasonContent').innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: var(--danger);">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem;"></i>
+                        <p>Error loading refund details. Please try again.</p>
+                    </div>
+                `;
+            }
+        });
+    }
+
+    function closeRefundReasonModal() {
+        document.getElementById('refundReasonModal').style.display = 'none';
+    }
+
     function updateOrderStatus(orderId) {
         // Get current order data
         const orderRow = event.target.closest('tr');
@@ -332,11 +423,72 @@ $pageTitle = "Manage Orders - Admin";
         document.getElementById('updateStatusForm').reset();
     }
 
+    // Approve refund function
+    function approveRefund(orderId) {
+        if (!confirm('Are you sure you want to APPROVE this refund request? This will refund the payment to the customer.')) {
+            return;
+        }
+        
+        $.ajax({
+            url: '<?php echo $controllerBasePath; ?>AdminRefundController.php',
+            method: 'POST',
+            data: {
+                action: 'approve',
+                order_id: orderId
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    alert('✓ Refund approved successfully!');
+                    location.reload();
+                } else {
+                    alert('✗ Error: ' + (response.message || 'Failed to approve refund'));
+                }
+            },
+            error: function() {
+                alert('✗ An error occurred while approving the refund');
+            }
+        });
+    }
+
+    // Reject refund function
+    function rejectRefund(orderId) {
+        const note = prompt('Please provide a reason for rejecting this refund request (optional):');
+        if (note === null) {
+            return; // User cancelled
+        }
+        
+        $.ajax({
+            url: '<?php echo $controllerBasePath; ?>AdminRefundController.php',
+            method: 'POST',
+            data: {
+                action: 'reject',
+                order_id: orderId,
+                admin_note: note
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    alert('✓ Refund rejected successfully!');
+                    location.reload();
+                } else {
+                    alert('✗ Error: ' + (response.message || 'Failed to reject refund'));
+                }
+            },
+            error: function() {
+                alert('✗ An error occurred while rejecting the refund');
+            }
+        });
+    }
+
     // Close modal when clicking outside
     window.onclick = function(event) {
-        const modal = document.getElementById('updateStatusModal');
-        if (event.target === modal) {
+        const statusModal = document.getElementById('updateStatusModal');
+        const refundModal = document.getElementById('refundReasonModal');
+        if (event.target === statusModal) {
             closeStatusModal();
+        } else if (event.target === refundModal) {
+            closeRefundReasonModal();
         }
     }
 

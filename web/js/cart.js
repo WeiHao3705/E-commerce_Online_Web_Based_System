@@ -6,17 +6,39 @@ $(document).ready(function() {
     // refresh the amount of items in the cart icon
     updateCartCount();
 
-    // change the item to unchecked state
-    localStorage.removeItem('checkedItem');
-
-    // mainly handle about every time user reload the page
-    //clear all checkbox states first
-    $('.item-checkbox').prop('checked', false);
-    $('#select-all').prop('checked', false);
-
-    // Restore checkbox states from localStorage (don't clear it)
-    // This allows checked items to remain checked when user returns from checkout
-    // restoreCheckboxStates();
+    // Check if returning from checkout with selected items
+    const urlParams = new URLSearchParams(window.location.search);
+    const returnedItems = urlParams.get('items');
+    
+    if (returnedItems) {
+        // User is returning from checkout - restore their selections
+        const itemIds = returnedItems.split(',').map(id => parseInt(id));
+        
+        // Clear all checkboxes first
+        $('.item-checkbox').prop('checked', false);
+        $('#select-all').prop('checked', false);
+        
+        // Restore the previously selected items
+        itemIds.forEach(function(itemId) {
+            $('.item-checkbox[data-item-id="' + itemId + '"]').prop('checked', true);
+        });
+        
+        // Check if all items are selected
+        if ($('.item-checkbox:checked').length === $('.item-checkbox').length) {
+            $('#select-all').prop('checked', true);
+        }
+        
+        // Save to localStorage
+        localStorage.setItem('checkedItem', JSON.stringify(itemIds));
+        
+        // Clean up URL (remove the items parameter)
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } else {
+        // Normal page load - clear selections
+        localStorage.removeItem('checkedItem');
+        $('.item-checkbox').prop('checked', false);
+        $('#select-all').prop('checked', false);
+    }
 
     // run initial calculation to set up the totals
     updateOrderSummary();
@@ -425,7 +447,7 @@ function restoreCheckboxStates() {
     }
 }
 
-// Handle checkout button click - pass selected items via URL
+// Handle checkout button click - create pending order first
 $('#checkout-btn').click(function(e) {
     // Get all checked item IDs
     var selectedItems = [];
@@ -439,8 +461,36 @@ $('#checkout-btn').click(function(e) {
         return false;
     }
     
-    // Navigate to checkout with selected items as URL parameter
-    window.location.href = 'checkout.php?items=' + selectedItems.join(',');
+    // Disable button and show loading state
+    $(this).prop('disabled', true).text('Creating Order...');
+    
+    // Create pending order in database
+    $.ajax({
+        url: 'create_pending_order.php',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            selectedItems: selectedItems
+        }),
+        success: function(response) {
+            if (response.success) {
+                // Navigate to checkout with order ID
+                window.location.href = 'checkout.php?order_id=' + response.orderId;
+            } else {
+                alert('Failed to create order: ' + response.error);
+                $('#checkout-btn').prop('disabled', false).text('Proceed to Checkout');
+            }
+        },
+        error: function(xhr) {
+            var errorMsg = 'Failed to create order';
+            try {
+                var response = JSON.parse(xhr.responseText);
+                errorMsg = response.error || errorMsg;
+            } catch(e) {}
+            alert(errorMsg);
+            $('#checkout-btn').prop('disabled', false).text('Proceed to Checkout');
+        }
+    });
 });
 
 function updateCartCount() {

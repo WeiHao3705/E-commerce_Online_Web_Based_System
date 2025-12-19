@@ -375,7 +375,7 @@ try {
                     <div class="admin-orders-card">
                         <div class="admin-orders-header">
                             <h3 class="admin-orders-title">Recent Orders</h3>
-                            <a href="AdminOrder.php" class="admin-orders-link">View All</a>
+                            <a href="#" data-view="orders" data-url="<?php echo $viewsBasePath; ?>admin/AdminOrder.php" class="admin-orders-link">View All</a>
                         </div>
                         <div class="admin-orders-list">
                             <?php foreach ($recentOrders as $order): ?>
@@ -464,6 +464,19 @@ try {
 
             // Quick action buttons with data-view and data-url
             $('.admin-quick-action-btn[data-view]').on('click', function(e) {
+                e.preventDefault();
+                var view = $(this).data('view');
+                var url = $(this).data('url');
+                if (url) {
+                    // Update navigation active state
+                    $('.admin-nav-item').removeClass('active');
+                    $('.admin-nav-item[data-view="' + view + '"]').addClass('active');
+                    showContentView(view, url);
+                }
+            });
+
+            // View All Orders link handler
+            $('.admin-orders-link[data-view]').on('click', function(e) {
                 e.preventDefault();
                 var view = $(this).data('view');
                 var url = $(this).data('url');

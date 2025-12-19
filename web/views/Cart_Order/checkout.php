@@ -22,86 +22,76 @@ $pageTitle = "Checkout";
 include '../../general/_header.php'; 
 // include '../../general/_navbar.php'; 
 
-// Get selected item IDs from GET parameter
-$selectedItemIds = [];
-if (isset($_GET['items']) && !empty($_GET['items'])) {
-    $selectedItemIds = explode(',', $_GET['items']);
-    $selectedItemIds = array_map('intval', $selectedItemIds);
-    $_SESSION['checkout_items'] = $selectedItemIds;
-} elseif (isset($_SESSION['checkout_items'])) {
-    $selectedItemIds = $_SESSION['checkout_items'];
-}
-
-// Debug output
-echo "<!-- DEBUG: Selected Item IDs: " . print_r($selectedItemIds, true) . " -->";
-echo "<!-- DEBUG: GET data: " . print_r($_GET, true) . " -->";
-echo "<!-- DEBUG: User ID: " . ($_SESSION['user_id'] ?? 'not set') . " -->";
-
-// Fetch only selected cart items from database
+// Check if this is a pending order from session or new checkout
+$orderId = null;
 $cartItems = [];
-if (isset($_SESSION['user_id']) && !empty($selectedItemIds)) {
-    $userId = $_SESSION['user_id'];
+$subtotal = 0;
+$shippingFee = 10.00;
+$tax = 0;
+$grandTotal = 0;
+
+if (isset($_GET['order_id'])) {
+    // Coming from cart - load pending order
+    $orderId = (int)$_GET['order_id'];
     
-    // Create placeholders for IN clause
-    $placeholders = implode(',', array_fill(0, count($selectedItemIds), '?'));
+    // Verify order belongs to user and is pending
+    $orderCheckStmt = $conn->prepare("
+        SELECT order_id, total_amount, order_status 
+        FROM orders 
+        WHERE order_id = :order_id AND user_id = :user_id AND order_status = 'pending'
+    ");
+    $orderCheckStmt->execute([
+        ':order_id' => $orderId,
+        ':user_id' => $_SESSION['user_id']
+    ]);
+    $orderData = $orderCheckStmt->fetch(PDO::FETCH_ASSOC);
     
-    // Query to fetch only selected cart items with product details
-    $cartQuery = "
+    if (!$orderData) {
+        die("Order not found or already processed");
+    }
+    
+    // Fetch order items
+    $itemsStmt = $conn->prepare("
         SELECT 
-            ci.cart_item_id,
-            ci.product_id,
-            ci.quantity,
-            p.product_name,
-            p.description,
-            pp.selling_price,
-            pi.image_path
-        FROM cart_item ci
-        JOIN shopping_cart sc ON ci.cart_id = sc.cart_id
-        JOIN product p ON ci.product_id = p.product_id
-        LEFT JOIN product_price pp ON p.product_id = pp.product_id
-        LEFT JOIN product_image pi ON p.product_id = pi.product_id
-        WHERE sc.user_id = ? AND ci.cart_item_id IN ($placeholders)
-        GROUP BY ci.cart_item_id
-        ORDER BY ci.cart_item_id DESC
-    ";
+            oi.order_item_id,
+            oi.product_id,
+            oi.quantity,
+            oi.product_name_snapshot as product_name,
+            oi.product_price_snapshot as selling_price,
+            COALESCE(pi.image_path, '../../images/no-image.png') as image_path
+        FROM order_item oi
+        LEFT JOIN product_image pi ON oi.product_id = pi.product_id
+        WHERE oi.order_id = :order_id
+        GROUP BY oi.order_item_id
+    ");
+    $itemsStmt->execute([':order_id' => $orderId]);
+    $dbCartItems = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
     
-    echo "<!-- DEBUG: Query: " . $cartQuery . " -->";
+    // Calculate totals
+    foreach ($dbCartItems as $item) {
+        $subtotal += $item['selling_price'] * $item['quantity'];
+    }
+    $tax = $subtotal * 0.06;
+    $grandTotal = $subtotal + $shippingFee + $tax;
     
-    $cartStmt = $conn->prepare($cartQuery);
-    // Bind user_id first, then selected item IDs
-    $params = array_merge([$userId], $selectedItemIds);
-    echo "<!-- DEBUG: Query params: " . print_r($params, true) . " -->";
-    
-    $cartStmt->execute($params);
-    $dbCartItems = $cartStmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    echo "<!-- DEBUG: Fetched items count: " . count($dbCartItems) . " -->";
-    echo "<!-- DEBUG: Fetched items: " . print_r($dbCartItems, true) . " -->";
+    $_SESSION['pending_order_id'] = $orderId;
     
     // Format cart items for display
     foreach ($dbCartItems as $item) {
         $cartItems[] = [
-            'id' => $item['cart_item_id'],
+            'id' => $item['order_item_id'],
             'product_id' => $item['product_id'],
-            'image' => $item['image_path'] ?? '../../images/products/default.png',
+            'image' => $item['image_path'],
             'name' => $item['product_name'],
-            'variant' => $item['description'] ?? 'Standard',
-            'price' => (float) ($item['selling_price'] ?? 0),
+            'variant' => 'Standard',
+            'price' => (float) $item['selling_price'],
             'quantity' => (int) $item['quantity']
         ];
     }
+    
+} else {
+    die("Invalid access - please checkout from cart page");
 }
-
-echo "<!-- DEBUG: Final cart items count: " . count($cartItems) . " -->";
-
-// Calculate totals
-$subtotal = 0;
-foreach ($cartItems as $item) {
-    $subtotal += $item['price'] * $item['quantity'];
-}
-$shippingFee = 15.00;
-$tax = $subtotal * 0.06;
-$grandTotal = $subtotal + $shippingFee + $tax;
 ?>
 
 <link rel="stylesheet" href="../../css/checkout.css">
@@ -110,9 +100,7 @@ $grandTotal = $subtotal + $shippingFee + $tax;
     <!-- Header with Logo and Title -->
     <div class="checkout-header">
         <div class="checkout-logo">
-            <a href="../../index.php">
                 <img src="../../images/logo/logo1.png" alt="NGEAR Logo">
-            </a>
         </div>
         <h1 class="checkout-title">Checkout</h1>
     </div>
@@ -310,9 +298,14 @@ $grandTotal = $subtotal + $shippingFee + $tax;
                     </div>
                 </div>  
                 
-                <button class="place-order-btn" id="placeOrderBtn">
-                    Place Order
-                </button>
+                <div class="checkout-actions">
+                    <a href="cart.php" class="cancel-order-btn">
+                        <i class="fas fa-arrow-left"></i> Back to Cart
+                    </a>
+                    <button class="place-order-btn" id="placeOrderBtn">
+                        Place Order <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -330,6 +323,7 @@ $grandTotal = $subtotal + $shippingFee + $tax;
     // Stripe configuration
     const STRIPE_PUBLISHABLE_KEY = '<?= STRIPE_PUBLISHABLE_KEY ?>';
     const ORDER_DATA = {
+        orderId: <?= $orderId ?>,
         items: <?= json_encode($cartItems) ?>,
         total_amount: <?= $grandTotal ?>,
         address: '',

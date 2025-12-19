@@ -296,6 +296,72 @@ class AdminController
         }
     }
 
+    public function getRefundReason(): void
+    {
+        $this->requireAdmin();
+
+        header('Content-Type: application/json');
+
+        try {
+            $orderId = $_GET['order_id'] ?? null;
+
+            if (!$orderId) {
+                throw new Exception('Order ID is required');
+            }
+
+            $database = new Database();
+            $conn = $database->getConnection();
+
+            // Get the refund request note from order_notes
+            $stmt = $conn->prepare("
+                SELECT note_text, created_at 
+                FROM order_notes 
+                WHERE order_id = :order_id 
+                AND note_text LIKE 'Refund requested by customer%'
+                ORDER BY created_at DESC 
+                LIMIT 1
+            ");
+            $stmt->execute([':order_id' => $orderId]);
+            $note = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$note) {
+                throw new Exception('No refund request found for this order');
+            }
+
+            // Parse the note to extract reason and details
+            $noteText = $note['note_text'];
+            $reason = 'Not specified';
+            $details = '';
+
+            // Extract reason (format: "Refund requested by customer. Reason: XXX")
+            if (preg_match('/Reason: ([^.]+)/', $noteText, $matches)) {
+                $reason = trim($matches[1]);
+            }
+
+            // Extract details (format: ". Details: XXX")
+            if (preg_match('/\. Details: (.+)$/s', $noteText, $matches)) {
+                $details = trim($matches[1]);
+            }
+
+            echo json_encode([
+                'success' => true,
+                'data' => [
+                    'reason' => $reason,
+                    'details' => $details,
+                    'created_at' => date('M d, Y H:i', strtotime($note['created_at']))
+                ]
+            ]);
+            exit;
+
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+            exit;
+        }
+    }
+
     public function updateOrderStatus(): void
     {
         $this->requireAdmin();
@@ -418,5 +484,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $controller->showAllAdmins();
     } elseif ($action === 'updateOrderStatus') {
         $controller->updateOrderStatus();
+    } elseif ($action === 'getRefundReason') {
+        $controller->getRefundReason();
     }
 }

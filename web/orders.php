@@ -46,7 +46,7 @@ include 'general/_navbar.php';
             <i class="fas fa-shopping-bag"></i>
             <h2>No Orders Yet</h2>
             <p>You haven't placed any orders yet. Start shopping to see your orders here!</p>
-            <a href="../index.php" class="btn btn-primary">Start Shopping</a>
+            <a href="views/product/ProductPage.php" class="btn btn-primary">Start Shopping</a>
         </div>
     <?php else: ?>
         <div class="orders-list">
@@ -59,7 +59,7 @@ include 'general/_navbar.php';
                         </div>
                         <div class="order-status">
                             <span class="status-badge status-<?= strtolower($order['order_status']) ?>">
-                                <?= ucfirst($order['order_status']) ?>
+                                <?= ucwords(str_replace('_', ' ', $order['order_status'])) ?>
                             </span>
                         </div>
                     </div>
@@ -133,18 +133,32 @@ include 'general/_navbar.php';
                     </div>
 
                     <div class="order-footer">
-                        <a href="views/Cart_Order/order_confirmation.php?order_id=<?= $order['order_id'] ?>" class="btn btn-secondary">
-                            <i class="fas fa-eye"></i> View Details
-                        </a>
-                        <?php if ($order['order_status'] === 'paid'): ?>
-                            <a href="views/Cart_Order/generate_receipt.php?order_id=<?= $order['order_id'] ?>" class="btn btn-success" target="_blank">
-                                <i class="fas fa-receipt"></i> E-Receipt
+                        <?php if ($order['order_status'] === 'pending'): ?>
+                            <a href="views/Cart_Order/checkout.php?order_id=<?= $order['order_id'] ?>" class="btn btn-primary">
+                                <i class="fas fa-credit-card"></i> Complete Payment
+                            </a>
+                        <?php else: ?>
+                            <a href="views/Cart_Order/order_confirmation.php?order_id=<?= $order['order_id'] ?>" class="btn btn-secondary">
+                                <i class="fas fa-eye"></i> View Details
                             </a>
                         <?php endif; ?>
-                        <?php if ($order['order_status'] === 'pending' || $order['order_status'] === 'paid'): ?>
+                        
+                        <?php if ($order['order_status'] === 'delivered' || $order['order_status'] === 'paid' || $order['order_status'] === 'processing' ): ?>
+                            <button class="btn btn-danger" onclick="requestRefund(<?= $order['order_id'] ?>, '<?= str_pad($order['order_id'], 6, '0', STR_PAD_LEFT) ?>')">
+                                <i class="fas fa-undo"></i> Request Refund
+                            </button>
+                        <?php endif; ?>
+                        
+                        <?php if ($order['order_status'] === 'paid'|| $order['order_status'] === 'shipped'): ?>
                             <button class="btn btn-outline" onclick="trackOrder(<?= $order['order_id'] ?>)">
                                 <i class="fas fa-truck"></i> Track Order
                             </button>
+                        <?php endif; ?>
+                        
+                        <?php if ($order['order_status'] === 'refunded'): ?>
+                            <span class="refund-notice">
+                                <i class="fas fa-check-circle"></i> Refund Processed
+                            </span>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -153,11 +167,103 @@ include 'general/_navbar.php';
     <?php endif; ?>
 </div>
 
+<!-- Refund Request Modal -->
+<div id="refundModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="fas fa-undo"></i> Request Refund</h2>
+            <button class="close-btn" onclick="closeRefundModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Request a refund for Order <strong id="refundOrderNumber"></strong></p>
+            <form id="refundForm">
+                <input type="hidden" id="refund_order_id" name="order_id">
+                <div class="form-group">
+                    <label for="refund_reason"><i class="fas fa-comment"></i> Reason for Refund *</label>
+                    <select id="refund_reason" name="reason" required>
+                        <option value="">Select a reason...</option>
+                        <option value="wrong_item">Received wrong item</option>
+                        <option value="defective">Product is defective/damaged</option>
+                        <option value="not_described">Item not as described</option>
+                        <option value="changed_mind">Changed my mind</option>
+                        <option value="late_delivery">Delivery was too late</option>
+                        <option value="other">Other reason</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="refund_details"><i class="fas fa-align-left"></i> Additional Details</label>
+                    <textarea id="refund_details" name="details" rows="4" placeholder="Please provide more details about your refund request..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeRefundModal()">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-paper-plane"></i> Submit Refund Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 function trackOrder(orderId) {
     // Future implementation for order tracking
     alert('Order tracking feature coming soon for Order #' + String(orderId).padStart(6, '0'));
 }
+
+function requestRefund(orderId, orderNumber) {
+    document.getElementById('refund_order_id').value = orderId;
+    document.getElementById('refundOrderNumber').textContent = '#' + orderNumber;
+    document.getElementById('refundModal').style.display = 'flex';
+}
+
+function closeRefundModal() {
+    document.getElementById('refundModal').style.display = 'none';
+    document.getElementById('refundForm').reset();
+}
+
+// Handle refund form submission
+document.getElementById('refundForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    // Show loading state
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+    
+    fetch('controller/RefundController.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Refund request submitted successfully! Our team will review your request within 5 business days.');
+            closeRefundModal();
+            location.reload(); // Refresh to show updated status
+        } else {
+            alert('Error: ' + (data.message || 'Failed to submit refund request'));
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
+});
+
+// Close modal when clicking outside
+document.getElementById('refundModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeRefundModal();
+    }
+});
 </script>
 
 <?php include 'general/_footer.php'; ?>
