@@ -592,7 +592,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
             color: #991b1b;
             border: 1px solid #ef4444;
         }
-
+        
         /* Confirmation Modal Styles */
         .confirmation-modal-overlay {
             position: fixed;
@@ -2082,10 +2082,10 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                 'Are you sure you want to ' + action + ' admin: ' + adminName + '?',
                 'warning',
                 function() {
-                    $('#statusUserId').val(userId);
-                    $('#statusValue').val(newStatus);
-                    $('#statusForm').submit();
-                }
+                $('#statusUserId').val(userId);
+                $('#statusValue').val(newStatus);
+                $('#statusForm').submit();
+            }
             );
         }
 
@@ -2094,9 +2094,9 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                 'Are you sure you want to delete admin: ' + adminName + '?<br><br>This action cannot be undone.',
                 'danger',
                 function() {
-                    $('#deleteUserId').val(userId);
-                    $('#deleteForm').submit();
-                }
+                $('#deleteUserId').val(userId);
+                $('#deleteForm').submit();
+            }
             );
         }
 
@@ -2251,14 +2251,14 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                 `Are you sure you want to delete ${count} admin(s)?<br><br>This action cannot be undone.`,
                 'danger',
                 function() {
-                    $('#bulkDeleteForm input[name="user_ids[]"]').remove();
+                $('#bulkDeleteForm input[name="user_ids[]"]').remove();
 
-                    selectedAdmins.forEach(function(adminId) {
-                        $('#bulkDeleteForm').append(`<input type="hidden" name="user_ids[]" value="${adminId}">`);
-                    });
+                selectedAdmins.forEach(function(adminId) {
+                    $('#bulkDeleteForm').append(`<input type="hidden" name="user_ids[]" value="${adminId}">`);
+                });
 
-                    $('#bulkDeleteForm').submit();
-                }
+                $('#bulkDeleteForm').submit();
+            }
             );
         });
 
@@ -2838,24 +2838,24 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                     <input type="hidden" name="user_id" id="editUserId">
 
                     <div class="modal-form-grid">
-                        <div class="form-group">
-                            <label class="form-label">Username</label>
-                            <input type="text" name="username" id="editUsername" readonly
-                                class="form-input form-input-readonly"
-                                title="Username cannot be changed"/>
-                        </div>
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <input type="text" name="username" id="editUsername" readonly
+                            class="form-input form-input-readonly"
+                            title="Username cannot be changed"/>
+                    </div>
 
-                        <div class="form-group">
-                            <label class="form-label">Full Name</label>
-                            <input type="text" name="full_name" id="editFullName" class="form-input"/>
-                        </div>
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="full_name" id="editFullName" class="form-input"/>
+                    </div>
 
-                        <div class="form-group">
-                            <label class="form-label">Email</label>
-                            <input type="email" name="email" id="editEmail" class="form-input"/>
-                        </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" id="editEmail" class="form-input"/>
+                    </div>
 
-                        <div class="form-group">
+                    <div class="form-group">
                             <label class="form-label">Gender</label>
                             <select name="gender" id="editGender" class="form-input">
                                 <option value="Male">Male</option>
@@ -2865,30 +2865,30 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                         </div>
 
                         <div class="form-group form-group-full">
-                            <label class="form-label">Contact Number</label>
-                            <div class="phone-input-group">
-                                <div class="country-code-wrapper">
-                                    <select id="editCountryCode" name="country_code" class="country-code-select" required>
-                                        <option value="+60">🇲🇾 +60 (MY)</option>
-                                        <option value="+1">🇺🇸 +1 (US)</option>
-                                        <option value="+44">🇬🇧 +44 (UK)</option>
-                                        <option value="+65">🇸🇬 +65 (SG)</option>
-                                        <option value="+86">🇨🇳 +86 (CN)</option>
-                                        <option value="+81">🇯🇵 +81 (JP)</option>
-                                        <option value="+61">🇦🇺 +61 (AU)</option>
-                                        <option value="+33">🇫🇷 +33 (FR)</option>
-                                        <option value="+49">🇩🇪 +49 (DE)</option>
-                                    </select>
-                                </div>
-                                <div class="phone-number-wrapper">
-                                    <i class="fas fa-phone input-icon"></i>
-                                    <input type="tel" id="editPhoneNumber" name="phone_number" class="form-input phone-number-input" placeholder="e.g., 11-5550 5761" required>
-                                </div>
+                        <label class="form-label">Contact Number</label>
+                        <div class="phone-input-group">
+                            <div class="country-code-wrapper">
+                                <select id="editCountryCode" name="country_code" class="country-code-select" required>
+                                    <option value="+60">🇲🇾 +60 (MY)</option>
+                                    <option value="+1">🇺🇸 +1 (US)</option>
+                                    <option value="+44">🇬🇧 +44 (UK)</option>
+                                    <option value="+65">🇸🇬 +65 (SG)</option>
+                                    <option value="+86">🇨🇳 +86 (CN)</option>
+                                    <option value="+81">🇯🇵 +81 (JP)</option>
+                                    <option value="+61">🇦🇺 +61 (AU)</option>
+                                    <option value="+33">🇫🇷 +33 (FR)</option>
+                                    <option value="+49">🇩🇪 +49 (DE)</option>
+                                </select>
                             </div>
-                            <input type="hidden" name="contact_no" id="editContactNo"/>
-                            <div id="editPhoneValidationError" class="phone-validation-error"></div>
-                            <small class="input-hint" id="editPhoneFormatHint">Enter phone number without country code</small>
+                            <div class="phone-number-wrapper">
+                                <i class="fas fa-phone input-icon"></i>
+                                <input type="tel" id="editPhoneNumber" name="phone_number" class="form-input phone-number-input" placeholder="e.g., 11-5550 5761" required>
+                            </div>
                         </div>
+                        <input type="hidden" name="contact_no" id="editContactNo"/>
+                        <div id="editPhoneValidationError" class="phone-validation-error"></div>
+                        <small class="input-hint" id="editPhoneFormatHint">Enter phone number without country code</small>
+                    </div>
                     </div>
 
                     <div class="form-actions">
