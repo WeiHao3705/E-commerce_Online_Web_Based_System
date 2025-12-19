@@ -52,7 +52,8 @@ class EmailService {
                 $webBasePath = '/E-commerce_Online_Web_Based_System/web/';
             }
             
-            $verificationUrl = $protocol . '://' . $host . $webBasePath . 'controller/MemberController.php?action=verifyEmail&token=' . urlencode($verificationToken);
+            // Use secure verification endpoint with shorter parameter name
+            $verificationUrl = $protocol . '://' . $host . $webBasePath . 'verify-email.php?t=' . urlencode($verificationToken);
             
             // Content
             $mail->isHTML(true);
@@ -79,7 +80,8 @@ class EmailService {
                 .container { max-width: 600px; margin: 0 auto; padding: 20px; }
                 .header { background-color: #FF523B; color: white; padding: 20px; text-align: center; }
                 .content { padding: 30px 20px; background-color: #f9f9f9; }
-                .button { display: inline-block; padding: 12px 30px; background-color: #FF523B; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+                .button { display: inline-block; padding: 12px 30px; background-color: #FF523B; color: #ffffff !important; text-decoration: none !important; border-radius: 5px; margin: 20px 0; font-weight: 500; }
+                .button:link, .button:visited, .button:hover, .button:active { color: #ffffff !important; text-decoration: none !important; }
                 .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
             </style>
         </head>
@@ -93,10 +95,8 @@ class EmailService {
                     <h2>Hello {$name}!</h2>
                     <p>Thank you for registering with NGEAR. Please verify your email address to complete your registration.</p>
                     <p style='text-align: center;'>
-                        <a href='{$verificationUrl}' class='button'>Verify Email Address</a>
+                        <a href='{$verificationUrl}' class='button' style='color: #ffffff; text-decoration: none;'>Verify Email Address</a>
                     </p>
-                    <p>Or copy and paste this link into your browser:</p>
-                    <p style='word-break: break-all; color: #666;'>{$verificationUrl}</p>
                     <p><strong>This link will expire in 24 hours.</strong></p>
                     <p>If you didn't create an account with NGEAR, please ignore this email.</p>
                 </div>
