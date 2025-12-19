@@ -1256,7 +1256,7 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
             });
             
             // Assign button handler
-            $(document).on('click', '.assign-btn[data-action="assign"]', function() {
+            $(document).on('click', '.action-btn[data-action="assign"]', function() {
                 var $btn = $(this);
                 var voucherId = $btn.data('voucher-id');
                 var voucherCode = $btn.data('code');
