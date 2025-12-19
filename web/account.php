@@ -9,7 +9,7 @@ if (!empty($_SESSION['user'])) {
         header('Location: views/admin/AdminDashboard.php');
     } else {
         // Redirect members to home page (shows MemberHome when logged in)
-        header('Location: index.php');
+        header('Location: ../index.php');
     }
     exit;
 }

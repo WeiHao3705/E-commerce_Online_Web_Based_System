@@ -331,7 +331,7 @@ include __DIR__ . '/../../general/_navbar.php';
                                 </div>
                                 <div class="voucher-actions">
                                     <?php if ($isActive): ?>
-                                        <button class="btn-primary btn-shop-now" data-shop-url="<?php echo $prefix; ?>index.php?page=product">
+                                        <button class="btn-primary btn-shop-now" data-shop-url="../../index.php?page=product">
                                             Shop Now
                                         </button>
                                         <button class="btn-secondary btn-copy-code" data-voucher-code="<?php echo htmlspecialchars($voucher['code'], ENT_QUOTES); ?>">

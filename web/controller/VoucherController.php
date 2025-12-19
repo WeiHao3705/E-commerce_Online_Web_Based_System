@@ -576,7 +576,7 @@ class VoucherController
             require_once __DIR__ . '/../views/member/MemberVoucherList.php';
         } catch (Exception $e) {
             $_SESSION['error_message'] = $e->getMessage();
-            header('Location: ../index.php');
+            header('Location: ../../index.php');
             exit;
         }
     }

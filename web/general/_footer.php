@@ -10,8 +10,11 @@
                     $docRoot = $_SERVER['DOCUMENT_ROOT'];
                     $relativePath = str_replace($docRoot, '', $webRootDir);
                     $webBasePath = str_replace('\\', '/', $relativePath) . '/';
+                    // Calculate root path (one level up from web/)
+                    $rootPath = dirname($webBasePath);
+                    $rootPath = rtrim($rootPath, '/') . '/';
                     ?>
-                    <a href="/index.php">
+                    <a href="<?php echo $rootPath; ?>index.php">
                         <img src="<?php echo $webBasePath; ?>images/logo/logo2.png" alt="NGEAR">
                     </a>
                 </div>
@@ -30,7 +33,7 @@
             <div class="footer-section">
                 <h3 class="footer-heading">Quick Links</h3>
                 <ul class="footer-links">
-                    <li><a href="<?php echo $webBasePath; ?>index.php">Home</a></li>
+                    <li><a href="<?php echo $rootPath; ?>index.php">Home</a></li>
                     <li><a href="<?php echo $webBasePath; ?>views/product/ProductPage.php">Products</a></li>
                     <li><a href="<?php echo $webBasePath; ?>about.php">About Us</a></li>
                 </ul>

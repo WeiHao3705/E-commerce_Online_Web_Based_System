@@ -46,7 +46,7 @@ include 'general/_navbar.php';
             <i class="fas fa-shopping-bag"></i>
             <h2>No Orders Yet</h2>
             <p>You haven't placed any orders yet. Start shopping to see your orders here!</p>
-            <a href="index.php" class="btn btn-primary">Start Shopping</a>
+            <a href="../index.php" class="btn btn-primary">Start Shopping</a>
         </div>
     <?php else: ?>
         <div class="orders-list">

@@ -65,7 +65,7 @@ if (!empty($_POST)) {
     <main class="voucher-main">
         <div class="voucher-container">
             <div class="mb-6">
-                <a href="<?php echo isset($_GET['return_to']) && $_GET['return_to'] === 'admin' ? $prefix . 'controller/VoucherController.php?action=showAll' : $prefix . 'index.php'; ?>" class="back-link">
+                <a href="<?php echo isset($_GET['return_to']) && $_GET['return_to'] === 'admin' ? $prefix . 'controller/VoucherController.php?action=showAll' : '../../index.php'; ?>" class="back-link">
                     <span class="material-symbols-outlined">arrow_back</span>
                     Back
                 </a>
@@ -255,7 +255,7 @@ if (!empty($_POST)) {
                             </button>
                         </div>
                         <div class="form-actions-right">
-                            <a href="<?php echo isset($_GET['return_to']) && $_GET['return_to'] === 'admin' ? $prefix . 'controller/VoucherController.php?action=showAll' : $prefix . 'index.php'; ?>" class="btn btn-secondary">Cancel</a>
+                            <a href="<?php echo isset($_GET['return_to']) && $_GET['return_to'] === 'admin' ? $prefix . 'controller/VoucherController.php?action=showAll' : '../../index.php'; ?>" class="btn btn-secondary">Cancel</a>
                             <button class="btn btn-primary" type="submit">Create Voucher</button>
                         </div>
                     </div>

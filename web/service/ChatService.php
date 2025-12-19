@@ -91,8 +91,21 @@ class ChatService
         return $this->chatRepository->closeChatRoom($chatRoomId);
     }
 
+    public function reopenChatRoom($chatRoomId)
+    {
+        return $this->chatRepository->reopenChatRoom($chatRoomId);
+    }
+
     public function getUnreadCount($userId, $role)
     {
         return $this->chatRepository->getUnreadCountForUser($userId, $role);
+    }
+
+    public function searchChatRooms($searchTerm, $userId, $role)
+    {
+        $data = $this->chatRepository->searchChatRooms($searchTerm, $userId, $role);
+        return array_map(function($item) {
+            return new ChatRoomDTO($item);
+        }, $data);
     }
 }

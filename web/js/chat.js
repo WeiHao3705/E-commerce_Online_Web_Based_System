@@ -76,6 +76,63 @@ $(document).ready(function() {
             $('#backToChatRoomsBtn').on('click', function() {
                 self.showChatRoomsList();
             });
+            
+            // Close chat room button (admin only)
+            $('#closeChatRoomBtn').on('click', function() {
+                if (self.currentChatRoomId) {
+                    self.showConfirmModal(
+                        'Close Chat Room',
+                        'Are you sure you want to close this chat room? Once closed, no new messages can be sent.',
+                        function() {
+                            self.closeChatRoom(self.currentChatRoomId);
+                        }
+                    );
+                }
+            });
+            
+            // Reopen chat room button (admin only)
+            $('#reopenChatRoomBtn').on('click', function() {
+                if (self.currentChatRoomId) {
+                    self.showConfirmModal(
+                        'Reopen Chat Room',
+                        'Are you sure you want to reopen this chat room? Messages can be sent again once reopened.',
+                        function() {
+                            self.reopenChatRoom(self.currentChatRoomId);
+                        }
+                    );
+                }
+            });
+            
+            // Modal close handlers
+            $('#chatModalClose, #chatModalCancel').on('click', function() {
+                self.hideConfirmModal();
+            });
+            
+            // Modal overlay click to close
+            $('#chatModalOverlay').on('click', function(e) {
+                if (e.target === this) {
+                    self.hideConfirmModal();
+                }
+            });
+            
+            // Search chat rooms
+            $('#chatRoomSearch').on('input', function() {
+                const searchTerm = $(this).val().trim();
+                if (searchTerm.length > 0) {
+                    self.searchChatRooms(searchTerm);
+                    $('#clearSearchBtn').show();
+                } else {
+                    self.clearSearch();
+                    $('#clearSearchBtn').hide();
+                }
+            });
+            
+            // Clear search
+            $('#clearSearchBtn').on('click', function() {
+                $('#chatRoomSearch').val('');
+                self.clearSearch();
+                $(this).hide();
+            });
         },
         
         toggle: function() {
@@ -145,6 +202,46 @@ $(document).ready(function() {
             });
         },
         
+        searchChatRooms: function(searchTerm) {
+            const self = this;
+            if (!searchTerm || searchTerm.trim().length === 0) {
+                this.clearSearch();
+                return;
+            }
+            
+            $.ajax({
+                url: window.chatControllerUrl || 'controller/ChatController.php',
+                method: 'GET',
+                data: { 
+                    action: 'searchChatRooms',
+                    search: searchTerm
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        if (self.userRole === 'admin') {
+                            self.renderAdminChatRooms(response.chat_rooms);
+                        } else {
+                            self.renderChatRooms(response.chat_rooms);
+                        }
+                    } else {
+                        self.showError('Search failed: ' + (response.error || 'Unknown error'));
+                    }
+                },
+                error: function() {
+                    self.showError('Failed to search chat rooms. Please try again.');
+                }
+            });
+        },
+        
+        clearSearch: function() {
+            if (this.userRole === 'admin') {
+                this.loadAdminChatRooms();
+            } else {
+                this.loadChatRooms();
+            }
+        },
+        
         loadAdminChatRooms: function() {
             const self = this;
             $.ajax({
@@ -181,10 +278,12 @@ $(document).ready(function() {
                 
                 const time = this.formatTime(room.created_at);
                 const status = room.status === 'closed' ? '<span class="status-badge closed">Closed</span>' : '';
+                // Show admin name for members, or "Unassigned" if no admin yet
+                const adminName = room.admin_name || 'Unassigned';
                 
                 $item.html(`
                     <div class="chat-room-item-header">
-                        <span class="chat-room-item-title">Chat Room #${room.chat_room_id}</span>
+                        <span class="chat-room-item-title">${adminName}</span>
                         <span class="chat-room-item-time">${time}</span>
                     </div>
                     <div class="chat-room-item-footer">
@@ -255,6 +354,9 @@ $(document).ready(function() {
             $('#chatInterface').hide();
             $('#chatInterfaceHeader').hide();
             $('#newChatForm').hide();
+            // Hide close/reopen buttons when navigating away
+            $('#closeChatRoomBtn').hide();
+            $('#reopenChatRoomBtn').hide();
             
             // Reload chat rooms
             if (this.userRole === 'admin') {
@@ -286,6 +388,47 @@ $(document).ready(function() {
             // Show loading
             $('#chatMessages').html('<div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading messages...</div>');
             
+            // Load chatroom details to check status (for admin close/reopen buttons and to disable input for closed rooms)
+            $.ajax({
+                url: window.chatControllerUrl || 'controller/ChatController.php',
+                method: 'GET',
+                data: { 
+                    action: 'getChatRoom',
+                    chat_room_id: chatRoomId 
+                },
+                dataType: 'json',
+                success: function(roomResponse) {
+                    if (roomResponse.success && roomResponse.chat_room) {
+                        // Show close button if chatroom is open, reopen button if closed (admin only)
+                        if (self.userRole === 'admin') {
+                            if (roomResponse.chat_room.status === 'open') {
+                                $('#closeChatRoomBtn').show();
+                                $('#reopenChatRoomBtn').hide();
+                            } else {
+                                $('#closeChatRoomBtn').hide();
+                                $('#reopenChatRoomBtn').show();
+                            }
+                        }
+                        
+                        // Enable/disable message input based on chat room status (for all users)
+                        if (roomResponse.chat_room.status === 'open') {
+                            $('#messageInput').prop('disabled', false);
+                            $('#messageInput').attr('placeholder', 'Type your message...');
+                        } else {
+                            $('#messageInput').prop('disabled', true);
+                            $('#messageInput').attr('placeholder', 'This chat room is closed');
+                        }
+                    }
+                },
+                error: function() {
+                    // Silently fail - not critical
+                    if (self.userRole === 'admin') {
+                        $('#closeChatRoomBtn').hide();
+                        $('#reopenChatRoomBtn').hide();
+                    }
+                }
+            });
+            
             // Load messages
             $.ajax({
                 url: window.chatControllerUrl || 'controller/ChatController.php',
@@ -299,6 +442,12 @@ $(document).ready(function() {
                     if (response.success) {
                         self.renderMessages(response.messages);
                         self.loadUnreadCount();
+                        // Refocus input if it's enabled and chat room is open
+                        setTimeout(function() {
+                            if (!$('#messageInput').prop('disabled')) {
+                                $('#messageInput').focus();
+                            }
+                        }, 100);
                     } else {
                         const errorMsg = response.error || 'Failed to load messages';
                         self.showError(errorMsg);
@@ -376,16 +525,46 @@ $(document).ready(function() {
                         $input.val('').prop('disabled', false);
                         $sendBtn.prop('disabled', false);
                         self.loadChatRoom(self.currentChatRoomId);
+                        // Refocus input field after sending message
+                        setTimeout(function() {
+                            $input.focus();
+                        }, 100);
                     } else {
                         $input.prop('disabled', false);
                         $sendBtn.prop('disabled', false);
+                        $input.focus();
                         self.showError('Error: ' + (response.error || 'Failed to send message'));
                     }
                 },
-                error: function() {
-                    $input.prop('disabled', false);
-                    $sendBtn.prop('disabled', false);
-                    self.showError('Failed to send message. Please try again.');
+                error: function(xhr, status, error) {
+                    // Try to parse JSON error response
+                    let errorMessage = 'Failed to send message. Please try again.';
+                    let isClosedChatRoom = false;
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.error) {
+                            errorMessage = response.error;
+                            // Check if this is a closed chat room error
+                            if (response.error.includes('Cannot send message to a closed chat room')) {
+                                isClosedChatRoom = true;
+                            }
+                        }
+                    } catch (e) {
+                        // If parsing fails, use default message
+                    }
+                    
+                    // If chat room is closed, keep input disabled
+                    if (isClosedChatRoom) {
+                        $input.prop('disabled', true);
+                        $input.attr('placeholder', 'This chat room is closed');
+                        $sendBtn.prop('disabled', true);
+                    } else {
+                        $input.prop('disabled', false);
+                        $sendBtn.prop('disabled', false);
+                        $input.focus();
+                    }
+                    
+                    self.showError(errorMessage);
                 }
             });
         },
@@ -459,10 +638,6 @@ $(document).ready(function() {
         },
         
         closeChatRoom: function(chatRoomId) {
-            if (!confirm('Are you sure you want to close this chat room?')) {
-                return;
-            }
-            
             const self = this;
             $.ajax({
                 url: window.chatControllerUrl || 'controller/ChatController.php',
@@ -474,11 +649,27 @@ $(document).ready(function() {
                 dataType: 'json',
                 success: function(response) {
                     if (response.success) {
-                        self.currentChatRoomId = null;
-                        if (self.userRole === 'member') {
-                            self.loadChatRooms();
+                        // Hide close button, show reopen button
+                        $('#closeChatRoomBtn').hide();
+                        $('#reopenChatRoomBtn').show();
+                        
+                        // Disable message input
+                        $('#messageInput').prop('disabled', true);
+                        $('#messageInput').attr('placeholder', 'This chat room is closed');
+                        
+                        // Show success message
+                        self.showSuccess('Chat room closed successfully');
+                        
+                        // If admin, go back to chat rooms list and refresh
+                        if (self.userRole === 'admin') {
+                            self.currentChatRoomId = null;
+                            self.showChatRoomsList();
                         } else {
-                            self.loadAdminChatRooms();
+                            // For members, just refresh the current view
+                            if (self.currentChatRoomId === chatRoomId) {
+                                self.loadChatRoom(chatRoomId);
+                            }
+                            self.loadChatRooms();
                         }
                     } else {
                         self.showError('Failed to close chat room');
@@ -488,6 +679,76 @@ $(document).ready(function() {
                     self.showError('Failed to close chat room. Please try again.');
                 }
             });
+        },
+        
+        reopenChatRoom: function(chatRoomId) {
+            const self = this;
+            $.ajax({
+                url: window.chatControllerUrl || 'controller/ChatController.php',
+                method: 'POST',
+                data: {
+                    action: 'reopenChatRoom',
+                    chat_room_id: chatRoomId
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        // Hide reopen button, show close button
+                        $('#reopenChatRoomBtn').hide();
+                        $('#closeChatRoomBtn').show();
+                        
+                        // Enable message input
+                        $('#messageInput').prop('disabled', false);
+                        $('#messageInput').attr('placeholder', 'Type your message...');
+                        
+                        // Show success message
+                        self.showSuccess('Chat room reopened successfully');
+                        
+                        // Reload the chatroom to update status
+                        if (self.currentChatRoomId === chatRoomId) {
+                            self.loadChatRoom(chatRoomId);
+                        }
+                        
+                        // Refresh chat rooms list
+                        if (self.userRole === 'admin') {
+                            self.loadAdminChatRooms();
+                        } else {
+                            self.loadChatRooms();
+                        }
+                    } else {
+                        self.showError('Failed to reopen chat room');
+                    }
+                },
+                error: function() {
+                    self.showError('Failed to reopen chat room. Please try again.');
+                }
+            });
+        },
+        
+        showConfirmModal: function(title, message, onConfirm) {
+            const self = this;
+            $('#chatModalTitle').text(title);
+            $('#chatModalMessage').text(message);
+            $('#chatModalOverlay').show();
+            
+            // Store the confirm callback
+            this.modalConfirmCallback = onConfirm;
+            
+            // Remove any existing handlers and set up confirm button handler
+            $('#chatModalConfirm').off('click').on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (self.modalConfirmCallback) {
+                    self.modalConfirmCallback();
+                }
+                self.hideConfirmModal();
+                return false;
+            });
+        },
+        
+        hideConfirmModal: function() {
+            $('#chatModalOverlay').hide();
+            this.modalConfirmCallback = null;
         },
         
         startPolling: function() {
@@ -560,6 +821,18 @@ $(document).ready(function() {
                     $(this).remove();
                 });
             }, 5000);
+        },
+        
+        showSuccess: function(message) {
+            // Show success message in chat interface
+            const $container = $('#chatMessages');
+            const $success = $('<div class="success-message"><i class="fas fa-check-circle"></i> ' + this.escapeHtml(message) + '</div>');
+            $container.append($success);
+            setTimeout(function() {
+                $success.fadeOut(function() {
+                    $(this).remove();
+                });
+            }, 3000);
         }
     };
     

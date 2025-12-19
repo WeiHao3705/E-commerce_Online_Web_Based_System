@@ -5,6 +5,9 @@ $docRoot = $_SERVER['DOCUMENT_ROOT'];
 $relativePath = str_replace($docRoot, '', $webRootDir);
 $webBasePath = str_replace('\\', '/', $relativePath) . '/';
 $prefix = $webBasePath;
+// Calculate root path (one level up from web/)
+$rootPath = dirname($webBasePath);
+$rootPath = rtrim($rootPath, '/') . '/';
 ?>
 <link rel="stylesheet" href="<?php echo $prefix; ?>css/navbar.css?v=<?php echo filemtime(__DIR__ . '/../css/navbar.css'); ?>">
 
@@ -13,7 +16,7 @@ $prefix = $webBasePath;
         <div class="nav-wrapper">
             <!-- Logo -->
             <div class="logo">
-                <a href="/index.php">
+                <a href="<?php echo $rootPath; ?>index.php">
                     <img src="<?php echo $prefix; ?>images/logo/logo2.png" alt="NGEAR">
                 </a>
             </div>
@@ -22,7 +25,7 @@ $prefix = $webBasePath;
             <div class="nav-right">
                 <!-- Navigation Menu -->
                 <ul class="nav-menu" id="navMenu">
-                    <li><a href="/index.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>">Home</a></li>
+                    <li><a href="<?php echo $rootPath; ?>index.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>">Home</a></li>
                     <?php
                     // Check if current page is a product page (ProductPage.php or ProductDetails.php)
                     $currentScript = $_SERVER['PHP_SELF'];

@@ -14,7 +14,7 @@ if (!isset($_SESSION['user'])) {
 if ($_SESSION['user']->role !== 'admin') {
 	// User is logged in but not admin - redirect to member home
 	$_SESSION['error_message'] = 'Access denied. Admin privileges required.';
-	header('Location: ../../../index.php');
+	header('Location: ../../index.php');
 	exit;
 }
 

@@ -156,6 +156,13 @@ class ChatRepository
         return $stmt->execute([$chatRoomId]);
     }
 
+    public function reopenChatRoom($chatRoomId)
+    {
+        $sql = "UPDATE chat_room SET status = 'open', closed_at = NULL WHERE chat_room_id = ?";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$chatRoomId]);
+    }
+
     public function getUnreadCountForUser($userId, $role)
     {
         if ($role === 'admin') {
@@ -181,5 +188,48 @@ class ChatRepository
 
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return $result['count'] ?? 0;
+    }
+
+    public function searchChatRooms($searchTerm, $userId, $role)
+    {
+        $searchTerm = '%' . $searchTerm . '%';
+        
+        if ($role === 'admin') {
+            // Admin can only search by member name
+            $sql = "SELECT r.*, 
+                    m.full_name as member_name, 
+                    a.full_name as admin_name,
+                    (SELECT COUNT(*) FROM chat_message cm 
+                     WHERE cm.chat_room_id = r.chat_room_id 
+                     AND cm.is_read = FALSE 
+                     AND cm.sender_id = r.member_id) as unread_count
+                    FROM chat_room r
+                    LEFT JOIN users m ON r.member_id = m.user_id
+                    LEFT JOIN users a ON r.admin_id = a.user_id
+                    WHERE r.status = 'open'
+                    AND m.full_name LIKE ?
+                    ORDER BY r.created_at DESC";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$searchTerm]);
+        } else {
+            // Member can only search by admin name
+            $sql = "SELECT r.*, 
+                    m.full_name as member_name, 
+                    a.full_name as admin_name,
+                    (SELECT COUNT(*) FROM chat_message cm 
+                     WHERE cm.chat_room_id = r.chat_room_id 
+                     AND cm.is_read = FALSE 
+                     AND cm.sender_id != r.member_id) as unread_count
+                    FROM chat_room r
+                    LEFT JOIN users m ON r.member_id = m.user_id
+                    LEFT JOIN users a ON r.admin_id = a.user_id
+                    WHERE r.member_id = ?
+                    AND a.full_name LIKE ?
+                    ORDER BY r.created_at DESC";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$userId, $searchTerm]);
+        }
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

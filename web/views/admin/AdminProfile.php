@@ -31,6 +31,9 @@ $docRoot = $_SERVER['DOCUMENT_ROOT'];
 $relativePath = str_replace($docRoot, '', $webRootDir);
 $webBasePath = str_replace('\\', '/', $relativePath) . '/';
 $prefix = $webBasePath; // e.g. /E-commerce_Online_Web_Based_System/web/
+// Calculate root path (one level up from web/)
+$rootPath = dirname($webBasePath);
+$rootPath = rtrim($rootPath, '/') . '/';
 
 // Services
 $db = new Database();
@@ -153,7 +156,7 @@ $pageTitle = 'Admin Profile';
                         <button type="button" class="btn btn-update" id="btnOpenUpdate">
                             <i class="fas fa-edit"></i> Update Profile
                         </button>
-                        <a href="<?php echo $prefix; ?>index.php" class="btn btn-logout" onclick="window.parent.location.href='<?php echo $prefix; ?>logout.php'; return false;">
+                        <a href="<?php echo $rootPath; ?>index.php" class="btn btn-logout" onclick="window.parent.location.href='<?php echo $prefix; ?>logout.php'; return false;">
                             <i class="fas fa-sign-out-alt"></i> Log out
                         </a>
                     </div>

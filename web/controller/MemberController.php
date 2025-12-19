@@ -25,7 +25,7 @@ class MemberController
             exit;
         } catch (Exception $e) {
             $_SESSION['error_message'] = $e->getMessage();
-            header('Location: ../index.php');
+            header('Location: ../../index.php');
             exit;
         }
     }
@@ -71,7 +71,7 @@ class MemberController
                 if ($userDTO->getRole() === 'admin') {
                     header('Location: ../views/admin/AdminDashboard.php');
                 } else {
-                    header('Location: /index.php');
+                    header('Location: ../../index.php');
                 }
                 exit;
             }
@@ -175,7 +175,7 @@ class MemberController
         session_destroy();
         session_start();
         $_SESSION['success_message'] = 'You have been logged out';
-        header('Location: /index.php');
+        header('Location: ../../index.php');
         exit;
     }
 

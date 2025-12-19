@@ -41,6 +41,13 @@ $prefix = $webBasePath;
                     </button>
                     <?php endif; ?>
                 </div>
+                <div class="chat-rooms-search">
+                    <input type="text" id="chatRoomSearch" placeholder="<?php echo $_SESSION['user']->role === 'admin' ? 'Search by member name...' : 'Search by admin name...'; ?>" autocomplete="off">
+                    <i class="fas fa-search search-icon"></i>
+                    <button class="btn-clear-search" id="clearSearchBtn" style="display: none;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
                 <div class="chat-rooms-items" id="chatRoomsItems"></div>
             </div>
             
@@ -51,6 +58,14 @@ $prefix = $webBasePath;
                         <i class="fas fa-arrow-left"></i>
                     </button>
                     <span class="chat-interface-title" id="chatInterfaceTitle">Chat</span>
+                    <?php if ($_SESSION['user']->role === 'admin'): ?>
+                    <button class="btn-close-chat" id="closeChatRoomBtn" title="Close this chat room" style="display: none;">
+                        <i class="fas fa-lock"></i> Close Chat
+                    </button>
+                    <button class="btn-reopen-chat" id="reopenChatRoomBtn" title="Reopen this chat room" style="display: none;">
+                        <i class="fas fa-unlock"></i> Reopen Chat
+                    </button>
+                    <?php endif; ?>
                 </div>
                 <div class="chat-messages" id="chatMessages"></div>
                 <div class="chat-input-container">
@@ -76,6 +91,25 @@ $prefix = $webBasePath;
                 </form>
             </div>
             <?php endif; ?>
+        </div>
+    </div>
+    
+    <!-- Confirmation Modal -->
+    <div class="chat-modal-overlay" id="chatModalOverlay" style="display: none;">
+        <div class="chat-modal">
+            <div class="chat-modal-header">
+                <h4 id="chatModalTitle">Confirm Action</h4>
+                <button class="chat-modal-close" id="chatModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="chat-modal-body">
+                <p id="chatModalMessage">Are you sure you want to perform this action?</p>
+            </div>
+            <div class="chat-modal-footer">
+                <button type="button" class="btn-modal-cancel" id="chatModalCancel">Cancel</button>
+                <button type="button" class="btn-modal-confirm" id="chatModalConfirm">Confirm</button>
+            </div>
         </div>
     </div>
 </div>

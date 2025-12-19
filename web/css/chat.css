@@ -123,6 +123,55 @@
     font-size: 16px;
 }
 
+.chat-rooms-search {
+    position: relative;
+    padding: 10px 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.chat-rooms-search input {
+    width: 100%;
+    padding: 8px 35px 8px 35px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.chat-rooms-search input:focus {
+    border-color: #FF5252;
+}
+
+.chat-rooms-search .search-icon {
+    position: absolute;
+    left: 25px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+    font-size: 14px;
+    pointer-events: none;
+}
+
+.chat-rooms-search .btn-clear-search {
+    position: absolute;
+    right: 25px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: color 0.2s, background 0.2s;
+}
+
+.chat-rooms-search .btn-clear-search:hover {
+    color: #FF5252;
+    background: rgba(255, 82, 82, 0.1);
+}
+
 .btn-new-chat {
     background: #FF5252;
     color: white;
@@ -268,6 +317,56 @@
     font-size: 15px;
     font-weight: 600;
     flex: 1;
+}
+
+.btn-close-chat {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    font-size: 13px;
+    font-weight: 500;
+    margin-left: auto;
+}
+
+.btn-close-chat:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-close-chat i {
+    font-size: 12px;
+}
+
+.btn-reopen-chat {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    font-size: 13px;
+    font-weight: 500;
+    margin-left: auto;
+}
+
+.btn-reopen-chat:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-reopen-chat i {
+    font-size: 12px;
 }
 
 .chat-messages {
@@ -492,6 +591,155 @@
     align-items: center;
     gap: 8px;
     font-size: 13px;
+}
+
+.success-message {
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+/* Confirmation Modal */
+.chat-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.2s ease;
+    pointer-events: auto;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.chat-modal {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+    overflow: hidden;
+    position: relative;
+    z-index: 10001;
+    pointer-events: auto;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.chat-modal-header {
+    background: linear-gradient(135deg, #FF5252 0%, #e04848 100%);
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-modal-header h4 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.chat-modal-close {
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
+    transition: background 0.2s;
+    font-size: 18px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chat-modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.chat-modal-body {
+    padding: 20px;
+}
+
+.chat-modal-body p {
+    margin: 0;
+    font-size: 15px;
+    color: #333;
+    line-height: 1.5;
+}
+
+.chat-modal-footer {
+    padding: 15px 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background: #f5f5f5;
+    border-top: 1px solid #e0e0e0;
+}
+
+.btn-modal-cancel,
+.btn-modal-confirm {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+    pointer-events: auto;
+    position: relative;
+    z-index: 1;
+}
+
+.btn-modal-cancel {
+    background: #e0e0e0;
+    color: #333;
+}
+
+.btn-modal-cancel:hover {
+    background: #d0d0d0;
+}
+
+.btn-modal-confirm {
+    background: #FF5252;
+    color: white;
+}
+
+.btn-modal-confirm:hover {
+    background: #e04848;
+    box-shadow: 0 4px 12px rgba(255, 82, 82, 0.3);
 }
 
 /* Scrollbar styling */

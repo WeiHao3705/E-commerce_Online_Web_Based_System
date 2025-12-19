@@ -52,11 +52,17 @@ class ChatController
             case 'closeChatRoom':
                 $this->closeChatRoom();
                 break;
+            case 'reopenChatRoom':
+                $this->reopenChatRoom();
+                break;
             case 'assignToAdmin':
                 $this->assignToAdmin();
                 break;
             case 'getUnreadCount':
                 $this->getUnreadCount();
+                break;
+            case 'searchChatRooms':
+                $this->searchChatRooms();
                 break;
             default:
                 http_response_code(400);
@@ -200,8 +206,15 @@ class ChatController
             $messageId = $this->chatService->sendMessage($chatRoomId, $userId, $message, $userRole);
             echo json_encode(['success' => true, 'message_id' => $messageId]);
         } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            // Check if it's a validation error (closed chat room, not found, etc.)
+            $errorMessage = $e->getMessage();
+            if (strpos($errorMessage, 'Cannot send message to a closed chat room') !== false ||
+                strpos($errorMessage, 'Chat room not found') !== false) {
+                http_response_code(400); // Bad Request for validation errors
+            } else {
+                http_response_code(500); // Server error for other exceptions
+            }
+            echo json_encode(['success' => false, 'error' => $errorMessage]);
         }
     }
 
@@ -307,6 +320,40 @@ class ChatController
         }
     }
 
+    private function reopenChatRoom()
+    {
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+            return;
+        }
+
+        $chatRoomId = $_POST['chat_room_id'] ?? null;
+
+        if (!$chatRoomId) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Chat room ID required']);
+            return;
+        }
+
+        $role = $_SESSION['user']->role;
+        if ($role !== 'admin') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Only admins can reopen chat rooms']);
+            return;
+        }
+
+        try {
+            $this->chatService->reopenChatRoom($chatRoomId);
+            echo json_encode(['success' => true]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
     private function assignToAdmin()
     {
         header('Content-Type: application/json');
@@ -351,6 +398,43 @@ class ChatController
         try {
             $count = $this->chatService->getUnreadCount($userId, $role);
             echo json_encode(['success' => true, 'count' => $count]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    private function searchChatRooms()
+    {
+        header('Content-Type: application/json');
+        $searchTerm = $_GET['search'] ?? $_POST['search'] ?? '';
+        $userId = $_SESSION['user']->user_id;
+        $role = $_SESSION['user']->role;
+
+        if (empty(trim($searchTerm))) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Search term is required']);
+            return;
+        }
+
+        try {
+            $chatRooms = $this->chatService->searchChatRooms($searchTerm, $userId, $role);
+
+            $result = array_map(function($room) {
+                return [
+                    'chat_room_id' => $room->getChatRoomId(),
+                    'member_id' => $room->getMemberId(),
+                    'admin_id' => $room->getAdminId(),
+                    'status' => $room->getStatus(),
+                    'created_at' => $room->getCreatedAt(),
+                    'closed_at' => $room->getClosedAt(),
+                    'member_name' => $room->getMemberName(),
+                    'admin_name' => $room->getAdminName(),
+                    'unread_count' => $room->getUnreadCount()
+                ];
+            }, $chatRooms);
+
+            echo json_encode(['success' => true, 'chat_rooms' => $result]);
         } catch (Exception $e) {
             http_response_code(500);
             echo json_encode(['success' => false, 'error' => $e->getMessage()]);
