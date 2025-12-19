@@ -65,6 +65,7 @@ class ChatRepository
 
     public function getAdminChatRooms($adminId = null)
     {
+        // Show all chat rooms (open and closed) to admin so they can view chat history
         $sql = "SELECT r.*, 
                 m.full_name as member_name, 
                 a.full_name as admin_name,
@@ -75,14 +76,19 @@ class ChatRepository
                 FROM chat_room r
                 LEFT JOIN users m ON r.member_id = m.user_id
                 LEFT JOIN users a ON r.admin_id = a.user_id
-                WHERE r.status = 'open'";
+                WHERE 1=1";
 
         if ($adminId) {
             $sql .= " AND (r.admin_id = ? OR r.admin_id IS NULL)";
-            $stmt = $this->db->prepare($sql);
+        }
+
+        // Order by status (open first) then by created_at DESC
+        $sql .= " ORDER BY CASE WHEN r.status = 'open' THEN 0 ELSE 1 END, r.created_at DESC";
+        
+        $stmt = $this->db->prepare($sql);
+        if ($adminId) {
             $stmt->execute([$adminId]);
         } else {
-            $stmt = $this->db->prepare($sql);
             $stmt->execute();
         }
 
@@ -195,7 +201,7 @@ class ChatRepository
         $searchTerm = '%' . $searchTerm . '%';
         
         if ($role === 'admin') {
-            // Admin can only search by member name
+            // Admin can search by member name in all chat rooms (open and closed)
             $sql = "SELECT r.*, 
                     m.full_name as member_name, 
                     a.full_name as admin_name,
@@ -206,9 +212,8 @@ class ChatRepository
                     FROM chat_room r
                     LEFT JOIN users m ON r.member_id = m.user_id
                     LEFT JOIN users a ON r.admin_id = a.user_id
-                    WHERE r.status = 'open'
-                    AND m.full_name LIKE ?
-                    ORDER BY r.created_at DESC";
+                    WHERE m.full_name LIKE ?
+                    ORDER BY CASE WHEN r.status = 'open' THEN 0 ELSE 1 END, r.created_at DESC";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$searchTerm]);
         } else {

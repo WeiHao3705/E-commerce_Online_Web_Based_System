@@ -308,7 +308,7 @@ $(document).ready(function() {
             $container.empty();
             
             if (chatRooms.length === 0) {
-                $container.html('<div class="empty-state"><i class="fas fa-inbox"></i><p>No open chat rooms</p></div>');
+                $container.html('<div class="empty-state"><i class="fas fa-inbox"></i><p>No chat rooms</p></div>');
                 return;
             }
             
@@ -358,7 +358,10 @@ $(document).ready(function() {
             $('#closeChatRoomBtn').hide();
             $('#reopenChatRoomBtn').hide();
             
-            // Reload chat rooms
+            // Clear any active room highlighting
+            $('.chat-room-item').removeClass('active');
+            
+            // Reload chat rooms to ensure list is up to date
             if (this.userRole === 'admin') {
                 this.loadAdminChatRooms();
             } else {
@@ -570,15 +573,31 @@ $(document).ready(function() {
         },
         
         showNewChatForm: function() {
+            // Hide other views
             $('#chatRoomsList').hide();
             $('#chatInterface').hide();
+            $('#chatInterfaceHeader').hide();
+            
+            // Show new chat form
             $('#newChatForm').show();
+            
+            // Clear any previous input
+            $('#initialMessage').val('');
+            
+            // Reset form state
+            const $form = $('#newChatFormElement');
+            $form.find('input, textarea, button').prop('disabled', false);
+            
+            // Focus on input
             $('#initialMessage').focus();
         },
         
         hideNewChatForm: function() {
             $('#newChatForm').hide();
             $('#initialMessage').val('');
+            // Reset form state
+            const $form = $('#newChatFormElement');
+            $form.find('input, textarea, button').prop('disabled', false);
         },
         
         createNewChatRoom: function() {
@@ -605,8 +624,18 @@ $(document).ready(function() {
                 dataType: 'json',
                 success: function(response) {
                     if (response.success) {
+                        // Clear and hide the form
+                        $('#initialMessage').val('');
                         self.hideNewChatForm();
+                        
+                        // Refresh chat rooms list to show the new chat
+                        self.loadChatRooms();
+                        
+                        // Load the newly created chat room
                         self.loadChatRoom(response.chat_room_id);
+                        
+                        // Show success message
+                        self.showSuccess('Chat room created successfully');
                     } else {
                         $form.find('input, textarea, button').prop('disabled', false);
                         self.showError('Error: ' + (response.error || 'Failed to create chat room'));
@@ -660,15 +689,17 @@ $(document).ready(function() {
                         // Show success message
                         self.showSuccess('Chat room closed successfully');
                         
-                        // If admin, go back to chat rooms list and refresh
+                        // Keep chat history visible - don't redirect away
+                        // Just refresh the chat room to update status and refresh chat rooms list
+                        if (self.currentChatRoomId === chatRoomId) {
+                            // Reload chat room to update status display
+                            self.loadChatRoom(chatRoomId);
+                        }
+                        
+                        // Refresh chat rooms list to update status badges
                         if (self.userRole === 'admin') {
-                            self.currentChatRoomId = null;
-                            self.showChatRoomsList();
+                            self.loadAdminChatRooms();
                         } else {
-                            // For members, just refresh the current view
-                            if (self.currentChatRoomId === chatRoomId) {
-                                self.loadChatRoom(chatRoomId);
-                            }
                             self.loadChatRooms();
                         }
                     } else {
