@@ -47,7 +47,8 @@ CREATE TABLE voucher (
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     status ENUM('active', 'inactive', 'expired') DEFAULT 'active',
-    is_redeemable BOOLEAN NOT NULL DEFAULT TRUE
+    is_redeemable BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Address table (depends on users)

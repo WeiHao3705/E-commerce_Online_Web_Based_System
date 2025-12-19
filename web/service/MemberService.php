@@ -327,7 +327,7 @@ class MembershipServices
     }
 
     /**
-     * Get count of active members
+     * Get count of all members (regardless of status)
      */
     public function getActiveMembersCount(): int
     {
@@ -335,7 +335,7 @@ class MembershipServices
     }
 
     /**
-     * Get count of active members that were created recently
+     * Get count of all new members that were created recently
      */
     public function getRecentActiveMembersCount($days = 7): int
     {

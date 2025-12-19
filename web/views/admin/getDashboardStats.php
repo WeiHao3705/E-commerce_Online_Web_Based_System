@@ -38,40 +38,40 @@ try {
     // Automatically expire vouchers that have passed their end date
     $voucherService->autoExpireVouchers();
 
-    // Get active vouchers count
+    // Get all vouchers count
     $activeVouchersCount = $voucherService->getActiveVouchersCount();
 
-    // Get recent active vouchers count (last 7 days)
-    $recentActiveVouchersCount = $voucherService->getRecentActiveVouchersCount(7);
+    // Get recent new vouchers count (last 30 days / 1 month)
+    $recentActiveVouchersCount = $voucherService->getRecentActiveVouchersCount(30);
 
     // Format the count with thousand separators
     $activeVouchersFormatted = number_format($activeVouchersCount);
 
     // Format the change indicator
     if ($recentActiveVouchersCount > 0) {
-        $activeVouchersChange = '+' . number_format($recentActiveVouchersCount) . ' (7d)';
+        $activeVouchersChange = '+' . number_format($recentActiveVouchersCount) . ' (30d)';
     } else {
-        $activeVouchersChange = '0 (7d)';
+        $activeVouchersChange = '0 (30d)';
     }
 
     // Member stats
     $memberRepository = new MembershipRepository($database);
     $memberService = new MembershipServices($memberRepository);
 
-    // Get active members count
+    // Get all members count
     $activeMembersCount = $memberService->getActiveMembersCount();
 
-    // Get recent active members count (last 7 days)
-    $recentActiveMembersCount = $memberService->getRecentActiveMembersCount(7);
+    // Get recent new members count (last 30 days / 1 month)
+    $recentActiveMembersCount = $memberService->getRecentActiveMembersCount(30);
 
     // Format the count with thousand separators
     $activeMembersFormatted = number_format($activeMembersCount);
 
     // Format the change indicator
     if ($recentActiveMembersCount > 0) {
-        $activeMembersChange = '+' . number_format($recentActiveMembersCount) . ' (7d)';
+        $activeMembersChange = '+' . number_format($recentActiveMembersCount) . ' (30d)';
     } else {
-        $activeMembersChange = '0 (7d)';
+        $activeMembersChange = '0 (30d)';
     }
 
     // Get sales data from orders table

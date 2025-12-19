@@ -158,18 +158,14 @@ class VoucherRepository
     }
 
     /**
-     * Get count of active vouchers
-     * Active vouchers are those with status = 'active' and current date between start_date and end_date
-     * Uses CURDATE() to ensure accurate date comparison at database level
+     * Get count of all vouchers
+     * Counts all vouchers regardless of status
      */
     public function getActiveVouchersCount(): int
     {
         try {
             $sql = "SELECT COUNT(*) as total 
-                    FROM voucher 
-                    WHERE status = 'active' 
-                    AND start_date <= CURDATE() 
-                    AND end_date >= CURDATE()";
+                    FROM voucher";
             
             $stmt = $this->db->prepare($sql);
             $stmt->execute();
@@ -178,24 +174,21 @@ class VoucherRepository
             return (int) $result['total'];
         } catch (PDOException $e) {
             error_log("Database error in getActiveVouchersCount: " . $e->getMessage());
-            throw new Exception("Error counting active vouchers");
+            throw new Exception("Error counting vouchers");
         }
     }
 
     /**
-     * Get count of active vouchers that started recently (in the last 7 days)
-     * This represents new active vouchers added recently
-     * Uses CURDATE() to ensure accurate date comparison at database level
+     * Get count of all new vouchers that were created recently (in the last 30 days)
+     * This represents new vouchers created recently, regardless of status
+     * Uses created_at field to track when vouchers were created
      */
-    public function getRecentActiveVouchersCount($days = 7): int
+    public function getRecentActiveVouchersCount($days = 30): int
     {
         try {
             $sql = "SELECT COUNT(*) as total 
                     FROM voucher 
-                    WHERE status = 'active' 
-                    AND start_date <= CURDATE() 
-                    AND end_date >= CURDATE() 
-                    AND start_date >= DATE_SUB(CURDATE(), INTERVAL ? DAY)";
+                    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)";
             
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$days]);
@@ -204,7 +197,7 @@ class VoucherRepository
             return (int) $result['total'];
         } catch (PDOException $e) {
             error_log("Database error in getRecentActiveVouchersCount: " . $e->getMessage());
-            throw new Exception("Error counting recent active vouchers");
+            throw new Exception("Error counting recent vouchers");
         }
     }
 

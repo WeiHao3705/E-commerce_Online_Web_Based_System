@@ -450,7 +450,7 @@ class VoucherService
     }
 
     /**
-     * Get count of active vouchers
+     * Get count of all vouchers (regardless of status)
      */
     public function getActiveVouchersCount(): int
     {
@@ -458,9 +458,9 @@ class VoucherService
     }
 
     /**
-     * Get count of active vouchers that started recently
+     * Get count of all new vouchers that were created recently
      */
-    public function getRecentActiveVouchersCount($days = 7): int
+    public function getRecentActiveVouchersCount($days = 30): int
     {
         return $this->voucherRepository->getRecentActiveVouchersCount($days);
     }

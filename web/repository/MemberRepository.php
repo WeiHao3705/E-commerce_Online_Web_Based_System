@@ -296,16 +296,15 @@ class MembershipRepository
     }
 
     /**
-     * Get count of active members
-     * Active members are those with role = 'member' and status = 'active'
+     * Get count of all members
+     * Counts all users with role = 'member' regardless of status
      */
     public function getActiveMembersCount(): int
     {
         try {
             $sql = "SELECT COUNT(*) as total 
                     FROM users 
-                    WHERE role = 'member' 
-                    AND status = 'active'";
+                    WHERE role = 'member'";
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute();
@@ -314,13 +313,13 @@ class MembershipRepository
             return (int) $result['total'];
         } catch (PDOException $e) {
             error_log("Database error in getActiveMembersCount: " . $e->getMessage());
-            throw new Exception("Error counting active members");
+            throw new Exception("Error counting members");
         }
     }
 
     /**
-     * Get count of active members that were created recently (in the last 7 days)
-     * This represents new active members registered recently
+     * Get count of all new members that were created recently (in the last 7 days)
+     * This represents new members registered recently, regardless of status
      */
     public function getRecentActiveMembersCount($days = 7): int
     {
@@ -330,7 +329,6 @@ class MembershipRepository
             $sql = "SELECT COUNT(*) as total 
                     FROM users 
                     WHERE role = 'member' 
-                    AND status = 'active' 
                     AND created_at >= ?";
 
             $stmt = $this->db->prepare($sql);
@@ -340,7 +338,7 @@ class MembershipRepository
             return (int) $result['total'];
         } catch (PDOException $e) {
             error_log("Database error in getRecentActiveMembersCount: " . $e->getMessage());
-            throw new Exception("Error counting recent active members");
+            throw new Exception("Error counting recent members");
         }
     }
 
