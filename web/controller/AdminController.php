@@ -295,6 +295,102 @@ class AdminController
             exit;
         }
     }
+
+    public function updateOrderStatus(): void
+    {
+        $this->requireAdmin();
+
+        header('Content-Type: application/json');
+
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('Invalid request method');
+            }
+
+            $orderId = $_POST['order_id'] ?? null;
+            $orderStatus = $_POST['order_status'] ?? null;
+            $paymentStatus = $_POST['payment_status'] ?? null;
+            $trackingNumber = $_POST['tracking_number'] ?? null;
+            $adminNotes = $_POST['admin_notes'] ?? null;
+            $sendEmail = isset($_POST['send_email']);
+
+            if (!$orderId) {
+                throw new Exception('Order ID is required');
+            }
+
+            if (!$orderStatus) {
+                throw new Exception('Order status is required');
+            }
+
+            $database = new Database();
+            $conn = $database->getConnection();
+
+            // Get order details before update
+            $stmt = $conn->prepare("SELECT o.*, u.email, u.username FROM orders o LEFT JOIN users u ON o.user_id = u.user_id WHERE o.order_id = :order_id");
+            $stmt->execute([':order_id' => $orderId]);
+            $order = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$order) {
+                throw new Exception('Order not found');
+            }
+
+            // Build update query
+            $updateFields = ['order_status = :order_status'];
+            $params = [
+                ':order_id' => $orderId,
+                ':order_status' => $orderStatus
+            ];
+
+            if ($paymentStatus) {
+                $updateFields[] = 'payment_status = :payment_status';
+                $params[':payment_status'] = $paymentStatus;
+            }
+
+            if ($trackingNumber) {
+                $updateFields[] = 'tracking_number = :tracking_number';
+                $params[':tracking_number'] = $trackingNumber;
+            }
+
+            // Update order
+            $updateQuery = "UPDATE orders SET " . implode(', ', $updateFields) . " WHERE order_id = :order_id";
+            $updateStmt = $conn->prepare($updateQuery);
+            $updateStmt->execute($params);
+
+            // Insert admin notes if provided
+            if ($adminNotes) {
+                $notesStmt = $conn->prepare("
+                    INSERT INTO order_notes (order_id, admin_id, note_text, created_at) 
+                    VALUES (:order_id, :admin_id, :note_text, NOW())
+                ");
+                $notesStmt->execute([
+                    ':order_id' => $orderId,
+                    ':admin_id' => $_SESSION['user']->user_id,
+                    ':note_text' => $adminNotes
+                ]);
+            }
+
+            // Send email notification if requested
+            if ($sendEmail && $order['email']) {
+                // TODO: Implement email notification
+                // This would use PHPMailer to send status update email
+                // For now, we'll just log it
+                error_log("Email notification would be sent to: " . $order['email']);
+            }
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Order status updated successfully'
+            ]);
+            exit;
+
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+            exit;
+        }
+    }
 }
 
 $controller = new AdminController();
@@ -312,11 +408,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $controller->deleteAdmin();
     } elseif ($action === 'bulkDelete') {
         $controller->bulkDeleteAdmins();
+    } elseif ($action === 'updateOrderStatus') {
+        $controller->updateOrderStatus();
     }
 } else {
     $action = $_GET['action'] ?? 'showAll';
 
     if ($action === 'showAll') {
         $controller->showAllAdmins();
+    } elseif ($action === 'updateOrderStatus') {
+        $controller->updateOrderStatus();
     }
 }

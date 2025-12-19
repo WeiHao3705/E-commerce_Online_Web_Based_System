@@ -135,10 +135,11 @@ CREATE TABLE orders (
     user_id INT(20) NOT NULL,
     voucher_id INT(20),
     total_amount DECIMAL(10, 2) NOT NULL CHECK(total_amount >= 0),
-    order_status ENUM('pending', 'paid', 'shipped', 'delivered', 'canceled', 'refunded') DEFAULT 'pending',
+    order_status ENUM('pending', 'paid', 'processing', 'shipped', 'delivered', 'canceled', 'refunded') DEFAULT 'pending',
     payment_method VARCHAR(50) DEFAULT 'credit_card',
     payment_status VARCHAR(50) DEFAULT 'pending',
     shipping_address TEXT DEFAULT NULL,
+    tracking_number VARCHAR(100) DEFAULT NULL,
     create_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
@@ -250,4 +251,19 @@ CREATE TABLE chat_message (
     FOREIGN KEY (chat_room_id) REFERENCES chat_room(chat_room_id)
         ON DELETE CASCADE,
     FOREIGN KEY (sender_id) REFERENCES users(user_id)
+);
+
+CREATE TABLE IF NOT EXISTS order_notes (
+    note_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    admin_id INT NOT NULL,
+    note_text TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    FOREIGN KEY (admin_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    
+    INDEX idx_order_id (order_id),
+    INDEX idx_admin_id (admin_id),
+    INDEX idx_created_at (created_at)
 );

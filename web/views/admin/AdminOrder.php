@@ -97,48 +97,6 @@ $pageTitle = "Manage Orders - Admin";
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AdminOrder.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: transparent;
-            color: #0f172a;
-        }
-        .page-container {
-            max-width: 100%;
-            margin: 0;
-            padding: 20px;
-        }
-        .header-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-        .btn-analytics {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            border: none;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
-        }
-        .btn-analytics:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
-        }
-    </style>
 </head>
 <body>
     <div class="page-container">
@@ -217,7 +175,7 @@ $pageTitle = "Manage Orders - Admin";
 
                 <div class="filter-actions">
                     <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
-                    <a href="orders.php" class="btn btn-secondary"><i class="fas fa-redo"></i> Reset</a>
+                    <a href="AdminOrder.php" class="btn btn-secondary"><i class="fas fa-redo"></i> Reset</a>
                 </div>
             </form>
         </section>
@@ -273,7 +231,7 @@ $pageTitle = "Manage Orders - Admin";
                                 <td><?= date('M d, Y H:i', strtotime($order['create_at'])) ?></td>
                                 <td>
                                     <div class="action-buttons">
-                                        <a href="order_details.php?id=<?= $order['order_id'] ?>" class="btn-action btn-view" title="View Details">
+                                        <a href="OrderDetails.php?id=<?= $order['order_id'] ?>" class="btn-action btn-view" title="View Details">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         <button onclick="updateOrderStatus(<?= $order['order_id'] ?>)" class="btn-action btn-edit" title="Update Status">
@@ -289,11 +247,133 @@ $pageTitle = "Manage Orders - Admin";
         </section>
     </div>
 
+    <!-- Update Order Status Modal -->
+    <div id="updateStatusModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> Update Order Status</h2>
+                <button class="close-btn" onclick="closeStatusModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="updateStatusForm">
+                    <input type="hidden" id="order_id" name="order_id">
+                    
+                    <div class="form-group">
+                        <label for="order_status"><i class="fas fa-box"></i> Order Status</label>
+                        <select id="order_status" name="order_status" required>
+                            <option value="pending">Pending</option>
+                            <option value="paid">Paid</option>
+                            <option value="processing">Processing</option>
+                            <option value="shipped">Shipped</option>
+                            <option value="delivered">Delivered</option>
+                            <option value="canceled">Canceled</option>
+                            <option value="refunded">Refunded</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="payment_status"><i class="fas fa-credit-card"></i> Payment Status</label>
+                        <select id="payment_status" name="payment_status">
+                            <option value="pending">Pending</option>
+                            <option value="completed">Completed</option>
+                            <option value="failed">Failed</option>
+                            <option value="refunded">Refunded</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tracking_number"><i class="fas fa-truck"></i> Tracking Number (Optional)</label>
+                        <input type="text" id="tracking_number" name="tracking_number" placeholder="Enter tracking number">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="admin_notes"><i class="fas fa-sticky-note"></i> Admin Notes (Optional)</label>
+                        <textarea id="admin_notes" name="admin_notes" rows="3" placeholder="Add internal notes..."></textarea>
+                    </div>
+
+                    <div class="form-group checkbox-group">
+                        <label>
+                            <input type="checkbox" id="send_email" name="send_email" checked>
+                            <span>Send email notification to customer</span>
+                        </label>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="closeStatusModal()">Cancel</button>
+                        <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Update Status</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
     function updateOrderStatus(orderId) {
-        // Future implementation for updating order status
-        alert('Update order status feature - Order #' + String(orderId).padStart(6, '0'));
+        // Get current order data
+        const orderRow = event.target.closest('tr');
+        const currentStatus = orderRow.querySelector('.status-badge').textContent.trim().toLowerCase();
+        const currentPaymentStatus = orderRow.querySelector('.payment-badge').textContent.trim().toLowerCase();
+        
+        // Populate modal
+        document.getElementById('order_id').value = orderId;
+        document.getElementById('order_status').value = currentStatus;
+        document.getElementById('payment_status').value = currentPaymentStatus;
+        document.getElementById('tracking_number').value = '';
+        document.getElementById('admin_notes').value = '';
+        document.getElementById('send_email').checked = true;
+        
+        // Show modal
+        document.getElementById('updateStatusModal').style.display = 'flex';
     }
+
+    function closeStatusModal() {
+        document.getElementById('updateStatusModal').style.display = 'none';
+        document.getElementById('updateStatusForm').reset();
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('updateStatusModal');
+        if (event.target === modal) {
+            closeStatusModal();
+        }
+    }
+
+    // Handle form submission
+    $(document).ready(function() {
+        $('#updateStatusForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = $(this).serialize();
+            const submitBtn = $(this).find('button[type="submit"]');
+            const originalText = submitBtn.html();
+            
+            // Disable button and show loading
+            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+            
+            $.ajax({
+                url: '<?php echo $controllerBasePath; ?>AdminController.php?action=updateOrderStatus',
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        alert('✓ Order status updated successfully!');
+                        location.reload();
+                    } else {
+                        alert('✗ Error: ' + (response.message || 'Failed to update order status'));
+                        submitBtn.prop('disabled', false).html(originalText);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX Error:', error);
+                    alert('✗ Error: Failed to update order status. Please try again.');
+                    submitBtn.prop('disabled', false).html(originalText);
+                }
+            });
+        });
+    });
     </script>
 </body>
 </html>
