@@ -83,27 +83,64 @@ $(document).ready(function() {
                 self.hideAdminChatByUsernameForm();
             });
             
-            // Admin chat by username form submit
+            // Admin chat by username form submit - prevent default and handle manually
             $('#adminChatByUsernameFormElement').on('submit', function(e) {
                 e.preventDefault();
-                self.createChatRoomByUsername();
-            });
-            
-            // Enter key in username input (only submit if no dropdown is shown)
-            $('#memberUsername').on('keypress', function(e) {
-                if (e.which === 13) {
-                    e.preventDefault();
-                    // If dropdown is visible and has results, don't submit - let user select first
-                    if ($('#memberSearchDropdown').is(':visible') && $('#memberSearchDropdown .member-search-item').length > 0) {
-                        // Select first item if arrow keys are used
-                        return;
-                    }
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                
+                // Only submit if dropdown is not visible (user explicitly submitted)
+                if (!$('#memberSearchDropdown').is(':visible')) {
                     self.createChatRoomByUsername();
                 }
+                return false;
+            });
+            
+            // Enter key in username input - prevent default form submission when searching
+            $('#memberUsername').on('keydown', function(e) {
+                // Only handle Enter key
+                if (e.which !== 13 && e.keyCode !== 13) {
+                    return; // Let other keys work normally
+                }
+                
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                
+                const searchTerm = $(this).val().trim();
+                
+                // If dropdown is visible with results, select the first item instead of submitting
+                if ($('#memberSearchDropdown').is(':visible') && $('#memberSearchDropdown .member-search-item:not(.member-search-no-results)').length > 0) {
+                    const $firstItem = $('#memberSearchDropdown .member-search-item:first');
+                    if ($firstItem.length) {
+                        $firstItem.trigger('click');
+                    }
+                    return false;
+                }
+                
+                // Only submit if there's a value and dropdown is NOT visible (user explicitly wants to submit)
+                // Don't submit if user is in the middle of searching
+                if (searchTerm.length > 0 && !$('#memberSearchDropdown').is(':visible')) {
+                    // Check if there's a pending search - if so, wait for it
+                    if (self.memberSearchTimeout) {
+                        // Wait for search to complete, then submit
+                        clearTimeout(self.memberSearchTimeout);
+                        setTimeout(function() {
+                            self.createChatRoomByUsername();
+                        }, 400);
+                    } else {
+                        // No pending search, submit immediately
+                        self.createChatRoomByUsername();
+                    }
+                }
+                return false;
             });
             
             // Input event for member search with debouncing
-            $('#memberUsername').on('input', function() {
+            $('#memberUsername').on('input', function(e) {
+                // Prevent any form submission while typing
+                e.stopPropagation();
+                
                 const searchTerm = $(this).val().trim();
                 clearTimeout(self.memberSearchTimeout);
                 
@@ -211,9 +248,9 @@ $(document).ready(function() {
             $('#adminChatByUsernameForm').hide();
             
             if (this.userRole === 'member') {
-                this.loadChatRooms();
+                this.loadChatRooms(false);
             } else {
-                this.loadAdminChatRooms();
+                this.loadAdminChatRooms(false);
             }
         },
         
@@ -245,7 +282,7 @@ $(document).ready(function() {
             });
         },
         
-        loadChatRooms: function() {
+        loadChatRooms: function(suppressAutoNewChat) {
             const self = this;
             $.ajax({
                 url: window.chatControllerUrl || 'controller/ChatController.php',
@@ -254,7 +291,7 @@ $(document).ready(function() {
                 dataType: 'json',
                 success: function(response) {
                     if (response.success) {
-                        self.renderChatRooms(response.chat_rooms);
+                        self.renderChatRooms(response.chat_rooms, false, suppressAutoNewChat);
                     } else {
                         self.showError('Failed to load chat rooms');
                     }
@@ -283,9 +320,9 @@ $(document).ready(function() {
                 success: function(response) {
                     if (response.success) {
                         if (self.userRole === 'admin') {
-                            self.renderAdminChatRooms(response.chat_rooms);
+                            self.renderAdminChatRooms(response.chat_rooms, true, false);
                         } else {
-                            self.renderChatRooms(response.chat_rooms);
+                            self.renderChatRooms(response.chat_rooms, true, false);
                         }
                     } else {
                         self.showError('Search failed: ' + (response.error || 'Unknown error'));
@@ -299,13 +336,13 @@ $(document).ready(function() {
         
         clearSearch: function() {
             if (this.userRole === 'admin') {
-                this.loadAdminChatRooms();
+                this.loadAdminChatRooms(false);
             } else {
-                this.loadChatRooms();
+                this.loadChatRooms(false);
             }
         },
         
-        loadAdminChatRooms: function() {
+        loadAdminChatRooms: function(suppressAutoNewChat) {
             const self = this;
             $.ajax({
                 url: window.chatControllerUrl || 'controller/ChatController.php',
@@ -314,7 +351,7 @@ $(document).ready(function() {
                 dataType: 'json',
                 success: function(response) {
                     if (response.success) {
-                        self.renderAdminChatRooms(response.chat_rooms);
+                        self.renderAdminChatRooms(response.chat_rooms, false, suppressAutoNewChat);
                     } else {
                         self.showError('Failed to load chat rooms');
                     }
@@ -325,13 +362,25 @@ $(document).ready(function() {
             });
         },
         
-        renderChatRooms: function(chatRooms) {
+        renderChatRooms: function(chatRooms, isSearchResult, suppressAutoNewChat) {
             const $container = $('#chatRoomsItems');
             $container.empty();
             
             if (chatRooms.length === 0) {
-                $container.html('<div class="empty-state"><i class="fas fa-inbox"></i><p>No chat rooms yet</p><p class="empty-hint">Start a new conversation to get help</p></div>');
-                this.showNewChatForm();
+                if (isSearchResult) {
+                    // Show "no results" message during search, don't redirect to new chat form
+                    $container.html('<div class="empty-state"><i class="fas fa-search"></i><p>No chat rooms found</p><p class="empty-hint">Try a different search term</p></div>');
+                } else {
+                    // Show empty state message
+                    $container.html('<div class="empty-state"><i class="fas fa-inbox"></i><p>No chat rooms yet</p><p class="empty-hint">Start a new conversation to get help</p></div>');
+                    // Only auto-show new chat form if not suppressed (i.e., not coming from cancel)
+                    if (!suppressAutoNewChat) {
+                        this.showNewChatForm();
+                    }
+                }
+                // Ensure chat rooms list is visible even when empty
+                $('#chatRoomsList').show();
+                $('#chatInterface').hide();
                 return;
             }
             
@@ -366,12 +415,21 @@ $(document).ready(function() {
             $('#chatInterface').hide();
         },
         
-        renderAdminChatRooms: function(chatRooms) {
+        renderAdminChatRooms: function(chatRooms, isSearchResult, suppressAutoNewChat) {
             const $container = $('#chatRoomsItems');
             $container.empty();
             
             if (chatRooms.length === 0) {
-                $container.html('<div class="empty-state"><i class="fas fa-inbox"></i><p>No chat rooms</p></div>');
+                if (isSearchResult) {
+                    // Show "no results" message during search
+                    $container.html('<div class="empty-state"><i class="fas fa-search"></i><p>No chat rooms found</p><p class="empty-hint">Try a different search term</p></div>');
+                } else {
+                    // Show regular empty state when loading initial list
+                    $container.html('<div class="empty-state"><i class="fas fa-inbox"></i><p>No chat rooms</p></div>');
+                }
+                // Ensure chat rooms list is visible even when empty
+                $('#chatRoomsList').show();
+                $('#chatInterface').hide();
                 return;
             }
             
@@ -411,7 +469,7 @@ $(document).ready(function() {
             $('#chatInterface').hide();
         },
         
-        showChatRoomsList: function() {
+        showChatRoomsList: function(suppressAutoNewChat) {
             this.currentChatRoomId = null;
             $('#chatRoomsList').show();
             $('#chatInterface').hide();
@@ -427,9 +485,9 @@ $(document).ready(function() {
             
             // Reload chat rooms to ensure list is up to date
             if (this.userRole === 'admin') {
-                this.loadAdminChatRooms();
+                this.loadAdminChatRooms(suppressAutoNewChat);
             } else {
-                this.loadChatRooms();
+                this.loadChatRooms(suppressAutoNewChat);
             }
         },
         
@@ -663,6 +721,9 @@ $(document).ready(function() {
             // Reset form state
             const $form = $('#newChatFormElement');
             $form.find('input, textarea, button').prop('disabled', false);
+            
+            // Show chat rooms list again, suppressing auto-show of new chat form
+            this.showChatRoomsList(true);
         },
         
         showAdminChatByUsernameForm: function() {
@@ -693,6 +754,9 @@ $(document).ready(function() {
             // Reset form state
             const $form = $('#adminChatByUsernameFormElement');
             $form.find('input, button').prop('disabled', false);
+            
+            // Show chat rooms list again, suppressing auto-show of new chat form
+            this.showChatRoomsList(true);
         },
         
         createChatRoomByUsername: function() {
@@ -723,7 +787,7 @@ $(document).ready(function() {
                         self.hideAdminChatByUsernameForm();
                         
                         // Refresh chat rooms list to show the new/existing chat
-                        self.loadAdminChatRooms();
+                        self.loadAdminChatRooms(false);
                         
                         // Load the chat room
                         self.loadChatRoom(response.chat_room_id);
@@ -814,9 +878,9 @@ $(document).ready(function() {
                     $('#memberUsername').val(username);
                     $dropdown.hide().empty();
                     // Clear any search timeout
-                    if (this.memberSearchTimeout) {
-                        clearTimeout(this.memberSearchTimeout);
-                        this.memberSearchTimeout = null;
+                    if (self.memberSearchTimeout) {
+                        clearTimeout(self.memberSearchTimeout);
+                        self.memberSearchTimeout = null;
                     }
                 });
                 
@@ -855,7 +919,7 @@ $(document).ready(function() {
                         self.hideNewChatForm();
                         
                         // Refresh chat rooms list to show the new chat
-                        self.loadChatRooms();
+                        self.loadChatRooms(false);
                         
                         // Load the newly created chat room
                         self.loadChatRoom(response.chat_room_id);
@@ -924,9 +988,9 @@ $(document).ready(function() {
                         
                         // Refresh chat rooms list to update status badges
                         if (self.userRole === 'admin') {
-                            self.loadAdminChatRooms();
+                            self.loadAdminChatRooms(false);
                         } else {
-                            self.loadChatRooms();
+                            self.loadChatRooms(false);
                         }
                     } else {
                         self.showError('Failed to close chat room');
@@ -968,9 +1032,9 @@ $(document).ready(function() {
                         
                         // Refresh chat rooms list
                         if (self.userRole === 'admin') {
-                            self.loadAdminChatRooms();
+                            self.loadAdminChatRooms(false);
                         } else {
-                            self.loadChatRooms();
+                            self.loadChatRooms(false);
                         }
                     } else {
                         self.showError('Failed to reopen chat room');
