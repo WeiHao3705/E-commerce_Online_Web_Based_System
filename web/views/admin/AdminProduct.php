@@ -246,10 +246,10 @@ $pageTitle = 'Admin Products';
 				<p style="margin:0;color:#64748b;font-size:13px;font-weight:600;">Backoffice</p>
 				<h1 class="page-title">Products</h1>
 			</div>
-			<button class="btn btn-primary" id="openCreateModal">
+			<a href="AddProduct.php" class="btn btn-primary">
 				<span class="material-symbols-outlined">add</span>
 				Add product
-			</button>
+			</a>
 		</div>
 
 		<?php if ($flashSuccess): ?>
@@ -382,52 +382,6 @@ $pageTitle = 'Admin Products';
 					<?php endfor; ?>
 				</div>
 			<?php endif; ?>
-		</div>
-	</div>
-
-	<div class="modal-overlay" id="createModal">
-		<div class="modal">
-			<div class="modal-header">
-				<h3>Add new product</h3>
-				<button class="btn btn-ghost" id="closeCreateModal">Close</button>
-			</div>
-			<form method="POST" action="AdminProduct.php">
-				<input type="hidden" name="action" value="create_product">
-				<div class="form-grid">
-					<div class="form-group">
-						<label for="product_name">Product name</label>
-						<input type="text" id="product_name" name="product_name" required>
-					</div>
-					<div class="form-group">
-						<label for="category">Category</label>
-						<input type="text" id="category" name="category" required>
-					</div>
-					<div class="form-group">
-						<label for="cost">Cost (RM)</label>
-						<input type="number" step="0.01" min="0" id="cost" name="cost" required>
-					</div>
-					<div class="form-group">
-						<label for="original_price">Original price (RM)</label>
-						<input type="number" step="0.01" min="0" id="original_price" name="original_price" required>
-					</div>
-					<div class="form-group">
-						<label for="selling_price">Selling price (RM)</label>
-						<input type="number" step="0.01" min="0" id="selling_price" name="selling_price" required>
-					</div>
-					<div class="form-group">
-						<label for="image_path">Image URL (optional)</label>
-						<input type="text" id="image_path" name="image_path" placeholder="/web/images/products/your-image.jpg">
-					</div>
-				</div>
-				<div class="form-group" style="margin-top:10px;">
-					<label for="description">Description</label>
-					<textarea id="description" name="description" placeholder="Short description"></textarea>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-ghost" id="cancelCreate">Cancel</button>
-					<button type="submit" class="btn btn-primary">Create</button>
-				</div>
-			</form>
 		</div>
 	</div>
 
