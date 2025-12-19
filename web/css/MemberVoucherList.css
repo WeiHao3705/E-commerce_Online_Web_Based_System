@@ -651,8 +651,8 @@
     }
 
     .voucher-card-content {
-        background-color: #221010;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        background-color: #ffffff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
 
     .voucher-title-text {
@@ -682,8 +682,8 @@
     }
 
     .redeem-voucher-card {
-        background-color: #221010;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        background-color: #ffffff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
 
     .redeem-voucher-title {
@@ -711,9 +711,9 @@
     }
 
     .error-message {
-        background-color: #7f1d1d;
-        color: #fca5a5;
-        border-color: #ef4444;
+        background-color: #fee2e2;
+        color: #991b1b;
+        border-color: #fca5a5;
     }
 }
 
@@ -800,8 +800,8 @@
 /* Dark mode support for dropdown */
 @media (prefers-color-scheme: dark) {
     .sort-dropdown-menu {
-        background-color: #221010;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        background-color: #ffffff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
     
     .sort-option {
