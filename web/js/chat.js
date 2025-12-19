@@ -6,15 +6,66 @@ $(document).ready(function() {
         userId: null,
         pollInterval: null,
         memberSearchTimeout: null,
+        isDragging: false,
+        dragOffset: { x: 0, y: 0 },
         
         init: function() {
             // Get user data from body attributes or session
             this.userRole = $('body').data('user-role') || 'member';
             this.userId = $('body').data('user-id') || null;
             
+            this.restorePosition();
             this.bindEvents();
+            this.initDrag();
             this.loadUnreadCount();
             this.startPolling();
+            this.handleWindowResize();
+        },
+        
+        handleWindowResize: function() {
+            const self = this;
+            let resizeTimeout;
+            
+            $(window).on('resize', function() {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(function() {
+                    // Ensure container stays within viewport
+                    const $container = $('#chatbotContainer');
+                    const containerPos = $container.position();
+                    const containerWidth = $container.outerWidth();
+                    const containerHeight = $container.outerHeight();
+                    const windowWidth = $(window).width();
+                    const windowHeight = $(window).height();
+                    
+                    let x = containerPos.left;
+                    let y = containerPos.top;
+                    
+                    // Adjust if out of bounds
+                    if (x + containerWidth > windowWidth) {
+                        x = windowWidth - containerWidth;
+                    }
+                    if (y + containerHeight > windowHeight) {
+                        y = windowHeight - containerHeight;
+                    }
+                    if (x < 0) x = 0;
+                    if (y < 0) y = 0;
+                    
+                    if (x !== containerPos.left || y !== containerPos.top) {
+                        $container.css({
+                            left: x + 'px',
+                            top: y + 'px',
+                            right: 'auto',
+                            bottom: 'auto'
+                        });
+                        self.savePosition(x, y);
+                    }
+                    
+                    // Adjust window position if open
+                    if (self.isOpen) {
+                        self.adjustWindowPosition();
+                    }
+                }, 100);
+            });
         },
         
         bindEvents: function() {
@@ -231,6 +282,119 @@ $(document).ready(function() {
             });
         },
         
+        initDrag: function() {
+            const self = this;
+            const $container = $('#chatbotContainer');
+            const $toggle = $('#chatbotToggle');
+            let startX, startY, initialX, initialY;
+            
+            $toggle.on('mousedown', function(e) {
+                // Only start dragging if clicking on the toggle button itself, not on child elements
+                if (e.target !== this && !$(e.target).closest('.unread-badge').length) {
+                    return;
+                }
+                
+                // Prevent default to avoid text selection
+                e.preventDefault();
+                
+                self.isDragging = true;
+                $toggle.addClass('dragging');
+                
+                // Get initial mouse position
+                startX = e.clientX;
+                startY = e.clientY;
+                
+                // Get initial container position
+                const containerPos = $container.position();
+                initialX = containerPos.left;
+                initialY = containerPos.top;
+                
+                // Add mousemove and mouseup handlers to document
+                $(document).on('mousemove.chatbot', function(e) {
+                    if (!self.isDragging) return;
+                    
+                    // Calculate new position
+                    const deltaX = e.clientX - startX;
+                    const deltaY = e.clientY - startY;
+                    
+                    let newX = initialX + deltaX;
+                    let newY = initialY + deltaY;
+                    
+                    // Constrain to viewport
+                    const containerWidth = $container.outerWidth();
+                    const containerHeight = $container.outerHeight();
+                    const windowWidth = $(window).width();
+                    const windowHeight = $(window).height();
+                    
+                    newX = Math.max(0, Math.min(newX, windowWidth - containerWidth));
+                    newY = Math.max(0, Math.min(newY, windowHeight - containerHeight));
+                    
+                    // Update position
+                    $container.css({
+                        left: newX + 'px',
+                        top: newY + 'px',
+                        right: 'auto',
+                        bottom: 'auto'
+                    });
+                    
+                    // Adjust window position if open
+                    if (self.isOpen) {
+                        self.adjustWindowPosition();
+                    }
+                });
+                
+                $(document).on('mouseup.chatbot', function() {
+                    if (self.isDragging) {
+                        self.isDragging = false;
+                        $toggle.removeClass('dragging');
+                        
+                        // Save position to localStorage
+                        const pos = $container.position();
+                        self.savePosition(pos.left, pos.top);
+                        
+                        // Remove event handlers
+                        $(document).off('mousemove.chatbot mouseup.chatbot');
+                    }
+                });
+            });
+        },
+        
+        savePosition: function(x, y) {
+            try {
+                localStorage.setItem('chatbotPosition', JSON.stringify({ x: x, y: y }));
+            } catch (e) {
+                // Ignore localStorage errors
+            }
+        },
+        
+        restorePosition: function() {
+            try {
+                const saved = localStorage.getItem('chatbotPosition');
+                if (saved) {
+                    const pos = JSON.parse(saved);
+                    const $container = $('#chatbotContainer');
+                    
+                    // Validate position is within viewport
+                    const windowWidth = $(window).width();
+                    const windowHeight = $(window).height();
+                    const containerWidth = $container.outerWidth();
+                    const containerHeight = $container.outerHeight();
+                    
+                    let x = Math.max(0, Math.min(pos.x, windowWidth - containerWidth));
+                    let y = Math.max(0, Math.min(pos.y, windowHeight - containerHeight));
+                    
+                    $container.css({
+                        left: x + 'px',
+                        top: y + 'px',
+                        right: 'auto',
+                        bottom: 'auto'
+                    });
+                }
+            } catch (e) {
+                // Ignore localStorage errors
+            }
+        },
+        
         toggle: function() {
             if (this.isOpen) {
                 this.close();
@@ -243,6 +407,9 @@ $(document).ready(function() {
             this.isOpen = true;
             $('#chatbotWindow').addClass('active');
             
+            // Adjust window position based on container position
+            this.adjustWindowPosition();
+            
             // Hide all forms initially
             $('#newChatForm').hide();
             $('#adminChatByUsernameForm').hide();
@@ -252,6 +419,47 @@ $(document).ready(function() {
             } else {
                 this.loadAdminChatRooms(false);
             }
+        },
+        
+        adjustWindowPosition: function() {
+            const $container = $('#chatbotContainer');
+            const $window = $('#chatbotWindow');
+            const containerPos = $container.position();
+            const containerWidth = $container.outerWidth();
+            const windowWidth = $window.outerWidth();
+            const windowHeight = $window.outerHeight();
+            const viewportWidth = $(window).width();
+            const viewportHeight = $(window).height();
+            
+            // Check if container is on the left side
+            const isOnLeft = containerPos.left < viewportWidth / 2;
+            
+            // Check if window would go off-screen
+            let newRight = 'auto';
+            let newLeft = 'auto';
+            let newBottom = '80px';
+            
+            if (isOnLeft) {
+                // Position window to the left of container
+                newLeft = '0';
+                newRight = 'auto';
+            } else {
+                // Position window to the right of container (default)
+                newRight = '0';
+                newLeft = 'auto';
+            }
+            
+            // Check if window would go off bottom of screen
+            const containerTop = containerPos.top;
+            if (containerTop + windowHeight > viewportHeight) {
+                newBottom = (viewportHeight - containerTop + 20) + 'px';
+            }
+            
+            $window.css({
+                right: newRight,
+                left: newLeft,
+                bottom: newBottom
+            });
         },
         
         close: function() {

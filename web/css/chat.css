@@ -4,6 +4,7 @@
     right: 20px;
     z-index: 1000;
     font-family: 'Poppins', sans-serif;
+    user-select: none;
 }
 
 .chatbot-toggle {
@@ -14,7 +15,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
+    cursor: move;
     box-shadow: 0 4px 15px rgba(255, 82, 82, 0.3);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     position: relative;
@@ -25,6 +26,24 @@
 .chatbot-toggle:hover {
     transform: scale(1.1);
     box-shadow: 0 6px 20px rgba(255, 82, 82, 0.4);
+}
+
+.chatbot-toggle.dragging {
+    cursor: grabbing;
+    transform: scale(1.15);
+    box-shadow: 0 8px 25px rgba(255, 82, 82, 0.5);
+}
+
+.chatbot-toggle::after {
+    content: '⋮⋮';
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    opacity: 0.7;
+    line-height: 1;
+    letter-spacing: -2px;
 }
 
 .unread-badge {
@@ -50,6 +69,7 @@
     right: 0;
     width: 380px;
     height: 600px;
+    max-height: calc(100vh - 100px);
     background: white;
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
@@ -57,6 +77,8 @@
     flex-direction: column;
     overflow: hidden;
 }
+
+/* Adjust window position when container is moved - handled by JavaScript */
 
 .chatbot-window.active {
     display: flex;
