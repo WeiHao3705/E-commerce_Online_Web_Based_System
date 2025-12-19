@@ -1,0 +1,288 @@
+/* Product details page layout */
+.product-detail-container {
+    max-width: 1000px;
+    margin: 40px auto 60px;
+    padding: 0 20px;
+}
+
+.product-detail-title {
+    margin: 0 0 30px;
+    font-size: 32px;
+    font-weight: 700;
+    color: #111827;
+    letter-spacing: -0.5px;
+}
+
+.product-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: start;
+}
+
+/* Left side - Image gallery */
+.product-gallery {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.main-image-wrapper {
+    width: 100%;
+    background: #f8f9fa;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    min-height: 300px;
+}
+
+.main-image-wrapper img {
+    max-width: 100%;
+    max-height: 500px;
+    object-fit: contain;
+    border-radius: 12px;
+    display: block;
+}
+
+.no-image-placeholder {
+    text-align: center;
+    color: #9ca3af;
+}
+
+.thumbnail-gallery {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.thumbnail-item {
+    text-align: center;
+    flex: 0 1 calc(25% - 8px);
+}
+
+.thumbnail-item img {
+    width: 100%;
+    aspect-ratio: 1;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    cursor: pointer;
+    object-fit: cover;
+    transition: all 140ms ease;
+    display: block;
+}
+
+.thumbnail-item img:hover {
+    border-color: #9ca3af;
+    transform: scale(1.03);
+}
+
+.thumbnail-item img.selected {
+    border-color: #ef8324;
+    background: #fef3f0;
+}
+
+.thumbnail-label {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+/* Right side - Details & Form */
+.product-info {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.price-badge {
+    display: inline-block;
+    font-size: 28px;
+    font-weight: 700;
+    color: #ef8324;
+    background: #fef3f0;
+    padding: 12px 18px;
+    border-radius: 8px;
+    width: fit-content;
+}
+
+.product-description {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.6;
+    color: #374151;
+}
+
+.options-section {
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.options-section h3 {
+    margin: 0 0 16px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.form-group select,
+.form-group input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    transition: border-color 140ms ease;
+}
+
+.form-group select:focus,
+.form-group input:focus {
+    outline: none;
+    border-color: #ef8324;
+    box-shadow: 0 0 0 3px rgba(239, 131, 36, 0.1);
+}
+
+.form-group input[type="number"] {
+    width: 120px;
+}
+
+.add-to-cart-btn {
+    width: 100%;
+    padding: 14px 24px;
+    background-color: #ef8324;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 140ms ease;
+    margin-top: 10px;
+}
+
+.add-to-cart-btn:hover {
+    background-color: #d66a1a;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(239, 131, 36, 0.3);
+}
+
+.add-to-cart-btn:active {
+    transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+    .product-detail-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+
+    .product-detail-container {
+        margin: 20px auto 40px;
+    }
+
+    .product-detail-title {
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+}
+
+/* Login modal */
+.login-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.login-modal.open {
+    display: flex;
+}
+
+.login-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.login-modal__dialog {
+    position: relative;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    width: min(420px, 90vw);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
+    z-index: 1;
+}
+
+.login-modal__title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.login-modal__body {
+    margin: 12px 0 18px;
+    color: #374151;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.login-modal__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.login-modal__btn {
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease, border-color 120ms ease;
+}
+
+.login-modal__btn--ghost {
+    background: #f3f4f6;
+    color: #374151;
+    border-color: #e5e7eb;
+}
+
+.login-modal__btn--ghost:hover {
+    background: #e5e7eb;
+}
+
+.login-modal__btn--primary {
+    background: #ef8324;
+    color: #ffffff;
+    border-color: #ef8324;
+    box-shadow: 0 10px 20px rgba(239, 131, 36, 0.25);
+}
+
+.login-modal__btn--primary:hover {
+    background: #d66a1a;
+    border-color: #d66a1a;
+}
+
+.login-modal__btn:active {
+    transform: translateY(1px);
+}
