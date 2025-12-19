@@ -40,6 +40,11 @@ $prefix = $webBasePath;
                         <i class="fas fa-plus"></i> New Chat
                     </button>
                     <?php endif; ?>
+                    <?php if ($_SESSION['user']->role === 'admin'): ?>
+                    <button class="btn-new-chat" id="adminChatByUsernameBtn" title="Chat with member by username">
+                        <i class="fas fa-user-plus"></i> Chat with Member
+                    </button>
+                    <?php endif; ?>
                 </div>
                 <div class="chat-rooms-search">
                     <input type="text" id="chatRoomSearch" placeholder="<?php echo $_SESSION['user']->role === 'admin' ? 'Search by member name...' : 'Search by admin name...'; ?>" autocomplete="off">
@@ -87,6 +92,24 @@ $prefix = $webBasePath;
                     <div class="form-actions">
                         <button type="submit" class="btn-primary">Send</button>
                         <button type="button" class="btn-secondary" id="cancelNewChatBtn">Cancel</button>
+                    </div>
+                </form>
+            </div>
+            <?php endif; ?>
+            
+            <!-- Admin Chat by Username Form (for admins only) -->
+            <?php if ($_SESSION['user']->role === 'admin'): ?>
+            <div class="new-chat-form" id="adminChatByUsernameForm" style="display: none;">
+                <h4>Chat with Member</h4>
+                <form id="adminChatByUsernameFormElement">
+                    <div class="form-group" style="position: relative;">
+                        <label for="memberUsername">Member Username:</label>
+                        <input type="text" id="memberUsername" placeholder="Enter member username or name..." autocomplete="off">
+                        <div class="member-search-dropdown" id="memberSearchDropdown" style="display: none;"></div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Start Chat</button>
+                        <button type="button" class="btn-secondary" id="cancelAdminChatBtn">Cancel</button>
                     </div>
                 </form>
             </div>

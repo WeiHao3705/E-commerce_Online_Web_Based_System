@@ -108,4 +108,30 @@ class ChatService
             return new ChatRoomDTO($item);
         }, $data);
     }
+
+    /**
+     * Create or get existing chat room for a member by username (admin only)
+     * Returns chat room ID
+     */
+    public function createChatRoomByUsername($username, $adminId)
+    {
+        // Get member by username
+        $member = $this->chatRepository->getMemberByUsername($username);
+        
+        if (!$member) {
+            throw new Exception('Member not found with username: ' . $username);
+        }
+
+        // Get or create chat room for this member
+        return $this->chatRepository->getOrCreateChatRoomForMember($member['user_id'], $adminId);
+    }
+
+    /**
+     * Search members by username or full name
+     * Returns array of member data
+     */
+    public function searchMembers($searchTerm, $limit = 10)
+    {
+        return $this->chatRepository->searchMembers($searchTerm, $limit);
+    }
 }

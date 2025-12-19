@@ -64,6 +64,12 @@ class ChatController
             case 'searchChatRooms':
                 $this->searchChatRooms();
                 break;
+            case 'createChatRoomByUsername':
+                $this->createChatRoomByUsername();
+                break;
+            case 'searchMembers':
+                $this->searchMembers();
+                break;
             default:
                 http_response_code(400);
                 echo json_encode(['success' => false, 'error' => 'Invalid action']);
@@ -438,6 +444,72 @@ class ChatController
         } catch (Exception $e) {
             http_response_code(500);
             echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    private function createChatRoomByUsername()
+    {
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+            return;
+        }
+
+        $role = $_SESSION['user']->role;
+        if ($role !== 'admin') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Only admins can create chat rooms by username']);
+            return;
+        }
+
+        $username = trim($_POST['username'] ?? '');
+        if (empty($username)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Username is required']);
+            return;
+        }
+
+        try {
+            $adminId = $_SESSION['user']->user_id;
+            $chatRoomId = $this->chatService->createChatRoomByUsername($username, $adminId);
+            echo json_encode(['success' => true, 'chat_room_id' => $chatRoomId]);
+        } catch (Exception $e) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    private function searchMembers()
+    {
+        header('Content-Type: application/json');
+        
+        $role = $_SESSION['user']->role ?? '';
+        if ($role !== 'admin') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Only admins can search members']);
+            return;
+        }
+
+        $searchTerm = trim($_GET['search'] ?? $_POST['search'] ?? '');
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+
+        if (empty($searchTerm)) {
+            echo json_encode(['success' => true, 'members' => []]);
+            return;
+        }
+
+        try {
+            $members = $this->chatService->searchMembers($searchTerm, $limit);
+            echo json_encode(['success' => true, 'members' => $members]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            error_log('ChatController searchMembers error: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
+            echo json_encode([
+                'success' => false, 
+                'error' => 'Failed to search members: ' . $e->getMessage()
+            ]);
         }
     }
 }

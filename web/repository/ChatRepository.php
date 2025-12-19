@@ -237,4 +237,105 @@ class ChatRepository
         
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * Get member by username
+     * Returns member user data or null if not found
+     */
+    public function getMemberByUsername($username)
+    {
+        try {
+            $sql = "SELECT * FROM users WHERE username = ? AND role = 'member' LIMIT 1";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$username]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log('ChatRepository getMemberByUsername error: ' . $e->getMessage());
+            throw new Exception('Failed to retrieve member: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get existing open chat room for a member, or create a new one
+     * Returns chat room ID
+     */
+    public function getOrCreateChatRoomForMember($memberId, $adminId = null)
+    {
+        try {
+            // First, try to find an existing open chat room for this member
+            $sql = "SELECT chat_room_id FROM chat_room WHERE member_id = ? AND status = 'open' ORDER BY created_at DESC LIMIT 1";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$memberId]);
+            $existingRoom = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($existingRoom) {
+                $chatRoomId = $existingRoom['chat_room_id'];
+                // If admin ID is provided and chat room is not assigned, assign it
+                if ($adminId) {
+                    $updateSql = "UPDATE chat_room SET admin_id = ? WHERE chat_room_id = ? AND admin_id IS NULL";
+                    $updateStmt = $this->db->prepare($updateSql);
+                    $updateStmt->execute([$adminId, $chatRoomId]);
+                }
+                return $chatRoomId;
+            }
+
+            // If no open chat room exists, create a new one
+            $sql = "INSERT INTO chat_room (member_id, admin_id, status) VALUES (?, ?, 'open')";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$memberId, $adminId]);
+            return $this->db->lastInsertId();
+        } catch (PDOException $e) {
+            error_log('ChatRepository getOrCreateChatRoomForMember error: ' . $e->getMessage());
+            throw new Exception('Failed to get or create chat room: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Search members by username or full name
+     * Returns array of member data matching the search term
+     */
+    public function searchMembers($searchTerm, $limit = 10)
+    {
+        try {
+            $searchTerm = trim($searchTerm);
+            $limit = (int)$limit;
+            if ($limit < 1) $limit = 10;
+            if ($limit > 50) $limit = 50; // Cap at 50 results
+            
+            // Create search pattern with wildcards
+            $searchPattern = '%' . $searchTerm . '%';
+            
+            // Create pattern for username starting with search term (higher priority)
+            $usernameStartPattern = $searchTerm . '%';
+            
+            $sql = "SELECT user_id, username, full_name, email, profile_photo, status
+                    FROM users
+                    WHERE role = 'member'
+                    AND (username LIKE ? OR full_name LIKE ?)
+                    ORDER BY 
+                        CASE 
+                            WHEN username LIKE ? THEN 1
+                            WHEN username LIKE ? THEN 2
+                            WHEN full_name LIKE ? THEN 3
+                            ELSE 4
+                        END,
+                        username ASC
+                    LIMIT ?";
+            
+            $stmt = $this->db->prepare($sql);
+            // Bind parameters: WHERE clause (2), ORDER BY CASE (3)
+            $stmt->bindValue(1, $searchPattern, PDO::PARAM_STR);      // WHERE username LIKE
+            $stmt->bindValue(2, $searchPattern, PDO::PARAM_STR);      // WHERE full_name LIKE
+            $stmt->bindValue(3, $usernameStartPattern, PDO::PARAM_STR); // ORDER BY: username starts with (highest priority)
+            $stmt->bindValue(4, $searchPattern, PDO::PARAM_STR);      // ORDER BY: username contains
+            $stmt->bindValue(5, $searchPattern, PDO::PARAM_STR);      // ORDER BY: full_name contains
+            $stmt->bindValue(6, $limit, PDO::PARAM_INT);              // LIMIT (must be integer)
+            $stmt->execute();
+            
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log('ChatRepository searchMembers error: ' . $e->getMessage());
+            throw new Exception('Failed to search members: ' . $e->getMessage());
+        }
+    }
 }

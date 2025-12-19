@@ -5,6 +5,7 @@ $(document).ready(function() {
         userRole: null,
         userId: null,
         pollInterval: null,
+        memberSearchTimeout: null,
         
         init: function() {
             // Get user data from body attributes or session
@@ -70,6 +71,64 @@ $(document).ready(function() {
                     e.preventDefault();
                     self.createNewChatRoom();
                 }
+            });
+            
+            // Admin chat by username button
+            $('#adminChatByUsernameBtn').on('click', function() {
+                self.showAdminChatByUsernameForm();
+            });
+            
+            // Cancel admin chat by username
+            $('#cancelAdminChatBtn').on('click', function() {
+                self.hideAdminChatByUsernameForm();
+            });
+            
+            // Admin chat by username form submit
+            $('#adminChatByUsernameFormElement').on('submit', function(e) {
+                e.preventDefault();
+                self.createChatRoomByUsername();
+            });
+            
+            // Enter key in username input (only submit if no dropdown is shown)
+            $('#memberUsername').on('keypress', function(e) {
+                if (e.which === 13) {
+                    e.preventDefault();
+                    // If dropdown is visible and has results, don't submit - let user select first
+                    if ($('#memberSearchDropdown').is(':visible') && $('#memberSearchDropdown .member-search-item').length > 0) {
+                        // Select first item if arrow keys are used
+                        return;
+                    }
+                    self.createChatRoomByUsername();
+                }
+            });
+            
+            // Input event for member search with debouncing
+            $('#memberUsername').on('input', function() {
+                const searchTerm = $(this).val().trim();
+                clearTimeout(self.memberSearchTimeout);
+                
+                if (searchTerm.length === 0) {
+                    $('#memberSearchDropdown').hide().empty();
+                    return;
+                }
+                
+                // Debounce search - wait 300ms after user stops typing
+                self.memberSearchTimeout = setTimeout(function() {
+                    self.searchMembers(searchTerm);
+                }, 300);
+            });
+            
+            // Handle clicking outside dropdown to close it
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('#adminChatByUsernameForm').length && 
+                    !$(e.target).closest('#memberSearchDropdown').length) {
+                    $('#memberSearchDropdown').hide();
+                }
+            });
+            
+            // Prevent dropdown from closing when clicking inside it
+            $('#memberSearchDropdown').on('click', function(e) {
+                e.stopPropagation();
             });
             
             // Back to chat rooms button
@@ -146,6 +205,10 @@ $(document).ready(function() {
         open: function() {
             this.isOpen = true;
             $('#chatbotWindow').addClass('active');
+            
+            // Hide all forms initially
+            $('#newChatForm').hide();
+            $('#adminChatByUsernameForm').hide();
             
             if (this.userRole === 'member') {
                 this.loadChatRooms();
@@ -354,6 +417,7 @@ $(document).ready(function() {
             $('#chatInterface').hide();
             $('#chatInterfaceHeader').hide();
             $('#newChatForm').hide();
+            $('#adminChatByUsernameForm').hide();
             // Hide close/reopen buttons when navigating away
             $('#closeChatRoomBtn').hide();
             $('#reopenChatRoomBtn').hide();
@@ -387,6 +451,7 @@ $(document).ready(function() {
             $('#chatInterface').show();
             $('#chatInterfaceHeader').show();
             $('#newChatForm').hide();
+            $('#adminChatByUsernameForm').hide();
             
             // Show loading
             $('#chatMessages').html('<div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading messages...</div>');
@@ -598,6 +663,167 @@ $(document).ready(function() {
             // Reset form state
             const $form = $('#newChatFormElement');
             $form.find('input, textarea, button').prop('disabled', false);
+        },
+        
+        showAdminChatByUsernameForm: function() {
+            // Hide other views
+            $('#chatRoomsList').hide();
+            $('#chatInterface').hide();
+            $('#chatInterfaceHeader').hide();
+            $('#newChatForm').hide();
+            
+            // Show admin chat by username form
+            $('#adminChatByUsernameForm').show();
+            
+            // Clear any previous input
+            $('#memberUsername').val('');
+            
+            // Reset form state
+            const $form = $('#adminChatByUsernameFormElement');
+            $form.find('input, button').prop('disabled', false);
+            
+            // Focus on input
+            $('#memberUsername').focus();
+        },
+        
+        hideAdminChatByUsernameForm: function() {
+            $('#adminChatByUsernameForm').hide();
+            $('#memberUsername').val('');
+            $('#memberSearchDropdown').hide().empty();
+            // Reset form state
+            const $form = $('#adminChatByUsernameFormElement');
+            $form.find('input, button').prop('disabled', false);
+        },
+        
+        createChatRoomByUsername: function() {
+            const username = $('#memberUsername').val().trim();
+            
+            if (!username) {
+                this.showError('Please enter a member username');
+                return;
+            }
+            
+            // Disable form while creating
+            const $form = $('#adminChatByUsernameFormElement');
+            $form.find('input, button').prop('disabled', true);
+            
+            const self = this;
+            $.ajax({
+                url: window.chatControllerUrl || 'controller/ChatController.php',
+                method: 'POST',
+                data: {
+                    action: 'createChatRoomByUsername',
+                    username: username
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        // Clear and hide the form
+                        $('#memberUsername').val('');
+                        self.hideAdminChatByUsernameForm();
+                        
+                        // Refresh chat rooms list to show the new/existing chat
+                        self.loadAdminChatRooms();
+                        
+                        // Load the chat room
+                        self.loadChatRoom(response.chat_room_id);
+                        
+                        // Show success message
+                        self.showSuccess('Chat room opened successfully');
+                    } else {
+                        $form.find('input, button').prop('disabled', false);
+                        self.showError('Error: ' + (response.error || 'Failed to create chat room'));
+                    }
+                },
+                error: function(xhr) {
+                    $form.find('input, button').prop('disabled', false);
+                    let errorMsg = 'Failed to create chat room. Please try again.';
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.error) {
+                            errorMsg = response.error;
+                        }
+                    } catch (e) {
+                        // Use default error message
+                    }
+                    self.showError(errorMsg);
+                }
+            });
+        },
+        
+        searchMembers: function(searchTerm) {
+            const self = this;
+            
+            $.ajax({
+                url: window.chatControllerUrl || 'controller/ChatController.php',
+                method: 'GET',
+                data: {
+                    action: 'searchMembers',
+                    search: searchTerm,
+                    limit: 10
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        self.renderMemberSearchResults(response.members);
+                    } else {
+                        $('#memberSearchDropdown').hide();
+                    }
+                },
+                error: function() {
+                    $('#memberSearchDropdown').hide();
+                }
+            });
+        },
+        
+        renderMemberSearchResults: function(members) {
+            const $dropdown = $('#memberSearchDropdown');
+            $dropdown.empty();
+            
+            if (!members || members.length === 0) {
+                $dropdown.html('<div class="member-search-item member-search-no-results">No members found</div>');
+                $dropdown.show();
+                return;
+            }
+            
+            members.forEach(function(member) {
+                const $item = $('<div class="member-search-item"></div>');
+                const statusBadge = member.status === 'active' 
+                    ? '<span class="member-status-badge active">Active</span>'
+                    : '<span class="member-status-badge inactive">' + (member.status || 'Inactive') + '</span>';
+                
+                $item.html(`
+                    <div class="member-search-item-content">
+                        <div class="member-search-item-name">
+                            <strong>${this.escapeHtml(member.username || 'N/A')}</strong>
+                            ${statusBadge}
+                        </div>
+                        <div class="member-search-item-fullname">${this.escapeHtml(member.full_name || '')}</div>
+                        ${member.email ? '<div class="member-search-item-email">' + this.escapeHtml(member.email) + '</div>' : ''}
+                    </div>
+                `);
+                
+                $item.data('username', member.username);
+                $item.data('user-id', member.user_id);
+                
+                // Click handler to select member
+                $item.on('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const username = $(this).data('username');
+                    $('#memberUsername').val(username);
+                    $dropdown.hide().empty();
+                    // Clear any search timeout
+                    if (this.memberSearchTimeout) {
+                        clearTimeout(this.memberSearchTimeout);
+                        this.memberSearchTimeout = null;
+                    }
+                });
+                
+                $dropdown.append($item);
+            }.bind(this));
+            
+            $dropdown.show();
         },
         
         createNewChatRoom: function() {
