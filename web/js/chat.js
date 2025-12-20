@@ -6,12 +6,18 @@ $(document).ready(function() {
         userId: null,
         pollInterval: null,
         memberSearchTimeout: null,
+        isDragging: false,
+        dragOffset: { x: 0, y: 0 },
+        togglePosition: { x: null, y: null },
+        dragStartPos: null,
+        hasDragged: false,
         
         init: function() {
             // Get user data from body attributes or session
             this.userRole = $('body').data('user-role') || 'member';
             this.userId = $('body').data('user-id') || null;
             
+            this.loadTogglePosition();
             this.bindEvents();
             this.loadUnreadCount();
             this.startPolling();
@@ -20,9 +26,14 @@ $(document).ready(function() {
         bindEvents: function() {
             const self = this;
             
-            // Toggle chatbot
-            $('#chatbotToggle').on('click', function() {
-                self.toggle();
+            // Toggle chatbot (only if not dragging)
+            $('#chatbotToggle').on('click', function(e) {
+                // Only toggle if we didn't just drag
+                if (!self.hasDragged) {
+                    self.toggle();
+                }
+                // Reset flag after click
+                self.hasDragged = false;
             });
             
             // Close button
@@ -229,6 +240,222 @@ $(document).ready(function() {
                 self.clearSearch();
                 $(this).hide();
             });
+            
+            // Initialize drag functionality for toggle button
+            self.initToggleDrag();
+            
+            // Handle window resize to keep toggle button in bounds
+            $(window).on('resize', function() {
+                if (self.togglePosition.x !== null && self.togglePosition.y !== null) {
+                    self.constrainTogglePosition();
+                }
+            });
+        },
+        
+        initToggleDrag: function() {
+            const self = this;
+            const $toggle = $('#chatbotToggle');
+            
+            // Remove any existing handlers to avoid duplicates
+            $(document).off('mousemove.chattoggle mouseup.chattoggle');
+            $toggle.off('mousedown.chattoggle');
+            
+            // Bind mousedown to toggle button
+            $toggle.on('mousedown.chattoggle', function(e) {
+                // Don't start drag if clicking on the unread badge
+                if ($(e.target).closest('.unread-badge').length) {
+                    return true; // Allow normal click behavior
+                }
+                
+                self.isDragging = false; // Will be set to true after mouse moves
+                self.hasDragged = false; // Reset drag flag
+                const toggleRect = $toggle[0].getBoundingClientRect();
+                
+                // Calculate offset from mouse to toggle center
+                self.dragOffset = {
+                    x: e.clientX - toggleRect.left - toggleRect.width / 2,
+                    y: e.clientY - toggleRect.top - toggleRect.height / 2
+                };
+                
+                // Store initial mouse position
+                self.dragStartPos = {
+                    x: e.clientX,
+                    y: e.clientY
+                };
+                
+                $toggle.css('cursor', 'grabbing');
+                $toggle.css('user-select', 'none');
+                
+                e.preventDefault();
+                e.stopPropagation();
+            });
+            
+            $(document).on('mousemove.chattoggle', function(e) {
+                if (self.dragStartPos === null) return;
+                
+                // Calculate distance moved
+                const deltaX = Math.abs(e.clientX - self.dragStartPos.x);
+                const deltaY = Math.abs(e.clientY - self.dragStartPos.y);
+                
+                // Start dragging if mouse moved more than 5px (to distinguish from click)
+                if (!self.isDragging && (deltaX > 5 || deltaY > 5)) {
+                    self.isDragging = true;
+                    self.hasDragged = true; // Mark that we've dragged
+                    $toggle.css('transition', 'none'); // Disable transitions during drag
+                }
+                
+                if (self.isDragging) {
+                    const $toggle = $('#chatbotToggle');
+                    const toggleWidth = $toggle.outerWidth();
+                    const toggleHeight = $toggle.outerHeight();
+                    
+                    // Calculate new position (center of toggle)
+                    let newX = e.clientX - self.dragOffset.x - toggleWidth / 2;
+                    let newY = e.clientY - self.dragOffset.y - toggleHeight / 2;
+                    
+                    // Constrain to viewport
+                    const minX = 0;
+                    const maxX = window.innerWidth - toggleWidth;
+                    const minY = 0;
+                    const maxY = window.innerHeight - toggleHeight;
+                    
+                    newX = Math.max(minX, Math.min(maxX, newX));
+                    newY = Math.max(minY, Math.min(maxY, newY));
+                    
+                    // Store position
+                    self.togglePosition.x = newX;
+                    self.togglePosition.y = newY;
+                    
+                    // Update position
+                    $toggle.css({
+                        position: 'fixed',
+                        left: newX + 'px',
+                        top: newY + 'px',
+                        right: 'auto',
+                        bottom: 'auto'
+                    });
+                    
+                    // Update chat window position relative to toggle
+                    self.updateChatWindowPosition();
+                    
+                    e.preventDefault();
+                }
+            });
+            
+            $(document).on('mouseup.chattoggle', function(e) {
+                if (self.dragStartPos !== null) {
+                    const wasDragging = self.isDragging;
+                    self.isDragging = false;
+                    self.dragStartPos = null;
+                    
+                    $('#chatbotToggle').css({
+                        'cursor': 'pointer',
+                        'user-select': '',
+                        'transition': '' // Re-enable transitions
+                    });
+                    
+                    if (wasDragging) {
+                        self.saveTogglePosition();
+                    }
+                }
+            });
+        },
+        
+        constrainTogglePosition: function() {
+            const $toggle = $('#chatbotToggle');
+            
+            if (this.togglePosition.x === null || this.togglePosition.y === null) return;
+            
+            const toggleWidth = $toggle.outerWidth();
+            const toggleHeight = $toggle.outerHeight();
+            
+            // Calculate viewport constraints
+            const maxX = window.innerWidth - toggleWidth;
+            const maxY = window.innerHeight - toggleHeight;
+            
+            // Constrain position
+            let newX = Math.max(0, Math.min(maxX, this.togglePosition.x));
+            let newY = Math.max(0, Math.min(maxY, this.togglePosition.y));
+            
+            if (newX !== this.togglePosition.x || newY !== this.togglePosition.y) {
+                this.togglePosition.x = newX;
+                this.togglePosition.y = newY;
+                $toggle.css({
+                    position: 'fixed',
+                    left: newX + 'px',
+                    top: newY + 'px',
+                    right: 'auto',
+                    bottom: 'auto'
+                });
+                this.updateChatWindowPosition();
+                this.saveTogglePosition();
+            }
+        },
+        
+        updateChatWindowPosition: function() {
+            const $toggle = $('#chatbotToggle');
+            const $window = $('#chatbotWindow');
+            
+            if (!$toggle.length || !$window.length) return;
+            
+            const toggleRect = $toggle[0].getBoundingClientRect();
+            const windowWidth = $window.outerWidth();
+            const windowHeight = $window.outerHeight();
+            
+            // Position window above toggle, aligned to right
+            let windowX = toggleRect.right - windowWidth;
+            let windowY = toggleRect.top - windowHeight - 10;
+            
+            // If window would go off screen, position it below toggle
+            if (windowY < 0) {
+                windowY = toggleRect.bottom + 10;
+            }
+            
+            // If window would go off right edge, align to left
+            if (windowX < 0) {
+                windowX = toggleRect.left;
+            }
+            
+            // If window would go off left edge, align to right
+            if (windowX + windowWidth > window.innerWidth) {
+                windowX = window.innerWidth - windowWidth;
+            }
+            
+            $window.css({
+                position: 'fixed',
+                left: windowX + 'px',
+                top: windowY + 'px',
+                right: 'auto',
+                bottom: 'auto'
+            });
+        },
+        
+        loadTogglePosition: function() {
+            const saved = localStorage.getItem('chatbotTogglePosition');
+            if (saved) {
+                try {
+                    const savedPos = JSON.parse(saved);
+                    if (savedPos.x !== null && savedPos.y !== null) {
+                        this.togglePosition = savedPos;
+                        const $toggle = $('#chatbotToggle');
+                        $toggle.css({
+                            position: 'fixed',
+                            left: this.togglePosition.x + 'px',
+                            top: this.togglePosition.y + 'px',
+                            right: 'auto',
+                            bottom: 'auto'
+                        });
+                        this.updateChatWindowPosition();
+                    }
+                } catch (e) {
+                    // Invalid saved data, use defaults
+                    this.togglePosition = { x: null, y: null };
+                }
+            }
+        },
+        
+        saveTogglePosition: function() {
+            localStorage.setItem('chatbotTogglePosition', JSON.stringify(this.togglePosition));
         },
         
         toggle: function() {
@@ -242,6 +469,9 @@ $(document).ready(function() {
         open: function() {
             this.isOpen = true;
             $('#chatbotWindow').addClass('active');
+            
+            // Update chat window position relative to toggle
+            this.updateChatWindowPosition();
             
             // Hide all forms initially
             $('#newChatForm').hide();
@@ -375,8 +605,8 @@ $(document).ready(function() {
                     $container.html('<div class="empty-state"><i class="fas fa-inbox"></i><p>No chat rooms yet</p><p class="empty-hint">Start a new conversation to get help</p></div>');
                     // Only auto-show new chat form if not suppressed (i.e., not coming from cancel)
                     if (!suppressAutoNewChat) {
-                        this.showNewChatForm();
-                    }
+                    this.showNewChatForm();
+                }
                 }
                 // Ensure chat rooms list is visible even when empty
                 $('#chatRoomsList').show();
