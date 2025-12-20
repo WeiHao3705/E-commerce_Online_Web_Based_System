@@ -41,39 +41,68 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
 // Handle POST submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	try {
-		// Collect form data
-		$productData = [
-			'name' => trim($_POST['product_name'] ?? ''),
-			'category' => trim($_POST['category'] ?? ''),
-			'description' => trim($_POST['description'] ?? ''),
-			'cost' => $_POST['cost'] ?? null,
-			'original_price' => $_POST['original_price'] ?? null,
-			'selling_price' => $_POST['selling_price'] ?? null,
-		];
+		$formType = $_POST['form_type'] ?? 'product';
 
-		// Handle file upload via service (multiple images)
-		$imagePaths = [];
-		$mainIndex = null;
-		if (isset($_FILES['product_images'])) {
-			$uploadDir = $webRootDir . '/images/products/';
-			$imagePaths = $productService->handleMultipleProductImageUpload(
-				$_FILES['product_images'],
-				$productData['name'],
-				$uploadDir
-			);
-			// Main image index from form (optional)
-			if (isset($_POST['main_image_index'])) {
-				$mainIndex = (int)($_POST['main_image_index']);
+		if ($formType === 'product') {
+			// Collect form data
+			$productData = [
+				'name' => trim($_POST['product_name'] ?? ''),
+				'category' => trim($_POST['category'] ?? ''),
+				'description' => trim($_POST['description'] ?? ''),
+				'cost' => $_POST['cost'] ?? null,
+				'original_price' => $_POST['original_price'] ?? null,
+				'selling_price' => $_POST['selling_price'] ?? null,
+			];
+
+			// Handle file upload via service (multiple images)
+			$imagePaths = [];
+			$mainIndex = null;
+			if (isset($_FILES['product_images'])) {
+				$uploadDir = $webRootDir . '/images/products/';
+				$imagePaths = $productService->handleMultipleProductImageUpload(
+					$_FILES['product_images'],
+					$productData['name'],
+					$uploadDir
+				);
+				// Main image index from form (optional)
+				if (isset($_POST['main_image_index'])) {
+					$mainIndex = (int)($_POST['main_image_index']);
+				}
 			}
+
+			// Create product via service
+			$productId = $productService->createProduct($productData, $imagePaths, $conn, $mainIndex);
+
+			// Success: set message and redirect
+			$_SESSION['success_message'] = 'Product created successfully.';
+			header('Location: AdminProduct.php');
+			exit;
+		} elseif ($formType === 'variant') {
+			$variantData = [
+				'product_id' => (int)($_POST['variant_product_id'] ?? 0),
+				'color' => trim($_POST['variant_color'] ?? ''),
+			];
+
+			$imagePaths = [];
+			$mainIndex = null;
+			if (isset($_FILES['variant_images'])) {
+				$uploadDir = $webRootDir . '/images/products/';
+				$imagePaths = $productService->handleMultipleProductImageUpload(
+					$_FILES['variant_images'],
+					$variantData['color'] ?: 'variant',
+					$uploadDir
+				);
+				if (isset($_POST['variant_main_image_index'])) {
+					$mainIndex = (int)($_POST['variant_main_image_index']);
+				}
+			}
+
+			$variantId = $productService->createVariant($variantData, $imagePaths, $mainIndex);
+
+			$_SESSION['success_message'] = 'Variant added successfully.';
+			header('Location: AdminProduct.php');
+			exit;
 		}
-
-		// Create product via service
-		$productId = $productService->createProduct($productData, $imagePaths, $conn, $mainIndex);
-
-		// Success: set message and redirect
-		$_SESSION['success_message'] = 'Product created successfully.';
-		header('Location: AdminProduct.php');
-		exit;
 	} catch (Exception $e) {
 		// Store error in variable for display
 		$flashError = $e->getMessage();
@@ -82,6 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Get categories for form
 $categories = $productService->getCategories();
+$productList = $productService->getAllProducts()['products'] ?? [];
 
 $pageTitle = 'Add Product';
 ?>
@@ -118,12 +148,18 @@ $pageTitle = 'Add Product';
 		<?php endif; ?>
 
 		<div class="content-card">
+			<div class="tab-bar">
+				<button type="button" class="tab-btn active" id="tab-product">New Product</button>
+				<button type="button" class="tab-btn" id="tab-variant">New Variant</button>
+			</div>
+
 			<div class="form-hint">
 				<span class="material-symbols-outlined">info</span>
 				<p>After creating the product, you can add variants, inventory, and additional images from the product management page.</p>
 			</div>
 
-			<form method="POST" action="AddProduct.php" enctype="multipart/form-data">
+			<form id="productForm" class="tab-content" data-tab="product" method="POST" action="AddProduct.php" enctype="multipart/form-data">
+				<input type="hidden" name="form_type" value="product">
 				<div class="form-grid">
 					<div class="form-group">
 						<label for="product_name">
@@ -206,6 +242,56 @@ $pageTitle = 'Add Product';
 					<button type="submit" class="btn btn-primary">
 						<span class="material-symbols-outlined">add</span>
 						Create Product
+					</button>
+				</div>
+			</form>
+
+			<form id="variantForm" class="tab-content hidden" data-tab="variant" method="POST" action="AddProduct.php" enctype="multipart/form-data">
+				<input type="hidden" name="form_type" value="variant">
+				<div class="form-grid">
+					<div class="form-group">
+						<label for="variant_product_id">
+							<span class="material-symbols-outlined">inventory</span>
+							Select Product
+							<span class="required">*</span>
+						</label>
+						<select id="variant_product_id" name="variant_product_id" required>
+							<option value="">-- Choose a product --</option>
+							<?php foreach ($productList as $p): ?>
+								<option value="<?php echo (int)$p['product_id']; ?>"><?php echo html_escape($p['product_name']); ?></option>
+							<?php endforeach; ?>
+						</select>
+					</div>
+
+					<div class="form-group">
+						<label for="variant_color">
+							<span class="material-symbols-outlined">palette</span>
+							Color
+							<span class="required">*</span>
+						</label>
+						<input type="text" id="variant_color" name="variant_color" required placeholder="e.g., Red / Midnight Navy">
+					</div>
+
+					<div class="form-group">
+						<label for="variant_images">
+							<span class="material-symbols-outlined">image</span>
+							Variant Images
+						</label>
+						<input type="file" id="variant_images" name="variant_images[]" multiple accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+						<small>Optional - Select multiple images. Choose one as Main (max 5MB each)</small>
+						<input type="hidden" name="variant_main_image_index" id="variant_main_image_index" value="0">
+						<div id="variantImagesPreview" class="images-preview" style="display:none;margin-top:10px;"></div>
+					</div>
+				</div>
+
+				<div class="form-actions">
+					<a href="AdminProduct.php" class="btn btn-secondary">
+						<span class="material-symbols-outlined">close</span>
+						Cancel
+					</a>
+					<button type="submit" class="btn btn-primary">
+						<span class="material-symbols-outlined">add</span>
+						Add Variant
 					</button>
 				</div>
 			</form>

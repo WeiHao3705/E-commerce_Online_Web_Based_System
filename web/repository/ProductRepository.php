@@ -153,4 +153,38 @@ class ProductRepository {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
+
+    /**
+     * Create a new variant for a product
+     * @param int $productId
+     * @param string $color
+     * @return int Variant ID
+     */
+    public function createVariant($productId, $color) {
+        $sql = "INSERT INTO product_variant (product_id, color) VALUES (:product_id, :color)";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([
+            ':product_id' => $productId,
+            ':color' => $color,
+        ]);
+        return (int)$this->conn->lastInsertId();
+    }
+
+    /**
+     * Insert an image record for a product/variant
+     * @param int $productId
+     * @param int|null $variantId
+     * @param string $imagePath
+     * @param string $type 'main' or 'gallery'
+     */
+    public function insertProductImage($productId, $variantId, $imagePath, $type = 'gallery') {
+        $sql = "INSERT INTO product_image (product_id, variant_id, image_path, type) VALUES (:pid, :vid, :path, :type)";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([
+            ':pid' => $productId,
+            ':vid' => $variantId,
+            ':path' => $imagePath,
+            ':type' => $type,
+        ]);
+    }
 }
