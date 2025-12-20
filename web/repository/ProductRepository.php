@@ -155,6 +155,38 @@ class ProductRepository {
     }
 
     /**
+     * Get all images for a product (product-level, no variant)
+     * Main first, then gallery
+     */
+    public function getImagesForProduct($productId) {
+        $sql = "
+            SELECT image_path, type
+            FROM product_image
+            WHERE product_id = :pid AND variant_id IS NULL
+            ORDER BY CASE WHEN type = 'main' THEN 0 ELSE 1 END, id
+        ";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([':pid' => $productId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Get all images for a specific variant
+     * Main first, then gallery
+     */
+    public function getImagesForVariant($variantId) {
+        $sql = "
+            SELECT image_path, type
+            FROM product_image
+            WHERE variant_id = :vid
+            ORDER BY CASE WHEN type = 'main' THEN 0 ELSE 1 END, id
+        ";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([':vid' => $variantId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Create a new variant for a product
      * @param int $productId
      * @param string $color

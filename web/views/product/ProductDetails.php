@@ -51,6 +51,7 @@ require __DIR__ . '/../../general/_navbar.php';
 <link rel="stylesheet" href="<?= $assetPrefix ?>css/reviews.css?v=<?= filemtime(__DIR__ . '/../../css/reviews.css'); ?>">
 
 <div class="product-detail-container" id="productDetailRoot" data-variant-sizes='<?= htmlspecialchars(json_encode($variantSizes), ENT_QUOTES, 'UTF-8') ?>' data-login-url="<?= htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8') ?>">
+	<a class="back-link" href="ProductPage.php">&#8592; Back</a>
 	<h1 class="product-detail-title">
 		<?= htmlspecialchars($product->product_name) ?>
 	</h1>
@@ -58,12 +59,25 @@ require __DIR__ . '/../../general/_navbar.php';
 	<div class="product-detail-grid">
 		<!-- Left: Product Gallery -->
 		<div class="product-gallery">
-			<!-- Main Image -->
+			<!-- Main Image/Gallery -->
 			<div class="main-image-wrapper">
-				<?php if ($initialImage): ?>
-					<img id="mainImage" src="/<?= htmlspecialchars(ltrim($initialImage, '/')) ?>" alt="<?= htmlspecialchars($product->product_name) ?>">
+				<?php if (!empty($displayImages)): ?>
+					<div class="main-images-grid">
+						<?php foreach ($displayImages as $idx => $img): ?>
+							<?php $src = '/' . ltrim($img['image_path'] ?? '', '/'); ?>
+							<?php if ($idx === 0): ?>
+								<img id="mainImage" src="<?= htmlspecialchars($src) ?>" alt="<?= htmlspecialchars($product->product_name) ?>">
+							<?php else: ?>
+								<img class="extra-image" src="<?= htmlspecialchars($src) ?>" alt="<?= htmlspecialchars($product->product_name) ?>">
+							<?php endif; ?>
+						<?php endforeach; ?>
+					</div>
 				<?php else: ?>
-					<div class="no-image-placeholder">No image available</div>
+					<?php if ($initialImage): ?>
+						<img id="mainImage" src="/<?= htmlspecialchars(ltrim($initialImage, '/')) ?>" alt="<?= htmlspecialchars($product->product_name) ?>">
+					<?php else: ?>
+						<div class="no-image-placeholder">No image available</div>
+					<?php endif; ?>
 				<?php endif; ?>
 			</div>
 

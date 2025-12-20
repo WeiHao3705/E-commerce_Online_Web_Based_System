@@ -1,8 +1,22 @@
 /* Product details page layout */
 .product-detail-container {
-    max-width: 1000px;
+    max-width: min(95vw, 1400px);
     margin: 40px auto 60px;
-    padding: 0 20px;
+    padding: 0 32px;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 16px;
+    color: #64748b;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.back-link:hover {
+    color: #0f172a;
 }
 
 .product-detail-title {
@@ -15,8 +29,8 @@
 
 .product-detail-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 40px;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 32px;
     align-items: start;
 }
 
@@ -24,7 +38,7 @@
 .product-gallery {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
 }
 
 .main-image-wrapper {
@@ -32,10 +46,10 @@
     background: #f8f9fa;
     border-radius: 12px;
     overflow: hidden;
+    padding: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
     min-height: 300px;
 }
 
@@ -45,6 +59,40 @@
     object-fit: contain;
     border-radius: 12px;
     display: block;
+}
+
+/* Grid of main + extra images */
+.main-images-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.main-images-grid img {
+    width: 100%;
+    height: 280px;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    display: block;
+}
+
+@media (max-width: 992px) {
+    .main-images-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+    .main-images-grid img {
+        width: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        height: 200px;
+        object-fit: contain;
+    }
 }
 
 .no-image-placeholder {
@@ -199,6 +247,35 @@
     .product-detail-title {
         font-size: 24px;
         margin-bottom: 20px;
+    }
+}
+
+/* Wider layouts for large screens */
+@media (min-width: 1400px) {
+    .product-detail-container {
+        max-width: 1500px;
+        padding: 0 40px;
+    }
+    .product-detail-grid {
+        grid-template-columns: 1.8fr 1fr;
+        gap: 36px;
+    }
+    .main-images-grid img {
+        width: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        height: 320px;
+        object-fit: contain;
+    }
+}
+
+@media (min-width: 1700px) {
+    .main-images-grid img {
+        width: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        height: 380px;
+        object-fit: contain;
     }
 }
 

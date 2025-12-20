@@ -44,6 +44,15 @@ class ProductService {
             $selectedSize = $variantSizes[$selectedVariant->variant_id][0] ?? '';
         }
         
+        // Collect product-level and variant-level images
+        $productImages = $this->productRepository->getImagesForProduct($product_id);
+        $variantImages = [];
+        if (!empty($selectedVariant) && !empty($selectedVariant->variant_id)) {
+            $variantImages = $this->productRepository->getImagesForVariant((int)$selectedVariant->variant_id);
+        }
+        // Prefer variant images if available, otherwise product images
+        $displayImages = !empty($variantImages) ? $variantImages : $productImages;
+        
         // Get reviews data
         $reviewsData = $this->reviewService->getProductReviews($product_id);
         
@@ -71,6 +80,7 @@ class ProductService {
             'selectedVariant' => $selectedVariant,
             'initialImage' => $initialImage,
             'selectedSize' => $selectedSize,
+            'displayImages' => $displayImages,
             'reviews' => $reviewsData['reviews'],
             'average_rating' => $reviewsData['average_rating'],
             'review_count' => $reviewsData['review_count'],
