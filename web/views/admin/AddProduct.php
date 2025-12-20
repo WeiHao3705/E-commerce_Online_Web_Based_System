@@ -51,19 +51,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			'selling_price' => $_POST['selling_price'] ?? null,
 		];
 
-		// Handle file upload via service
-		$imagePath = '';
-		if (isset($_FILES['product_image']) && $_FILES['product_image']['error'] === UPLOAD_ERR_OK) {
+		// Handle file upload via service (multiple images)
+		$imagePaths = [];
+		$mainIndex = null;
+		if (isset($_FILES['product_images'])) {
 			$uploadDir = $webRootDir . '/images/products/';
-			$imagePath = $productService->handleProductImageUpload(
-				$_FILES['product_image'],
+			$imagePaths = $productService->handleMultipleProductImageUpload(
+				$_FILES['product_images'],
 				$productData['name'],
 				$uploadDir
 			);
+			// Main image index from form (optional)
+			if (isset($_POST['main_image_index'])) {
+				$mainIndex = (int)($_POST['main_image_index']);
+			}
 		}
 
 		// Create product via service
-		$productId = $productService->createProduct($productData, $imagePath, $conn);
+		$productId = $productService->createProduct($productData, $imagePaths, $conn, $mainIndex);
 
 		// Success: set message and redirect
 		$_SESSION['success_message'] = 'Product created successfully.';
@@ -174,15 +179,14 @@ $pageTitle = 'Add Product';
 					</div>
 
 					<div class="form-group">
-						<label for="product_image">
+						<label for="product_images">
 							<span class="material-symbols-outlined">image</span>
-							Product Image
+							Product Images
 						</label>
-						<input type="file" id="product_image" name="product_image" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
-						<small>Optional - JPG, PNG, GIF, WebP (max 5MB)</small>
-						<div id="imagePreview" style="display:none;margin-top:10px;">
-							<img id="previewImg" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid #e2e8f0;" alt="Preview">
-						</div>
+						<input type="file" id="product_images" name="product_images[]" multiple accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+						<small>Optional - Select multiple images. Choose one as Main (max 5MB each)</small>
+						<input type="hidden" name="main_image_index" id="main_image_index" value="0">
+						<div id="imagesPreview" class="images-preview" style="display:none;margin-top:10px;"></div>
 					</div>
 				</div>
 

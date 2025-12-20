@@ -123,11 +123,11 @@ class ProductService {
     }
 
     /**
-     * Handle file upload and return relative path
+     * Handle single file upload and return relative path
      * @param array $file $_FILES array element
      * @param string $productName Product name to use in filename
      * @param string $uploadDir Directory to save file (with trailing slash)
-     * @return string|null Relative path to saved file or null if upload failed
+     * @return string Relative path to saved file
      * @throws Exception On validation or file system errors
      */
     public function handleProductImageUpload($file, $productName, $uploadDir) {
@@ -191,6 +191,38 @@ class ProductService {
     }
 
     /**
+     * Handle multiple image uploads
+     * @param array $files The $_FILES['product_images'] array
+     * @param string $productName Product name to use in filenames
+     * @param string $uploadDir Directory to save files (with trailing slash)
+     * @return array List of relative paths to saved files
+     * @throws Exception If none of the files are valid/uploads fail
+     */
+    public function handleMultipleProductImageUpload($files, $productName, $uploadDir) {
+        $paths = [];
+        if (!isset($files['name']) || !is_array($files['name'])) {
+            return $paths;
+        }
+
+        $count = count($files['name']);
+        for ($i = 0; $i < $count; $i++) {
+            $file = [
+                'name' => $files['name'][$i],
+                'type' => $files['type'][$i],
+                'tmp_name' => $files['tmp_name'][$i],
+                'error' => $files['error'][$i],
+                'size' => $files['size'][$i],
+            ];
+
+            if ($file['error'] === UPLOAD_ERR_OK) {
+                $paths[] = $this->handleProductImageUpload($file, $productName, $uploadDir);
+            }
+        }
+
+        return $paths;
+    }
+
+    /**
      * Create a new product with its price and optional image
      * @param array $productData ['name', 'category', 'description', 'cost', 'original_price', 'selling_price']
      * @param string|null $imagePath Optional image path
@@ -198,7 +230,7 @@ class ProductService {
      * @return int|null Product ID on success, null on failure
      * @throws Exception On database or validation errors
      */
-    public function createProduct($productData, $imagePath = null, $conn) {
+    public function createProduct($productData, $images = null, $conn, $mainIndex = null) {
         // Validate required fields
         $required = ['name', 'category', 'cost', 'original_price', 'selling_price'];
         foreach ($required as $field) {
@@ -236,14 +268,49 @@ class ProductService {
                 ':selling' => $productData['selling_price'],
             ]);
 
-            // Insert product image if provided
-            if (!empty($imagePath)) {
-                $stmt = $conn->prepare('INSERT INTO product_image (product_id, variant_id, image_path, type) VALUES (:id, NULL, :path, :type)');
-                $stmt->execute([
-                    ':id' => $productId,
-                    ':path' => $imagePath,
-                    ':type' => 'main',
-                ]);
+            // Insert product images if provided
+            if (!empty($images)) {
+                // If a single string was provided (backward compatibility), store as main
+                if (is_string($images)) {
+                    $stmt = $conn->prepare('INSERT INTO product_image (product_id, variant_id, image_path, type) VALUES (:id, NULL, :path, :type)');
+                    $stmt->execute([
+                        ':id' => $productId,
+                        ':path' => $images,
+                        ':type' => 'main',
+                    ]);
+                } elseif (is_array($images)) {
+                    // Determine main index (default 0)
+                    $mainIdx = 0;
+                    if ($mainIndex !== null && is_int($mainIndex) && $mainIndex >= 0 && $mainIndex < count($images)) {
+                        $mainIdx = $mainIndex;
+                    }
+
+                    // Insert main image
+                    if (!empty($images[$mainIdx])) {
+                        $stmt = $conn->prepare('INSERT INTO product_image (product_id, variant_id, image_path, type) VALUES (:id, NULL, :path, :type)');
+                        $stmt->execute([
+                            ':id' => $productId,
+                            ':path' => $images[$mainIdx],
+                            ':type' => 'main',
+                        ]);
+                    }
+
+                    // Insert gallery images (others)
+                    foreach ($images as $idx => $imgPath) {
+                        if ($idx === $mainIdx) {
+                            continue;
+                        }
+                        if (empty($imgPath)) {
+                            continue;
+                        }
+                        $stmt = $conn->prepare('INSERT INTO product_image (product_id, variant_id, image_path, type) VALUES (:id, NULL, :path, :type)');
+                        $stmt->execute([
+                            ':id' => $productId,
+                            ':path' => $imgPath,
+                            ':type' => 'gallery',
+                        ]);
+                    }
+                }
             }
 
             $conn->commit();

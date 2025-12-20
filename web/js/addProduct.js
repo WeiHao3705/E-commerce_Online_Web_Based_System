@@ -3,9 +3,9 @@ document.addEventListener('DOMContentLoaded', function() {
 	const costInput = document.getElementById('cost');
 	const originalPriceInput = document.getElementById('original_price');
 	const sellingPriceInput = document.getElementById('selling_price');
-	const imageInput = document.getElementById('product_image');
-	const imagePreview = document.getElementById('imagePreview');
-	const previewImg = document.getElementById('previewImg');
+	const imageInput = document.getElementById('product_images');
+	const imagesPreview = document.getElementById('imagesPreview');
+	const mainIndexInput = document.getElementById('main_image_index');
 	const form = document.querySelector('form');
 
 	function suggestSellingPrice() {
@@ -22,44 +22,84 @@ document.addEventListener('DOMContentLoaded', function() {
 	costInput.addEventListener('input', suggestSellingPrice);
 	originalPriceInput.addEventListener('input', suggestSellingPrice);
 
-	// Image preview and validation
+	// Multiple image preview and validation with main selection
 	imageInput.addEventListener('change', function(e) {
-		const file = e.target.files[0];
-		if (file) {
-			// Validate file size
-			if (file.size > 5 * 1024 * 1024) {
-				alert('Image size must be less than 5MB.');
-				imageInput.value = '';
-				imagePreview.style.display = 'none';
-				return;
-			}
+		const files = Array.from(e.target.files || []);
+		const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
 
-			// Validate file type
-			const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-			if (!validTypes.includes(file.type)) {
-				alert('Only JPG, PNG, GIF, and WebP images are allowed.');
-				imageInput.value = '';
-				imagePreview.style.display = 'none';
-				return;
-			}
+		imagesPreview.innerHTML = '';
+		if (!files.length) {
+			imagesPreview.style.display = 'none';
+			return;
+		}
 
-			// Show preview
+		let firstValidIndex = -1;
+
+		files.forEach((file, idx) => {
+			// Validate file size/type
+			if (file.size > 5 * 1024 * 1024 || !validTypes.includes(file.type)) {
+				return; // skip invalid
+			}
+			if (firstValidIndex === -1) firstValidIndex = idx;
+
 			const reader = new FileReader();
-			reader.onload = function(e) {
-				previewImg.src = e.target.result;
-				imagePreview.style.display = 'block';
+			reader.onload = function(ev) {
+				const item = document.createElement('div');
+				item.className = 'image-item';
+
+				const img = document.createElement('img');
+				img.src = ev.target.result;
+				img.alt = 'Preview ' + (idx + 1);
+
+				const radioWrap = document.createElement('label');
+				radioWrap.className = 'main-select';
+				radioWrap.title = 'Set as main image';
+
+				const radio = document.createElement('input');
+				radio.type = 'radio';
+				radio.name = 'main_image_choice';
+				radio.value = String(idx);
+
+				const mark = document.createElement('span');
+				mark.className = 'main-mark';
+				mark.textContent = 'Main';
+
+				radio.addEventListener('change', function() {
+					mainIndexInput.value = String(idx);
+				});
+
+				radioWrap.appendChild(radio);
+				radioWrap.appendChild(mark);
+
+				item.appendChild(img);
+				item.appendChild(radioWrap);
+				imagesPreview.appendChild(item);
+
+				// Default first valid as main
+				if (idx === firstValidIndex) {
+					radio.checked = true;
+					mainIndexInput.value = String(idx);
+				}
 			};
 			reader.readAsDataURL(file);
-		} else {
-			imagePreview.style.display = 'none';
-		}
+		});
+
+		imagesPreview.style.display = 'grid';
 	});
 
-	// Validate prices on form submission
+	// Validate on form submission
 	form.addEventListener('submit', function(e) {
 		const cost = parseFloat(costInput.value) || 0;
 		const original = parseFloat(originalPriceInput.value) || 0;
 		const selling = parseFloat(sellingPriceInput.value) || 0;
+
+		// If images selected, ensure a main is chosen
+		const hasImages = imageInput && imageInput.files && imageInput.files.length > 0;
+		if (hasImages && (mainIndexInput.value === '' || isNaN(parseInt(mainIndexInput.value)))) {
+			e.preventDefault();
+			alert('Please select one image as the main image.');
+			return;
+		}
 
 		if (selling < cost) {
 			e.preventDefault();
