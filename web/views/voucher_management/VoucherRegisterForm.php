@@ -310,124 +310,19 @@ if (!empty($_POST)) {
         </div>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        // Bulk Import Modal
-        const bulkImportBtn = document.getElementById('bulk-import-btn');
-        const bulkImportModal = document.getElementById('bulk-import-modal');
-        const closeModal = document.getElementById('close-modal');
-        const cancelImport = document.getElementById('cancel-import');
-
-        bulkImportBtn.addEventListener('click', function() {
-            bulkImportModal.classList.remove('hidden');
-        });
-
-        closeModal.addEventListener('click', function() {
-            bulkImportModal.classList.add('hidden');
-        });
-
-        cancelImport.addEventListener('click', function() {
-            bulkImportModal.classList.add('hidden');
-        });
-
-        bulkImportModal.addEventListener('click', function(e) {
-            if (e.target === bulkImportModal) {
-                bulkImportModal.classList.add('hidden');
-            }
-        });
-
-        // Generate random voucher code
-        document.getElementById('generate-code').addEventListener('click', function() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let code = '';
-            for (let i = 0; i < 8; i++) {
-                code += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            document.getElementById('code').value = code;
-        });
-
-        // Update discount prefix and show/hide max discount based on type
-        document.getElementById('type').addEventListener('change', function() {
-            const type = this.value;
-            const discountPrefix = document.getElementById('discount-prefix');
-            const discountValueInput = document.getElementById('discount-value');
-            const maxDiscountGroup = document.getElementById('max-discount-group');
-
-            if (type === 'percent') {
-                discountPrefix.textContent = '%';
-                discountValueInput.setAttribute('max', '100');
-                maxDiscountGroup.style.display = 'block';
-            } else if (type === 'fixed') {
-                discountPrefix.textContent = '$';
-                discountValueInput.removeAttribute('max');
-                maxDiscountGroup.style.display = 'none';
-            } else if (type === 'freeshipping') {
-                discountPrefix.textContent = '';
-                discountValueInput.value = '0';
-                discountValueInput.setAttribute('readonly', 'readonly');
-                maxDiscountGroup.style.display = 'none';
-            } else {
-                discountValueInput.removeAttribute('readonly');
-                maxDiscountGroup.style.display = 'none';
-            }
-        });
-
-        // Validate end date is after start date
-        document.getElementById('start-date').addEventListener('change', function() {
-            const startDate = new Date(this.value);
-            const endDateInput = document.getElementById('end-date');
-            const endDate = new Date(endDateInput.value);
-
-            if (endDateInput.value && endDate < startDate) {
-                alert('End date must be after start date!');
-                endDateInput.value = '';
-            }
-        });
-
-        document.getElementById('end-date').addEventListener('change', function() {
-            const startDateInput = document.getElementById('start-date');
-            const startDate = new Date(startDateInput.value);
-            const endDate = new Date(this.value);
-
-            if (startDateInput.value && endDate < startDate) {
-                alert('End date must be after start date!');
-                this.value = '';
-            }
-        });
-
-        // Validate discount value based on type
-        document.getElementById('discount-value').addEventListener('input', function() {
-            const type = document.getElementById('type').value;
-            const value = parseFloat(this.value);
-
-            if (type === 'percent' && (value < 0 || value > 100)) {
-                this.style.borderColor = '#ef4444';
-            } else {
-                this.style.borderColor = '';
-            }
-        });
-
-        // Toggle switch functionality
-        const statusToggle = document.getElementById('status-toggle');
-        statusToggle.addEventListener('click', function() {
-            const isChecked = this.getAttribute('aria-checked') === 'true';
-            this.setAttribute('aria-checked', isChecked ? 'false' : 'true');
-        });
-
-        // Trigger type change on page load if type is already selected
-        if (document.getElementById('type').value) {
-            document.getElementById('type').dispatchEvent(new Event('change'));
-        }
-
-        // Scroll to error field if exists
+        // Pass PHP variables to JavaScript
         <?php if ($errorField): ?>
-            document.addEventListener('DOMContentLoaded', function() {
-                const errorField = document.getElementById('<?php echo $errorField; ?>');
-                if (errorField) {
-                    errorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    errorField.focus();
-                }
-            });
+        $(document).ready(function() {
+            const errorField = document.getElementById('<?php echo $errorField; ?>');
+            if (errorField) {
+                errorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                errorField.focus();
+            }
+        });
         <?php endif; ?>
     </script>
+    <script src="<?php echo $prefix; ?>js/voucherRegisterForm.js?v=<?php echo filemtime(__DIR__ . '/../../js/voucherRegisterForm.js'); ?>"></script>
 </body>
 </html>
