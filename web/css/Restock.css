@@ -1,0 +1,20 @@
+/* Basic layout for restock page */
+.page-container { max-width: 1100px; margin: 20px auto; padding: 0 24px; }
+.page-title { margin: 0 0 16px; font-size: 28px; font-weight: 700; }
+.content-card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:20px; }
+
+.restock-form .form-grid { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+.restock-form .form-group { display:flex; flex-direction:column; gap:6px; }
+.restock-form .form-group label { font-weight:600; color:#374151; }
+.restock-form select, .restock-form input[type="text"], .restock-form input[type="number"] { padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; }
+.restock-form .inline { display:flex; align-items:center; gap:10px; margin-top:6px; }
+.restock-form .checkbox { display:flex; align-items:center; gap:6px; }
+
+.form-actions { margin-top: 16px; }
+.btn { display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border-radius:8px; border:none; cursor:pointer; }
+.btn-primary { background:#ef8324; color:#fff; }
+.message { padding:10px 12px; border-radius:8px; margin:12px 0; }
+.message-success { background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; }
+.message-error { background:#fef2f2; color:#991b1b; border:1px solid #fecaca; }
+
+@media (max-width: 768px){ .restock-form .form-grid { grid-template-columns:1fr; } }

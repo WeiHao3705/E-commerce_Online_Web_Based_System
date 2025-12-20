@@ -302,10 +302,16 @@ $pageTitle = 'Admin Products';
 				<p style="margin:0;color:#64748b;font-size:13px;font-weight:600;">Backoffice</p>
 				<h1 class="page-title">Products</h1>
 			</div>
+			<div style="display:flex;gap:10px;align-items:center;">
 			<a href="AddProduct.php" class="btn btn-primary">
 				<span class="material-symbols-outlined">add</span>
 				Add product
 			</a>
+			<a href="Restock.php" class="btn btn-secondary">
+				<span class="material-symbols-outlined">inventory_2</span>
+				Restock
+			</a>
+			</div>
 		</div>
 
 		<?php if ($flashSuccess): ?>
