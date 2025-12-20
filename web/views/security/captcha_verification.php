@@ -25,14 +25,14 @@ $device_fingerprint = md5($_SERVER['HTTP_USER_AGENT'] . $_SERVER['REMOTE_ADDR'])
 if (isset($_COOKIE['captcha_verified']) && $_COOKIE['captcha_verified'] === $device_fingerprint) {
     // Device already verified within the last week, redirect to home
     $_SESSION['captcha_verified'] = true; // Also set session for consistency
-    header('Location: ../../index.php');
+    header('Location: /index.php');
     exit;
 }
 
 // Check if user has already verified CAPTCHA in this session
 if (isset($_SESSION['captcha_verified']) && $_SESSION['captcha_verified'] === true) {
     // User already verified, redirect to home
-    header('Location: ../../index.php');
+    header('Location: /index.php');
     exit;
 }
 
@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['verify_captcha'])) {
         setcookie('captcha_verified', $device_fingerprint, $cookie_expiry, '/');
         
         unset($_SESSION['captcha_code']);
-        header('Location: ../../index.php');
+        header('Location: /index.php');
         exit;
     }
 }
