@@ -614,86 +614,86 @@
 }
 
 /* Dark Mode Support
-   Force voucher list background to stay white on all devices/browsers */
+   Force voucher list to use light theme colors */
 @media (prefers-color-scheme: dark) {
     .voucher-list-container {
         background-color: #ffffff;
     }
 
     .brand-title {
-        color: #f9fafb;
+        color: #111827;
     }
 
     .voucher-title {
-        color: #f9fafb;
+        color: #111827;
     }
 
     .sort-label {
-        color: #9ca3af;
+        color: #4b5563;
     }
 
     .sort-button {
-        background-color: rgba(236, 19, 19, 0.2);
-        color: #e5e7eb;
+        background-color: rgba(236, 19, 19, 0.1);
+        color: #1f2937;
     }
 
     .sort-button:hover {
-        background-color: rgba(236, 19, 19, 0.3);
+        background-color: rgba(236, 19, 19, 0.2);
     }
 
     .filter-tab {
-        background-color: rgba(236, 19, 19, 0.2);
-        color: #e5e7eb;
+        background-color: rgba(236, 19, 19, 0.1);
+        color: #1f2937;
     }
 
     .filter-tab:hover {
-        background-color: rgba(236, 19, 19, 0.3);
+        background-color: rgba(236, 19, 19, 0.2);
     }
 
     .voucher-card-content {
-        background-color: #ffffff;
+        background-color: white;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
 
     .voucher-title-text {
-        color: #f9fafb;
+        color: #111827;
     }
 
     .voucher-description {
-        color: #9ca3af;
+        color: #4b5563;
     }
 
     .voucher-actions {
-        border-top-color: #374151;
+        border-top-color: #e5e7eb;
     }
 
     .btn-secondary {
-        background-color: rgba(236, 19, 19, 0.2);
-        color: #e5e7eb;
+        background-color: rgba(236, 19, 19, 0.1);
+        color: #1f2937;
     }
 
     .btn-secondary:hover {
-        background-color: rgba(236, 19, 19, 0.3);
+        background-color: rgba(236, 19, 19, 0.2);
     }
 
     .btn-disabled {
-        background-color: #374151;
-        color: #9ca3af;
+        background-color: #e5e7eb;
+        color: #6b7280;
     }
 
     .redeem-voucher-card {
-        background-color: #ffffff;
+        background-color: white;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
 
     .redeem-voucher-title {
-        color: #f9fafb;
+        color: #111827;
     }
 
     .redeem-voucher-input {
-        background-color: #374151;
-        border-color: #4b5563;
-        color: #f9fafb;
+        background-color: white;
+        border-color: #e5e7eb;
+        color: #111827;
     }
 
     .redeem-voucher-input:focus {
@@ -701,13 +701,13 @@
     }
 
     .redeem-voucher-input::placeholder {
-        color: #6b7280;
+        color: #9ca3af;
     }
 
     .success-message {
-        background-color: #064e3b;
-        color: #6ee7b7;
-        border-color: #10b981;
+        background-color: #d1fae5;
+        color: #065f46;
+        border-color: #6ee7b7;
     }
 
     .error-message {
@@ -800,20 +800,20 @@
 /* Dark mode support for dropdown */
 @media (prefers-color-scheme: dark) {
     .sort-dropdown-menu {
-        background-color: #ffffff;
+        background-color: white;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
     
     .sort-option {
-        color: #e5e7eb;
+        color: #1f2937;
     }
     
     .sort-option:hover {
-        background-color: #374151;
+        background-color: #f3f4f6;
     }
     
     .sort-option.active {
-        background-color: rgba(236, 19, 19, 0.2);
+        background-color: rgba(236, 19, 19, 0.1);
         color: #ec1313;
     }
 }
