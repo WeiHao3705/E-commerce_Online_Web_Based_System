@@ -1,12 +1,17 @@
 <?php
 
 require_once __DIR__ . '/../repository/ProductRepository.php';
+require_once __DIR__ . '/ReviewService.php';
 
 class ProductService {
     private $productRepository;
+    private $conn;
+    private $reviewService;
     
     public function __construct($conn) {
+        $this->conn = $conn;
         $this->productRepository = new ProductRepository($conn);
+        $this->reviewService = new ReviewService($conn);
     }
     
     /**
@@ -39,6 +44,23 @@ class ProductService {
             $selectedSize = $variantSizes[$selectedVariant->variant_id][0] ?? '';
         }
         
+        // Get reviews data
+        $reviewsData = $this->reviewService->getProductReviews($product_id);
+        
+        // Check if current user can review (if logged in)
+        $canReview = false;
+        $eligibleOrderItems = [];
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        if (isset($_SESSION['user']) && isset($_SESSION['user']->user_id)) {
+            $userId = $_SESSION['user']->user_id;
+            $canReview = $this->reviewService->canUserReviewProduct($userId, $product_id);
+            if ($canReview) {
+                $eligibleOrderItems = $this->reviewService->getUserEligibleOrderItems($userId, $product_id);
+            }
+        }
+        
         // Return formatted data for controller/view
         return [
             'pageTitle' => $product->product_name,
@@ -48,7 +70,12 @@ class ProductService {
             'variantSizes' => $variantSizes,
             'selectedVariant' => $selectedVariant,
             'initialImage' => $initialImage,
-            'selectedSize' => $selectedSize
+            'selectedSize' => $selectedSize,
+            'reviews' => $reviewsData['reviews'],
+            'average_rating' => $reviewsData['average_rating'],
+            'review_count' => $reviewsData['review_count'],
+            'can_review' => $canReview,
+            'eligible_order_items' => $eligibleOrderItems
         ];
     }
     

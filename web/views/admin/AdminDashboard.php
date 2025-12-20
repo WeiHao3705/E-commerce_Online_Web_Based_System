@@ -300,6 +300,10 @@ try {
                     <span class="material-symbols-outlined">shopping_cart</span>
                     <p>Orders</p>
                 </a>
+                <a href="#" data-view="reviews" data-url="<?php echo $controllerBasePath; ?>ReviewController.php?action=viewAll" class="admin-nav-item">
+                    <span class="material-symbols-outlined">star</span>
+                    <p>Reviews</p>
+                </a>
             </nav>
 
             <div class="admin-sidebar-footer">

@@ -36,16 +36,22 @@ if (!$order) {
     exit;
 }
 
-// Fetch order items
+// Fetch order items with review status
 $itemsQuery = "
-    SELECT oi.*, pi.image_path
+    SELECT oi.*, 
+           pi.image_path,
+           CASE 
+               WHEN pr.review_id IS NOT NULL THEN 1 
+               ELSE 0 
+           END as already_reviewed
     FROM order_item oi
     LEFT JOIN product_image pi ON oi.product_id = pi.product_id
+    LEFT JOIN product_review pr ON oi.order_item_id = pr.order_item_id AND pr.user_id = :user_id
     WHERE oi.order_id = :order_id
     GROUP BY oi.order_item_id
 ";
 $itemsStmt = $conn->prepare($itemsQuery);
-$itemsStmt->execute([':order_id' => $orderId]);
+$itemsStmt->execute([':order_id' => $orderId, ':user_id' => $userId]);
 $orderItems = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $pageTitle = "Order Confirmation";
@@ -142,6 +148,20 @@ include '../../general/_header.php';
                     <div class="item-details">
                         <div class="item-name"><?= htmlspecialchars($item['product_name_snapshot']) ?></div>
                         <div class="item-qty">Quantity: <?= $item['quantity'] ?> × RM <?= number_format($item['product_price_snapshot'], 2) ?></div>
+                        <?php if ($order['order_status'] === 'delivered'): ?>
+                            <div class="item-actions">
+                                <?php if (!$item['already_reviewed']): ?>
+                                    <a href="../../views/product/ProductDetails.php?id=<?= $item['product_id'] ?>&review_order_item=<?= $item['order_item_id'] ?>&review_order_id=<?= $orderId ?>" 
+                                       class="review-btn">
+                                        <i class="fas fa-star"></i> Write Review
+                                    </a>
+                                <?php else: ?>
+                                    <span class="reviewed-badge">
+                                        <i class="fas fa-check-circle"></i> Reviewed
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
                     <div class="item-price">RM <?= number_format($item['subtotal'], 2) ?></div>
                 </div>
@@ -161,8 +181,27 @@ include '../../general/_header.php';
         <a href="generate_receipt.php?order_id=<?= $orderId ?>" class="btn btn-success" target="_blank">
             <i class="fas fa-receipt"></i> Generate E-Receipt
         </a>
+        <?php if ($order['order_status'] === 'delivered'): ?>
+            <?php
+            // Check if there are any unreviewed items
+            $unreviewedQuery = "
+                SELECT COUNT(*) as count
+                FROM order_item oi
+                LEFT JOIN product_review pr ON oi.order_item_id = pr.order_item_id AND pr.user_id = :user_id
+                WHERE oi.order_id = :order_id AND pr.review_id IS NULL
+            ";
+            $unreviewedStmt = $conn->prepare($unreviewedQuery);
+            $unreviewedStmt->execute([':order_id' => $orderId, ':user_id' => $userId]);
+            $unreviewedResult = $unreviewedStmt->fetch(PDO::FETCH_ASSOC);
+            $hasUnreviewedItems = (int)$unreviewedResult['count'] > 0;
+            ?>
+            <?php if ($hasUnreviewedItems): ?>
+                <a href="order_confirmation.php?order_id=<?= $orderId ?>&show_reviews=1" class="btn btn-primary">
+                    <i class="fas fa-star"></i> Write Reviews
+                </a>
+            <?php endif; ?>
+        <?php endif; ?>
         <a href="../../index.php" class="btn btn-primary">Continue Shopping</a>
-        
     </div>
 </div>
 
@@ -182,6 +221,24 @@ function showSlides() {
     slides[slideIndex - 1].style.display = "block";
     setTimeout(showSlides, 3000); // Change image every 3 seconds
 }
+
+// Handle show_reviews parameter - scroll to first review link
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('show_reviews') === '1') {
+        setTimeout(function() {
+            const firstReviewBtn = document.querySelector('.review-btn');
+            if (firstReviewBtn) {
+                firstReviewBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Highlight the review button briefly
+                firstReviewBtn.style.boxShadow = '0 0 20px rgba(251, 191, 36, 0.6)';
+                setTimeout(function() {
+                    firstReviewBtn.style.boxShadow = '';
+                }, 2000);
+            }
+        }, 300);
+    }
+});
 </script>
 
 <?php include '../../general/_footer.php'; ?>

@@ -97,17 +97,23 @@ include 'general/_navbar.php';
                         </div>
 
                         <?php
-                        // Fetch order items for this order
+                        // Fetch order items for this order with review status
                         $itemsQuery = "
-                            SELECT oi.*, pi.image_path
+                            SELECT oi.*, 
+                                   pi.image_path,
+                                   CASE 
+                                       WHEN pr.review_id IS NOT NULL THEN 1 
+                                       ELSE 0 
+                                   END as already_reviewed
                             FROM order_item oi
                             LEFT JOIN product_image pi ON oi.product_id = pi.product_id
+                            LEFT JOIN product_review pr ON oi.order_item_id = pr.order_item_id AND pr.user_id = :user_id
                             WHERE oi.order_id = :order_id
                             GROUP BY oi.order_item_id
                             LIMIT 3
                         ";
                         $itemsStmt = $conn->prepare($itemsQuery);
-                        $itemsStmt->execute([':order_id' => $order['order_id']]);
+                        $itemsStmt->execute([':order_id' => $order['order_id'], ':user_id' => $userId]);
                         $items = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
                         ?>
 
@@ -141,6 +147,27 @@ include 'general/_navbar.php';
                             <a href="views/Cart_Order/order_confirmation.php?order_id=<?= $order['order_id'] ?>" class="btn btn-secondary">
                                 <i class="fas fa-eye"></i> View Details
                             </a>
+                        <?php endif; ?>
+                        
+                        <?php if ($order['order_status'] === 'delivered'): ?>
+                            <?php
+                            // Check if there are any unreviewed items in this order
+                            $unreviewedQuery = "
+                                SELECT COUNT(*) as count
+                                FROM order_item oi
+                                LEFT JOIN product_review pr ON oi.order_item_id = pr.order_item_id AND pr.user_id = :user_id
+                                WHERE oi.order_id = :order_id AND pr.review_id IS NULL
+                            ";
+                            $unreviewedStmt = $conn->prepare($unreviewedQuery);
+                            $unreviewedStmt->execute([':order_id' => $order['order_id'], ':user_id' => $userId]);
+                            $unreviewedResult = $unreviewedStmt->fetch(PDO::FETCH_ASSOC);
+                            $hasUnreviewedItems = (int)$unreviewedResult['count'] > 0;
+                            ?>
+                            <?php if ($hasUnreviewedItems): ?>
+                                <a href="views/Cart_Order/order_confirmation.php?order_id=<?= $order['order_id'] ?>&show_reviews=1" class="btn btn-primary">
+                                    <i class="fas fa-star"></i> Write Review
+                                </a>
+                            <?php endif; ?>
                         <?php endif; ?>
                         
                         <?php if ($order['order_status'] === 'delivered' || $order['order_status'] === 'paid' || $order['order_status'] === 'processing' ): ?>

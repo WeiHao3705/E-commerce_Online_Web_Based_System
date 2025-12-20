@@ -77,6 +77,7 @@ include 'general/_navbar.php';
         border-radius: 8px;
         font-weight: 700;
         font-size: 16px;
+        cursor: pointer;
         transition: background-color 0.3s ease, transform 0.2s ease;
     }
 
@@ -330,6 +331,7 @@ include 'general/_navbar.php';
         border-radius: 8px;
         font-weight: 700;
         font-size: 16px;
+        cursor: pointer;
         transition: background-color 0.3s ease, transform 0.2s ease;
     }
 
@@ -403,7 +405,7 @@ include 'general/_navbar.php';
             <div class="about-hero-content">
                 <h1>Your Ultimate Brand Marketplace</h1>
                 <p>Discover premium products from all your favorite brands in one convenient place. Explore our diverse collections.</p>
-                <a href="<?php echo $rootPath; ?>index.php" class="about-hero-btn">Explore Collections</a>
+                <a href="<?php echo $prefix; ?>views/product/ProductPage.php" class="about-hero-btn">Explore Collections</a>
             </div>
         </section>
 
@@ -525,7 +527,7 @@ include 'general/_navbar.php';
                 <div class="about-cta-card">
                     <h2>Ready to Elevate Your Game?</h2>
                     <p>Explore our collections and find the perfect gear to match your ambition. Join the ProGear family today.</p>
-                    <a href="<?php echo $rootPath; ?>index.php" class="about-cta-btn">Shop Our Gear</a>
+                    <a href="<?php echo $prefix; ?>views/product/ProductPage.php" class="about-cta-btn">Shop Our Gear</a>
                 </div>
             </div>
         </section>

@@ -13,6 +13,9 @@ $prefix = str_replace('\\', '/', $relativePath) . '/';
 require_once $webBasePath . 'lib/PHPMailer.php';
 require_once $webBasePath . 'lib/SMTP.php';
 
+// Include Google Maps Config
+require_once $webBasePath . 'config/google_maps_config.php';
+
 include 'general/_header.php';
 include 'general/_navbar.php';
 ?>
@@ -111,19 +114,12 @@ include 'general/_navbar.php';
                         <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
                       </svg>
                     </a>
-                    
+
                   </div>
                 </div>
 
                 <div class="contact-map-container">
-                  <iframe
-                    class="contact-map"
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3983.8123456789!2d101.6769!3d3.1181!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31cc37d12d8c9231%3A0xf4b6e5c5c5c5c5c5!2sMid%20Valley%20Megamall!5e0!3m2!1sen!2smy!4v1234567890123!5m2!1sen!2smy"
-                    allowfullscreen=""
-                    loading="lazy"
-                    referrerpolicy="no-referrer-when-downgrade"
-                    title="Mid Valley Megamall Location">
-                  </iframe>
+                  <div id="contact-map" class="contact-map"></div>
                 </div>
               </div>
             </div>
@@ -167,9 +163,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (empty($errors)) {
     // Send email using PHPMailer
     $mail = new PHPMailer(true);
-    
+
     try {
-      
+
       $mail->isSMTP();
       $mail->Host       = 'smtp.gmail.com';
       $mail->SMTPAuth   = true;
@@ -178,49 +174,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
       $mail->Port       = 587;
       $mail->CharSet    = 'UTF-8';
-      
-      $mail->SMTPDebug = 0;  
-      $mail->Debugoutput = 'html'; 
-      
+
+      $mail->SMTPDebug = 0;
+      $mail->Debugoutput = 'html';
+
       // Recipients
       $mail->setFrom($email, $full_name);
-      $mail->addAddress('cwsong0833@gmail.com', 'Contact Form Recipient');
+      $mail->addAddress('leewh-wm23@student.tarc.edu.my', 'Contact Form Recipient');
       $mail->addReplyTo($email, $full_name);
-      
+
       // Content
       $mail->isHTML(true);
       $mail->Subject = $subject;
       $mail->Body    = '<h2>Contact Form Submission</h2>' .
-                       '<p><strong>From:</strong> ' . htmlspecialchars($full_name) . '</p>' .
-                       '<p><strong>Email:</strong> ' . htmlspecialchars($email) . '</p>' .
-                       '<p><strong>Subject:</strong> ' . htmlspecialchars($subject) . '</p>' .
-                       '<hr>' .
-                       '<p><strong>Message:</strong></p>' .
-                       '<p>' . nl2br(htmlspecialchars($message)) . '</p>';
+        '<p><strong>From:</strong> ' . htmlspecialchars($full_name) . '</p>' .
+        '<p><strong>Email:</strong> ' . htmlspecialchars($email) . '</p>' .
+        '<p><strong>Subject:</strong> ' . htmlspecialchars($subject) . '</p>' .
+        '<hr>' .
+        '<p><strong>Message:</strong></p>' .
+        '<p>' . nl2br(htmlspecialchars($message)) . '</p>';
       $mail->AltBody = "Contact Form Submission\n\n" .
-                       "From: " . $full_name . "\n" .
-                       "Email: " . $email . "\n" .
-                       "Subject: " . $subject . "\n\n" .
-                       "Message:\n" . $message;
-      
+        "From: " . $full_name . "\n" .
+        "Email: " . $email . "\n" .
+        "Subject: " . $subject . "\n\n" .
+        "Message:\n" . $message;
+
       $mail->send();
-      
+
       // Success message
       echo '<div class="contact-message contact-message-success">';
       echo '<p>Thank you! Your message has been sent successfully.</p>';
       echo '</div>';
-      
+
       // Clear form data
       $_POST = [];
     } catch (Exception $e) {
       // Error message
       echo '<div class="contact-message contact-message-error">';
       echo '<p><strong>Sorry, there was an error sending your message.</strong></p>';
-      
+
       if ($mail->ErrorInfo) {
         $errorInfo = htmlspecialchars($mail->ErrorInfo);
         echo '<p><strong>Error Details:</strong> ' . $errorInfo . '</p>';
-        
+
         // Provide helpful suggestions based on error type
         if (stripos($errorInfo, 'authenticate') !== false || stripos($errorInfo, 'login') !== false) {
           echo '<div style="background: #fff3cd; padding: 15px; margin: 10px 0; border-left: 4px solid #ffc107; border-radius: 4px;">';
@@ -245,7 +241,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       } else {
         echo '<p>Error: ' . htmlspecialchars($e->getMessage()) . '</p>';
       }
-      
+
       echo '<p style="margin-top: 15px; font-size: 0.9em; color: #666;">If the problem persists, please contact the administrator.</p>';
       echo '</div>';
     }
@@ -261,5 +257,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 }
 ?>
+
+<!-- Google Maps JavaScript API -->
+<?php if (!empty(GOOGLE_MAPS_API_KEY)): ?>
+  <script>
+    // Define callback function before loading the API
+    window.initContactMap = function() {
+      // Check if map container exists
+      const mapContainer = document.getElementById('contact-map');
+      if (!mapContainer) {
+        console.error('Map container not found');
+        return;
+      }
+
+      // Mid Valley Megamall Kuala Lumpur coordinates
+      const location = {
+        lat: 3.1181,
+        lng: 101.6769
+      };
+
+      try {
+        // Create map
+        const map = new google.maps.Map(mapContainer, {
+          center: location,
+          zoom: 15,
+          mapTypeControl: true,
+          streetViewControl: true,
+          fullscreenControl: true,
+          styles: [{
+            featureType: 'poi.business',
+            stylers: [{
+              visibility: 'on'
+            }]
+          }]
+        });
+
+        // Add marker
+        const marker = new google.maps.Marker({
+          position: location,
+          map: map,
+          title: 'Mid Valley Megamall Kuala Lumpur',
+          animation: google.maps.Animation.DROP
+        });
+
+        // Add info window
+        const infoWindow = new google.maps.InfoWindow({
+          content: '<div style="padding: 10px;"><h3 style="margin: 0 0 5px 0;">Mid Valley Megamall</h3><p style="margin: 0;">Kuala Lumpur, Malaysia</p></div>'
+        });
+
+        // Show info window on marker click
+        marker.addListener('click', () => {
+          infoWindow.open(map, marker);
+        });
+      } catch (error) {
+        console.error('Error initializing Google Maps:', error);
+        mapContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f0f0f0; color: #d32f2f; padding: 20px; text-align: center;"><p>Error loading map. Please check your API key.</p></div>';
+      }
+    };
+  </script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo htmlspecialchars(GOOGLE_MAPS_API_KEY); ?>&callback=initContactMap&loading=async" async defer></script>
+<?php else: ?>
+  <script>
+    console.warn('Google Maps API key is not configured. Please add GOOGLE_MAPS_API_KEY to your .env file or google_maps_config.php');
+    document.getElementById('contact-map').innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f0f0f0; color: #666; padding: 20px; text-align: center;"><p>Map is not available. Please configure Google Maps API key.</p></div>';
+  </script>
+<?php endif; ?>
 
 <?php include 'general/_footer.php'; ?>

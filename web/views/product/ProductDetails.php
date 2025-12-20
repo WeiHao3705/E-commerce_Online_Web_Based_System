@@ -48,6 +48,7 @@ require __DIR__ . '/../../general/_navbar.php';
 ?>
 
 <link rel="stylesheet" href="<?= $assetPrefix ?>css/ProductDetails.css?v=<?= filemtime(__DIR__ . '/../../css/ProductDetails.css'); ?>">
+<link rel="stylesheet" href="<?= $assetPrefix ?>css/reviews.css?v=<?= filemtime(__DIR__ . '/../../css/reviews.css'); ?>">
 
 <div class="product-detail-container" id="productDetailRoot" data-variant-sizes='<?= htmlspecialchars(json_encode($variantSizes), ENT_QUOTES, 'UTF-8') ?>' data-login-url="<?= htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8') ?>">
 	<h1 class="product-detail-title">
@@ -129,6 +130,103 @@ require __DIR__ . '/../../general/_navbar.php';
 			</form>
 		</div>
 	</div>
+	
+	<!-- Reviews Section -->
+	<div class="reviews-section">
+		<div class="reviews-header">
+			<h2>Customer Reviews</h2>
+		</div>
+		
+		<!-- Reviews Summary -->
+		<?php if ($review_count > 0): ?>
+			<div class="reviews-summary">
+				<div class="average-rating">
+					<div class="average-rating-value"><?= number_format($average_rating, 1) ?></div>
+					<div class="star-rating" data-rating="<?= $average_rating ?>"></div>
+					<div class="average-rating-count"><?= $review_count ?> review<?= $review_count !== 1 ? 's' : '' ?></div>
+				</div>
+				<div class="review-count-text">
+					Based on <?= $review_count ?> customer review<?= $review_count !== 1 ? 's' : '' ?>
+				</div>
+			</div>
+		<?php endif; ?>
+		
+		<!-- Review Form (if user can review) -->
+		<?php if (isset($can_review) && $can_review && !empty($eligible_order_items)): ?>
+			<div class="review-form-container">
+				<h3>Write a Review</h3>
+				<div id="reviewMessage" class="review-message" style="display: none;"></div>
+				<form id="reviewForm" class="review-form" method="POST">
+					<input type="hidden" name="product_id" value="<?= $product->product_id ?>">
+					<input type="hidden" id="reviewRating" name="rating" value="0">
+					
+					<div class="form-group">
+						<label for="orderItemSelect">Select Order Item</label>
+						<select id="orderItemSelect" name="order_item_id" required>
+							<option value="">-- Select Order Item --</option>
+							<?php foreach ($eligible_order_items as $item): ?>
+								<?php if ($item['already_reviewed'] == 0): ?>
+									<option value="<?= $item['order_item_id'] ?>" data-order-id="<?= $item['order_id'] ?>">
+										Order #<?= str_pad($item['order_id'], 6, '0', STR_PAD_LEFT) ?> - 
+										<?= htmlspecialchars($item['product_name_snapshot']) ?> 
+										(Qty: <?= $item['quantity'] ?>) - 
+										<?= date('M d, Y', strtotime($item['order_date'])) ?>
+									</option>
+								<?php endif; ?>
+							<?php endforeach; ?>
+						</select>
+						<input type="hidden" id="reviewOrderId" name="order_id" value="">
+					</div>
+					
+					<div class="form-group">
+						<label>Rating</label>
+						<div class="star-rating-input">
+							<span class="star" data-rating="1">★</span>
+							<span class="star" data-rating="2">★</span>
+							<span class="star" data-rating="3">★</span>
+							<span class="star" data-rating="4">★</span>
+							<span class="star" data-rating="5">★</span>
+						</div>
+						<div class="rating-label"></div>
+					</div>
+					
+					<div class="form-group">
+						<label for="reviewComment">Comment (Optional)</label>
+						<textarea id="reviewComment" name="comment" rows="4" placeholder="Share your experience with this product..."></textarea>
+					</div>
+					
+					<button type="submit" class="submit-review-btn">Submit Review</button>
+				</form>
+			</div>
+		<?php endif; ?>
+		
+		<!-- Reviews List -->
+		<div class="reviews-list">
+			<?php if (empty($reviews)): ?>
+				<div class="no-reviews">
+					<div class="no-reviews-icon">⭐</div>
+					<div class="no-reviews-text">No reviews yet. Be the first to review this product!</div>
+				</div>
+			<?php else: ?>
+				<?php foreach ($reviews as $review): ?>
+					<div class="review-item">
+						<div class="review-header">
+							<div class="review-user">
+								<div class="review-user-name"><?= htmlspecialchars($review->full_name ?: $review->username) ?></div>
+								<div class="review-date"><?= date('M d, Y', strtotime($review->created_at)) ?></div>
+							</div>
+							<div class="review-rating">
+								<div class="star-rating" data-rating="<?= $review->rating ?>"></div>
+							</div>
+						</div>
+						<?php if (!empty($review->comment)): ?>
+							<div class="review-comment"><?= nl2br(htmlspecialchars($review->comment)) ?></div>
+						<?php endif; ?>
+					</div>
+				<?php endforeach; ?>
+			<?php endif; ?>
+		</div>
+	</div>
 </div>
 <!-- Login required modal -->
 <div class="login-modal" id="loginModal" aria-hidden="true" role="dialog" aria-modal="true">
@@ -148,5 +246,6 @@ require __DIR__ . '/../../general/_navbar.php';
 </div>
 
 <script src="<?= $assetPrefix ?>js/productDetails.js?v=<?= filemtime(__DIR__ . '/../../js/productDetails.js'); ?>"></script>
+<script src="<?= $assetPrefix ?>js/reviews.js?v=<?= filemtime(__DIR__ . '/../../js/reviews.js'); ?>"></script>
 
 <?php require __DIR__ . '/../../general/_footer.php'; ?>

@@ -252,6 +252,48 @@
     color: #666;
 }
 
+.review-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 5px;
+    padding: 4px 8px;
+    background: #fbbf24;
+    color: white;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.review-link:hover {
+    background: #f59e0b;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
+}
+
+.review-link i {
+    font-size: 10px;
+}
+
+.reviewed-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 5px;
+    padding: 4px 8px;
+    background: #d1fae5;
+    color: #065f46;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.reviewed-badge i {
+    font-size: 10px;
+}
+
 .more-items {
     display: flex;
     align-items: center;
