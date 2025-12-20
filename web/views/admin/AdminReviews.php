@@ -1,17 +1,22 @@
 <?php
-// Calculate base path
+// Calculate base path - use absolute path from document root
 $currentFileDir = dirname(__FILE__);
 $webRootDir = dirname(dirname($currentFileDir));
 $docRoot = $_SERVER['DOCUMENT_ROOT'];
 $relativePath = str_replace($docRoot, '', $webRootDir);
-$webBasePath = str_replace('\\', '/', $relativePath) . '/';
+$webBasePath = str_replace('\\', '/', $relativePath);
+// Ensure path starts with /
+if (substr($webBasePath, 0, 1) !== '/') {
+    $webBasePath = '/' . $webBasePath;
+}
+// Remove trailing slash and add it back to ensure consistency
+$webBasePath = rtrim($webBasePath, '/') . '/';
 $cssBasePath = $webBasePath . 'css/';
 $controllerBasePath = $webBasePath . 'controller/';
 $viewsBasePath = $webBasePath . 'views/';
 
 // Get filter parameters
-$product_filter = $_GET['product_id'] ?? '';
-$user_filter = $_GET['user_id'] ?? '';
+$product_filter = $_GET['product_name'] ?? '';
 $rating_filter = $_GET['rating'] ?? '';
 ?>
 <!DOCTYPE html>
@@ -19,6 +24,7 @@ $rating_filter = $_GET['rating'] ?? '';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="<?php echo $webBasePath; ?>">
     <title><?php echo $pageTitle; ?> - NGEAR</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -61,33 +67,80 @@ $rating_filter = $_GET['rating'] ?? '';
         .star-rating-admin .star.filled {
             color: #fbbf24;
         }
+        .filter-actions .btn {
+            padding: 0.625rem 1.25rem;
+            font-size: 0.875rem;
+            min-width: 100px;
+            width: 100px;
+            height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+        .product-search-wrapper {
+            position: relative;
+        }
+        .product-autocomplete {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            margin-top: 4px;
+        }
+        .product-autocomplete.show {
+            display: block;
+        }
+        .product-autocomplete-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #e5e7eb;
+            transition: background-color 0.2s;
+        }
+        .product-autocomplete-item:last-child {
+            border-bottom: none;
+        }
+        .product-autocomplete-item:hover {
+            background-color: #f3f4f6;
+        }
+        .product-autocomplete-item.selected {
+            background-color: #ef8324;
+            color: white;
+        }
     </style>
 </head>
 <body>
     <div class="page-container">
-        <!-- Header -->
-        <header class="header-actions">
-            <h1 style="font-size: 2rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 0.75rem;">
-                <i class="fas fa-star" style="color: #FF523B;"></i> Product Reviews
-            </h1>
-        </header>
-
         <!-- Filters -->
         <section class="filters-section">
-            <form method="GET" class="filters-form">
+            <form method="GET" class="filters-form" id="reviewFilterForm">
+                <input type="hidden" name="controller" value="review">
+                <input type="hidden" name="action" value="viewAll">
+                
                 <div class="filter-group">
-                    <label><i class="fas fa-box"></i> Product ID</label>
-                    <input type="number" name="product_id" placeholder="Filter by Product ID" value="<?= htmlspecialchars($product_filter) ?>">
-                </div>
-
-                <div class="filter-group">
-                    <label><i class="fas fa-user"></i> User ID</label>
-                    <input type="number" name="user_id" placeholder="Filter by User ID" value="<?= htmlspecialchars($user_filter) ?>">
+                    <label><i class="fas fa-box"></i> Product Name</label>
+                    <div class="product-search-wrapper">
+                        <input type="text" 
+                               id="productNameInput" 
+                               name="product_name" 
+                               placeholder="Search by Product Name" 
+                               value="<?= htmlspecialchars($product_filter) ?>"
+                               autocomplete="off">
+                        <div id="productAutocomplete" class="product-autocomplete"></div>
+                    </div>
                 </div>
 
                 <div class="filter-group">
                     <label><i class="fas fa-star"></i> Rating</label>
-                    <select name="rating">
+                    <select name="rating" id="ratingFilter">
                         <option value="">All Ratings</option>
                         <option value="5" <?= $rating_filter === '5' ? 'selected' : '' ?>>5 Stars</option>
                         <option value="4" <?= $rating_filter === '4' ? 'selected' : '' ?>>4 Stars</option>
@@ -168,6 +221,132 @@ $rating_filter = $_GET['rating'] ?? '';
             </table>
         </section>
     </div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            const productInput = $('#productNameInput');
+            const autocomplete = $('#productAutocomplete');
+            let searchTimeout;
+            let selectedIndex = -1;
+            let products = [];
+            
+            // Get controller base path
+            const controllerBasePath = '<?php echo $controllerBasePath; ?>';
+            const reviewControllerUrl = controllerBasePath + 'ReviewController.php';
+            
+            // Handle input for autocomplete
+            productInput.on('input', function() {
+                const searchTerm = $(this).val().trim();
+                clearTimeout(searchTimeout);
+                
+                if (searchTerm.length < 2) {
+                    autocomplete.removeClass('show').empty();
+                    return;
+                }
+                
+                searchTimeout = setTimeout(function() {
+                    searchProducts(searchTerm);
+                }, 300);
+            });
+            
+            // Handle keyboard navigation
+            productInput.on('keydown', function(e) {
+                if (!autocomplete.hasClass('show') || products.length === 0) {
+                    return;
+                }
+                
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectedIndex = Math.min(selectedIndex + 1, products.length - 1);
+                    updateSelection();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectedIndex = Math.max(selectedIndex - 1, -1);
+                    updateSelection();
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (selectedIndex >= 0 && selectedIndex < products.length) {
+                        selectProduct(products[selectedIndex]);
+                    } else {
+                        // Submit form if no selection
+                        $('#reviewFilterForm').submit();
+                    }
+                } else if (e.key === 'Escape') {
+                    autocomplete.removeClass('show').empty();
+                    selectedIndex = -1;
+                }
+            });
+            
+            // Handle click outside to close autocomplete
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.product-search-wrapper').length) {
+                    autocomplete.removeClass('show');
+                }
+            });
+            
+            function searchProducts(searchTerm) {
+                $.ajax({
+                    url: reviewControllerUrl,
+                    method: 'GET',
+                    data: {
+                        action: 'searchProducts',
+                        search: searchTerm,
+                        limit: 10
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success && response.products.length > 0) {
+                            products = response.products;
+                            renderAutocomplete(response.products);
+                            selectedIndex = -1;
+                        } else {
+                            autocomplete.removeClass('show').empty();
+                        }
+                    },
+                    error: function() {
+                        autocomplete.removeClass('show').empty();
+                    }
+                });
+            }
+            
+            function renderAutocomplete(productsList) {
+                autocomplete.empty();
+                
+                productsList.forEach(function(product, index) {
+                    const item = $('<div>')
+                        .addClass('product-autocomplete-item')
+                        .attr('data-index', index)
+                        .text(product.product_name)
+                        .on('click', function() {
+                            selectProduct(product);
+                        })
+                        .on('mouseenter', function() {
+                            selectedIndex = index;
+                            updateSelection();
+                        });
+                    
+                    autocomplete.append(item);
+                });
+                
+                autocomplete.addClass('show');
+            }
+            
+            function updateSelection() {
+                autocomplete.find('.product-autocomplete-item').removeClass('selected');
+                if (selectedIndex >= 0 && selectedIndex < products.length) {
+                    autocomplete.find('.product-autocomplete-item[data-index="' + selectedIndex + '"]')
+                        .addClass('selected');
+                }
+            }
+            
+            function selectProduct(product) {
+                productInput.val(product.product_name);
+                autocomplete.removeClass('show').empty();
+                selectedIndex = -1;
+            }
+        });
+    </script>
 </body>
 </html>
 

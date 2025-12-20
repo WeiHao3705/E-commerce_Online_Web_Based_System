@@ -30,6 +30,9 @@ class ReviewController {
             case 'viewAll':
                 $this->viewAllReviews();
                 break;
+            case 'searchProducts':
+                $this->searchProducts();
+                break;
             default:
                 http_response_code(400);
                 echo json_encode(['success' => false, 'message' => 'Invalid action']);
@@ -142,11 +145,8 @@ class ReviewController {
         
         // Get filters
         $filters = [];
-        if (!empty($_GET['product_id'])) {
-            $filters['product_id'] = (int)$_GET['product_id'];
-        }
-        if (!empty($_GET['user_id'])) {
-            $filters['user_id'] = (int)$_GET['user_id'];
+        if (!empty($_GET['product_name'])) {
+            $filters['product_name'] = trim($_GET['product_name']);
         }
         if (!empty($_GET['rating'])) {
             $filters['rating'] = (int)$_GET['rating'];
@@ -155,18 +155,57 @@ class ReviewController {
         try {
             $reviews = $this->reviewService->getAllReviewsForAdmin($filters);
             
-            // Include the admin reviews view
+            // Include the admin reviews view (no header/footer for iframe loading)
             $pageTitle = "All Reviews";
-            require __DIR__ . '/../general/_header.php';
-            require __DIR__ . '/../general/_navbar.php';
             require __DIR__ . '/../views/admin/AdminReviews.php';
-            require __DIR__ . '/../general/_footer.php';
         } catch (Exception $e) {
             $pageTitle = "Error";
-            require __DIR__ . '/../general/_header.php';
-            require __DIR__ . '/../general/_navbar.php';
             echo "<div style='max-width:1000px;margin:40px auto;padding:20px;'><h2 style='color:#dc2626;'>Error</h2><p>" . htmlspecialchars($e->getMessage()) . "</p></div>";
-            require __DIR__ . '/../general/_footer.php';
+        }
+    }
+    
+    /**
+     * Search products by name (AJAX)
+     */
+    private function searchProducts() {
+        header('Content-Type: application/json');
+        
+        if (!isset($_GET['search']) || empty(trim($_GET['search']))) {
+            echo json_encode(['success' => true, 'products' => []]);
+            return;
+        }
+        
+        $searchTerm = trim($_GET['search']);
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+        
+        try {
+            $sql = "
+                SELECT DISTINCT
+                    p.product_id,
+                    p.product_name
+                FROM product p
+                WHERE p.product_name LIKE :search
+                ORDER BY p.product_name ASC
+                LIMIT :limit
+            ";
+            
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindValue(':search', '%' . $searchTerm . '%', PDO::PARAM_STR);
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            echo json_encode([
+                'success' => true,
+                'products' => $products
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
         }
     }
     

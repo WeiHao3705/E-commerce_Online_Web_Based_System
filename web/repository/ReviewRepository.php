@@ -213,7 +213,7 @@ class ReviewRepository {
     
     /**
      * Get all reviews for admin view
-     * @param array $filters Optional filters (product_id, user_id, rating)
+     * @param array $filters Optional filters (product_name, rating)
      * @return array Array of ReviewDTO objects
      */
     public function getAllReviewsForAdmin($filters = []) {
@@ -239,14 +239,9 @@ class ReviewRepository {
         
         $params = [];
         
-        if (!empty($filters['product_id'])) {
-            $sql .= " AND r.product_id = :product_id";
-            $params[':product_id'] = $filters['product_id'];
-        }
-        
-        if (!empty($filters['user_id'])) {
-            $sql .= " AND r.user_id = :user_id";
-            $params[':user_id'] = $filters['user_id'];
+        if (!empty($filters['product_name'])) {
+            $sql .= " AND p.product_name LIKE :product_name";
+            $params[':product_name'] = '%' . $filters['product_name'] . '%';
         }
         
         if (!empty($filters['rating'])) {
