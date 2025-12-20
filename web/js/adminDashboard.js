@@ -136,12 +136,10 @@ $(document).ready(function() {
                     // Update recent orders if data is available
                     if (response.recent_orders && response.recent_orders.length > 0) {
                         var ordersHtml = '';
-                        var imageBasePath = $('#dashboard-view').data('image-base-path') || '';
                         response.recent_orders.forEach(function(order) {
                             ordersHtml += '<div class="admin-order-item">';
-                            ordersHtml += '<div class="admin-order-image" style="background-image: url(\'' + imageBasePath + 'images/' + order.image + '\');"></div>';
-                            ordersHtml += '<div class="admin-order-details">';
-                            ordersHtml += '<h4 class="admin-order-name">' + order.name + '</h4>';
+                            ordersHtml += '<div class="admin-order-info">';
+                            ordersHtml += '<p class="admin-order-name">' + order.name + '</p>';
                             ordersHtml += '<p class="admin-order-id">#' + order.id + '</p>';
                             ordersHtml += '</div>';
                             ordersHtml += '<p class="admin-order-price">RM ' + order.price + '</p>';

@@ -131,12 +131,9 @@ try {
         SELECT o.order_id, 
                o.total_amount,
                o.create_at,
-               oi.product_name_snapshot,
-               pi.image_path
+               oi.product_name_snapshot
         FROM orders o
         LEFT JOIN order_item oi ON o.order_id = oi.order_id
-        LEFT JOIN product p ON oi.product_id = p.product_id
-        LEFT JOIN product_image pi ON p.product_id = pi.product_id AND pi.type = 'main'
         WHERE o.order_status != 'canceled'
         ORDER BY o.create_at DESC
         LIMIT 3
@@ -149,8 +146,7 @@ try {
         $recentOrders[] = [
             'id' => str_pad($order['order_id'], 6, '0', STR_PAD_LEFT),
             'name' => $order['product_name_snapshot'] ?? 'Product',
-            'price' => number_format($order['total_amount'], 2),
-            'image' => $order['image_path'] ?? 'products/default.jpg'
+            'price' => number_format($order['total_amount'], 2)
         ];
     }
 

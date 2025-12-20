@@ -170,12 +170,9 @@ try {
         SELECT o.order_id, 
                o.total_amount,
                o.create_at,
-               oi.product_name_snapshot,
-               pi.image_path
+               oi.product_name_snapshot
         FROM orders o
         LEFT JOIN order_item oi ON o.order_id = oi.order_id
-        LEFT JOIN product p ON oi.product_id = p.product_id
-        LEFT JOIN product_image pi ON p.product_id = pi.product_id AND pi.type = 'main'
         WHERE o.order_status != 'canceled'
         ORDER BY o.create_at DESC
         LIMIT 3
@@ -188,11 +185,10 @@ try {
         $recentOrders[] = [
             'name' => $order['product_name_snapshot'] ?? 'Product',
             'id' => '#' . str_pad($order['order_id'], 6, '0', STR_PAD_LEFT),
-            'price' => 'RM ' . number_format($order['total_amount'], 2),
-            'image' => $webBasePath . 'images/' . ($order['image_path'] ?? 'products/default.jpg')
+            'price' => 'RM ' . number_format($order['total_amount'], 2)
         ];
     }
-    
+
     // If no orders found, show empty state
     if (empty($recentOrders)) {
         $recentOrders = [];
@@ -200,6 +196,41 @@ try {
 } catch (Exception $e) {
     error_log("Error fetching recent orders: " . $e->getMessage());
     $recentOrders = [];
+}
+
+// Get low stock products (threshold: 10 units)
+$lowStockThreshold = 10; // Configurable threshold
+try {
+    // Ensure we have a database connection
+    if (!isset($conn)) {
+        $database = new Database();
+        $conn = $database->getConnection();
+    }
+    $lowStockQuery = "
+        SELECT * FROM (
+            SELECT 
+                p.product_id,
+                p.product_name,
+                p.category,
+                COALESCE((
+                    SELECT SUM(i2.stock_quantity)
+                    FROM inventory i2
+                    WHERE i2.product_id = p.product_id OR i2.variant_id IN (
+                        SELECT variant_id FROM product_variant WHERE product_id = p.product_id
+                    )
+                ), 0) AS total_stock
+            FROM product p
+        ) AS product_stock
+        WHERE total_stock <= :threshold
+        ORDER BY total_stock ASC
+        LIMIT 5
+    ";
+    $lowStockStmt = $conn->prepare($lowStockQuery);
+    $lowStockStmt->execute([':threshold' => $lowStockThreshold]);
+    $lowStockProducts = $lowStockStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    error_log("Error fetching low stock products: " . $e->getMessage());
+    $lowStockProducts = [];
 }
 ?>
 <!DOCTYPE html>
@@ -358,19 +389,19 @@ try {
                         </div>
                         <p class="admin-chart-period" id="selected-week-label">This Week</p>
                         <div class="admin-chart-bars">
-                            <?php 
+                            <?php
                             $maxWeeklySales = max($weeklySalesData);
                             if ($maxWeeklySales == 0) $maxWeeklySales = 1; // Prevent division by zero
-                            for ($i = 0; $i < 4; $i++): 
+                            for ($i = 0; $i < 4; $i++):
                                 $height = ($weeklySalesData[$i] / $maxWeeklySales) * 100;
                                 $isActive = ($i == 3) ? 'active' : '';
                                 $weekLabel = ($i == 3) ? 'This Week' : (4 - $i) . ' weeks ago';
                                 $weeksAgo = 3 - $i;
                             ?>
-                            <div class="week-bar-container" data-week-index="<?php echo $i; ?>" data-weeks-ago="<?php echo $weeksAgo; ?>" data-sales="<?php echo $weeklySalesData[$i]; ?>" data-label="<?php echo $weekLabel; ?>" style="cursor: pointer;">
-                                <div class="admin-chart-bar <?php echo $isActive; ?>" style="height: <?php echo max($height, 5); ?>%;"></div>
-                                <p class="admin-chart-label <?php echo $isActive; ?>"><?php echo $weekLabel; ?></p>
-                            </div>
+                                <div class="week-bar-container" data-week-index="<?php echo $i; ?>" data-weeks-ago="<?php echo $weeksAgo; ?>" data-sales="<?php echo $weeklySalesData[$i]; ?>" data-label="<?php echo $weekLabel; ?>" style="cursor: pointer;">
+                                    <div class="admin-chart-bar <?php echo $isActive; ?>" style="height: <?php echo max($height, 5); ?>%;"></div>
+                                    <p class="admin-chart-label <?php echo $isActive; ?>"><?php echo $weekLabel; ?></p>
+                                </div>
                             <?php endfor; ?>
                         </div>
                     </div>
@@ -384,7 +415,6 @@ try {
                         <div class="admin-orders-list">
                             <?php foreach ($recentOrders as $order): ?>
                                 <div class="admin-order-item">
-                                    <div class="admin-order-image" style="background-image: url('<?php echo htmlspecialchars($order['image']); ?>');"></div>
                                     <div class="admin-order-info">
                                         <p class="admin-order-name"><?php echo htmlspecialchars($order['name']); ?></p>
                                         <p class="admin-order-id"><?php echo htmlspecialchars($order['id']); ?></p>
@@ -406,6 +436,36 @@ try {
                             </a>
                         </div>
                     </div>
+                </section>
+
+                <!-- Low Stock Alert Section -->
+                <section class="admin-content-section">
+                    <?php if (!empty($lowStockProducts)): ?>
+                        <div class="admin-alert-card">
+                            <div class="admin-alert-header">
+                                <span class="material-symbols-outlined admin-alert-icon">warning</span>
+                                <h3 class="admin-alert-title">Low Stock Alert (<?php echo count($lowStockProducts); ?>)</h3>
+                            </div>
+                            <div class="admin-alert-list">
+                                <?php foreach ($lowStockProducts as $product): ?>
+                                    <div class="admin-alert-item">
+                                        <div class="admin-alert-info">
+                                            <p class="admin-alert-name"><?php echo htmlspecialchars($product['product_name']); ?></p>
+                                            <p class="admin-alert-stock">Stock: <strong><?php echo $product['total_stock']; ?></strong> units</p>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <div class="admin-alert-card" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-left-color: #10b981;">
+                            <div class="admin-alert-header">
+                                <span class="material-symbols-outlined admin-alert-icon" style="color: #10b981;">check_circle</span>
+                                <h3 class="admin-alert-title" style="color: #065f46;">Stock Status: All Good</h3>
+                            </div>
+                            <p style="color: #047857; margin: 0.5rem 0 0 0; font-size: 0.875rem;">All products have sufficient stock (above <?php echo $lowStockThreshold; ?> units).</p>
+                        </div>
+                    <?php endif; ?>
                 </section>
             </div>
 
