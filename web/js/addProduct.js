@@ -6,7 +6,13 @@ document.addEventListener('DOMContentLoaded', function() {
 	const imageInput = document.getElementById('product_images');
 	const imagesPreview = document.getElementById('imagesPreview');
 	const mainIndexInput = document.getElementById('main_image_index');
-	const form = document.querySelector('form');
+	const variantImageInput = document.getElementById('variant_images');
+	const variantImagesPreview = document.getElementById('variantImagesPreview');
+	const variantMainIndexInput = document.getElementById('variant_main_image_index');
+	const productForm = document.getElementById('productForm');
+	const variantForm = document.getElementById('variantForm');
+	const tabProduct = document.getElementById('tab-product');
+	const tabVariant = document.getElementById('tab-variant');
 
 	function suggestSellingPrice() {
 		const cost = parseFloat(costInput.value) || 0;
@@ -22,23 +28,22 @@ document.addEventListener('DOMContentLoaded', function() {
 	costInput.addEventListener('input', suggestSellingPrice);
 	originalPriceInput.addEventListener('input', suggestSellingPrice);
 
-	// Multiple image preview and validation with main selection
-	imageInput.addEventListener('change', function(e) {
-		const files = Array.from(e.target.files || []);
+	// Shared preview renderer
+	function renderPreview(fileInput, previewContainer, mainInput, radioName) {
+		const files = Array.from(fileInput.files || []);
 		const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
 
-		imagesPreview.innerHTML = '';
+		previewContainer.innerHTML = '';
 		if (!files.length) {
-			imagesPreview.style.display = 'none';
+			previewContainer.style.display = 'none';
 			return;
 		}
 
 		let firstValidIndex = -1;
 
 		files.forEach((file, idx) => {
-			// Validate file size/type
 			if (file.size > 5 * 1024 * 1024 || !validTypes.includes(file.type)) {
-				return; // skip invalid
+				return;
 			}
 			if (firstValidIndex === -1) firstValidIndex = idx;
 
@@ -57,7 +62,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 				const radio = document.createElement('input');
 				radio.type = 'radio';
-				radio.name = 'main_image_choice';
+				radio.name = radioName;
 				radio.value = String(idx);
 
 				const mark = document.createElement('span');
@@ -65,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				mark.textContent = 'Main';
 
 				radio.addEventListener('change', function() {
-					mainIndexInput.value = String(idx);
+					mainInput.value = String(idx);
 				});
 
 				radioWrap.appendChild(radio);
@@ -73,27 +78,53 @@ document.addEventListener('DOMContentLoaded', function() {
 
 				item.appendChild(img);
 				item.appendChild(radioWrap);
-				imagesPreview.appendChild(item);
+				previewContainer.appendChild(item);
 
-				// Default first valid as main
 				if (idx === firstValidIndex) {
 					radio.checked = true;
-					mainIndexInput.value = String(idx);
+					mainInput.value = String(idx);
 				}
 			};
 			reader.readAsDataURL(file);
 		});
 
-		imagesPreview.style.display = 'grid';
+		previewContainer.style.display = 'grid';
+	}
+
+	// Product images
+	imageInput.addEventListener('change', function() {
+		renderPreview(imageInput, imagesPreview, mainIndexInput, 'main_image_choice');
 	});
 
-	// Validate on form submission
-	form.addEventListener('submit', function(e) {
+	// Variant images
+	variantImageInput.addEventListener('change', function() {
+		renderPreview(variantImageInput, variantImagesPreview, variantMainIndexInput, 'variant_main_image_choice');
+	});
+
+	// Tab switching
+	function switchTab(target) {
+		if (target === 'product') {
+			tabProduct.classList.add('active');
+			tabVariant.classList.remove('active');
+			productForm.classList.remove('hidden');
+			variantForm.classList.add('hidden');
+		} else {
+			tabVariant.classList.add('active');
+			tabProduct.classList.remove('active');
+			variantForm.classList.remove('hidden');
+			productForm.classList.add('hidden');
+		}
+	}
+
+	tabProduct.addEventListener('click', () => switchTab('product'));
+	tabVariant.addEventListener('click', () => switchTab('variant'));
+
+	// Validate product form
+	productForm.addEventListener('submit', function(e) {
 		const cost = parseFloat(costInput.value) || 0;
 		const original = parseFloat(originalPriceInput.value) || 0;
 		const selling = parseFloat(sellingPriceInput.value) || 0;
 
-		// If images selected, ensure a main is chosen
 		const hasImages = imageInput && imageInput.files && imageInput.files.length > 0;
 		if (hasImages && (mainIndexInput.value === '' || isNaN(parseInt(mainIndexInput.value)))) {
 			e.preventDefault();
@@ -106,8 +137,33 @@ document.addEventListener('DOMContentLoaded', function() {
 			alert('Warning: Selling price is lower than cost. You may be selling at a loss.');
 			const confirmed = window.confirm('Do you still want to proceed?');
 			if (confirmed) {
-				form.submit();
+				productForm.submit();
 			}
+		}
+	});
+
+	// Validate variant form
+	variantForm.addEventListener('submit', function(e) {
+		const productId = document.getElementById('variant_product_id').value;
+		const color = document.getElementById('variant_color').value.trim();
+		const hasImages = variantImageInput && variantImageInput.files && variantImageInput.files.length > 0;
+
+		if (!productId) {
+			e.preventDefault();
+			alert('Please choose a product.');
+			return;
+		}
+
+		if (!color) {
+			e.preventDefault();
+			alert('Color is required.');
+			return;
+		}
+
+		if (hasImages && (variantMainIndexInput.value === '' || isNaN(parseInt(variantMainIndexInput.value)))) {
+			e.preventDefault();
+			alert('Please select one image as the main image.');
+			return;
 		}
 	});
 });

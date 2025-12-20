@@ -357,4 +357,67 @@ class ProductService {
     public function getCategories() {
         return $this->productRepository->getAllCategories();
     }
+
+    /**
+     * Create a variant with optional images
+     * @param array $variantData ['product_id', 'color']
+     * @param array|string|null $images List of image paths or single path
+     * @param int|null $mainIndex Index of main image in $images array
+     * @return int Variant ID
+     * @throws Exception On validation or database errors
+     */
+    public function createVariant($variantData, $images = null, $mainIndex = null) {
+        $productId = (int)($variantData['product_id'] ?? 0);
+        $color = trim($variantData['color'] ?? '');
+
+        if ($productId <= 0) {
+            throw new Exception('Please select a valid product.');
+        }
+        if ($color === '') {
+            throw new Exception('Color is required.');
+        }
+
+        // Ensure product exists
+        $product = $this->productRepository->getProductById($productId);
+        if (!$product) {
+            throw new Exception('Product not found.');
+        }
+
+        try {
+            $this->conn->beginTransaction();
+
+            $variantId = $this->productRepository->createVariant($productId, $color);
+
+            // Insert images if provided
+            if (!empty($images)) {
+                if (is_string($images)) {
+                    $this->productRepository->insertProductImage($productId, $variantId, $images, 'main');
+                } elseif (is_array($images)) {
+                    $mainIdx = 0;
+                    if ($mainIndex !== null && is_int($mainIndex) && $mainIndex >= 0 && $mainIndex < count($images)) {
+                        $mainIdx = $mainIndex;
+                    }
+
+                    if (!empty($images[$mainIdx])) {
+                        $this->productRepository->insertProductImage($productId, $variantId, $images[$mainIdx], 'main');
+                    }
+
+                    foreach ($images as $idx => $imgPath) {
+                        if ($idx === $mainIdx || empty($imgPath)) {
+                            continue;
+                        }
+                        $this->productRepository->insertProductImage($productId, $variantId, $imgPath, 'gallery');
+                    }
+                }
+            }
+
+            $this->conn->commit();
+            return $variantId;
+        } catch (Exception $e) {
+            if ($this->conn->inTransaction()) {
+                $this->conn->rollBack();
+            }
+            throw $e;
+        }
+    }
 }
