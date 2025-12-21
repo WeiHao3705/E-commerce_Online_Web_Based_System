@@ -15,6 +15,7 @@
     const addToCartBtn = document.getElementById('addToCartBtn');
     const wishlistSection = document.getElementById('wishlistSection');
     const sizeSelectElement = document.getElementById('sizeSelect');
+    const sizeFormGroup = document.getElementById('sizeFormGroup');
     const quantityInput = document.getElementById('quantityInput');
     
     // Named function for size change handler to avoid duplicate listeners
@@ -25,6 +26,17 @@
     const loginModalBackdrop = document.getElementById('loginModalBackdrop');
     const loginModalCancel = document.getElementById('loginModalCancel');
     const loginModalLogin = document.getElementById('loginModalLogin');
+
+    function toggleSizeVisibility() {
+        if (!sizeFormGroup) return;
+        const optionCount = sizeSelect ? sizeSelect.options.length : 0;
+        // Hide when only the placeholder exists or select missing
+        if (!sizeSelect || optionCount <= 1) {
+            sizeFormGroup.style.display = 'none';
+        } else {
+            sizeFormGroup.style.display = '';
+        }
+    }
 
     function updateSizeOptions() {
         if (!sizeSelect || !selectedVariantInput) return;
@@ -45,6 +57,8 @@
                 };
                 sizeSelect.addEventListener('change', sizeChangeHandler);
             }
+            // No variant → we don't have variant-specific sizes here; ensure visibility toggles
+            toggleSizeVisibility();
             return;
         }
 
@@ -69,6 +83,8 @@
                 updateStockStatus(selectedVariantInput.value, sizes[0]);
             }
         }
+        // Toggle size visibility based on available options
+        toggleSizeVisibility();
         
         // Add event listener for size change (remove old one first if it exists)
         if (sizeSelect) {
@@ -256,6 +272,7 @@
         });
 
         updateSizeOptions();
+        toggleSizeVisibility();
 
         // Initialize stock status for default variant or product without variants
         if (selectedVariantInput && selectedVariantInput.value) {

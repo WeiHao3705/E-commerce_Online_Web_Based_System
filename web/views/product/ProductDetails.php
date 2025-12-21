@@ -130,7 +130,7 @@ require __DIR__ . '/../../general/_navbar.php';
 				<h3>Select Options</h3>
 
 				<!-- Size Selection -->
-				<div class="form-group">
+				<div class="form-group" id="sizeFormGroup">
 					<label for="sizeSelect">Size</label>
 					<select id="sizeSelect" name="size">
 						<option value="">-- Select Size --</option>
