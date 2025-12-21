@@ -87,4 +87,13 @@ class InventoryRepository {
         $stmt->execute();
         return array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'size');
     }
+
+    public function getStockByVariantAndSize($variantId, $size) {
+        $stmt = $this->conn->prepare('SELECT COALESCE(SUM(stock_quantity), 0) as stock FROM inventory WHERE variant_id = :vid AND size = :size');
+        $stmt->bindValue(':vid', (int)$variantId, PDO::PARAM_INT);
+        $stmt->bindValue(':size', $size);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return (int)($result['stock'] ?? 0);
+    }
 }

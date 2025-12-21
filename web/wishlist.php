@@ -124,46 +124,69 @@ $pageTitle = 'My Wishlist';
                         const cleanPath = item.image_path.replace(/^\/+/, '');
                         imagePath = '/' + cleanPath;
                     }
-                    const stock = parseInt(item.stock_quantity || 0);
-                    let stockClass = 'stock-out';
-                    let stockText = 'Out of Stock';
-                    let stockIcon = 'fa-times-circle';
                     
-                    if (stock > 10) {
-                        stockClass = 'stock-available';
-                        stockText = 'In Stock';
-                        stockIcon = 'fa-check-circle';
-                    } else if (stock > 0) {
-                        stockClass = 'stock-low';
-                        stockText = `Only ${stock} left`;
-                        stockIcon = 'fa-exclamation-circle';
+                    // Variant and size information
+                    const variantColor = item.variant_color || null;
+                    const variantId = item.variant_id || null;
+                    const size = item.size || null;
+                    const stock = parseInt(item.stock_quantity || 0);
+                    const isOutOfStock = stock <= 0;
+                    const isSizeSpecific = size !== null && size !== '';
+                    
+                    // Build view URL with variant if available
+                    let viewUrl = `views/product/ProductDetails.php?id=${item.product_id}`;
+                    if (variantId) {
+                        viewUrl += `&variant=${variantId}`;
+                    }
+
+                    // Determine badge text and button behavior
+                    let badgeText = '';
+                    let showAddToCart = true;
+                    let addToCartText = 'Add to Cart';
+                    let addToCartTitle = '';
+                    
+                    if (isOutOfStock) {
+                        if (isSizeSpecific) {
+                            // Only this specific size is out of stock, other sizes may be available
+                            badgeText = `Size ${size} Out of Stock`;
+                            showAddToCart = false; // Disable for this specific size
+                            addToCartTitle = `Size ${size} is out of stock. Click View to select another size.`;
+                        } else {
+                            // Entire variant/product is out of stock
+                            badgeText = 'Out of Stock';
+                            showAddToCart = false;
+                            addToCartTitle = 'This item is out of stock';
+                        }
                     }
 
                     html += `
-                        <div class="wishlist-item" data-product-id="${item.product_id}">
-                            <button class="btn-remove" onclick="removeFromWishlist(${item.product_id})" title="Remove from wishlist">
+                        <div class="wishlist-item" data-product-id="${item.product_id}" data-wishlist-id="${item.wishlist_id}">
+                            <button class="btn-remove" onclick="removeFromWishlist(${item.wishlist_id})" title="Remove from wishlist">
                                 <i class="fas fa-trash"></i>
                             </button>
+                            ${badgeText ? `<div class="wishlist-out-of-stock-badge">${badgeText}</div>` : ''}
                             <img src="${imagePath}" alt="${item.product_name}" class="wishlist-item-image">
                             <div class="wishlist-item-content">
                                 <h3 class="wishlist-item-name">${item.product_name}</h3>
+                                ${variantColor ? `<p class="wishlist-item-variant"><i class="fas fa-palette"></i> Color: ${variantColor}</p>` : ''}
+                                ${size ? `<p class="wishlist-item-size"><i class="fas fa-ruler"></i> Size: ${size}</p>` : ''}
                                 <p class="wishlist-item-description">${item.description || ''}</p>
                                 <div class="wishlist-item-price">
                                     <span class="wishlist-current-price">RM ${displayPrice.toFixed(2)}</span>
                                 </div>
-                                <div class="wishlist-stock-status ${stockClass}">
-                                    <i class="fas ${stockIcon}"></i>
-                                    <span>${stockText}</span>
-                                </div>
                                 <div class="wishlist-item-actions">
-                                    <a href="views/product/ProductDetails.php?id=${item.product_id}" class="btn btn-primary">
+                                    <a href="${viewUrl}" class="btn btn-primary">
                                         <i class="fas fa-eye"></i> View
                                     </a>
-                                    ${stock > 0 ? `
-                                        <button class="btn btn-secondary" onclick="addToCart(${item.product_id})">
-                                            <i class="fas fa-shopping-cart"></i> Add to Cart
+                                    ${showAddToCart ? `
+                                        <button class="btn btn-secondary" onclick="addToCart(${item.product_id}${variantId ? ', ' + variantId : ''}${size ? ', \'' + size + '\'' : ''})">
+                                            <i class="fas fa-shopping-cart"></i> ${addToCartText}
                                         </button>
-                                    ` : ''}
+                                    ` : `
+                                        <button class="btn btn-secondary" disabled title="${addToCartTitle}">
+                                            <i class="fas fa-shopping-cart"></i> ${isSizeSpecific ? 'Size Out of Stock' : 'Out of Stock'}
+                                        </button>
+                                    `}
                                 </div>
                             </div>
                         </div>
@@ -185,7 +208,7 @@ $pageTitle = 'My Wishlist';
             }
 
             // Make functions globally accessible
-            window.removeFromWishlist = function(productId) {
+            window.removeFromWishlist = function(wishlistId) {
                 if (!confirm('Remove this item from your wishlist?')) {
                     return;
                 }
@@ -193,7 +216,7 @@ $pageTitle = 'My Wishlist';
                 $.ajax({
                     url: 'controller/WishlistController.php',
                     method: 'POST',
-                    data: { action: 'remove', product_id: productId },
+                    data: { action: 'remove', wishlist_id: wishlistId },
                     dataType: 'json',
                     success: function(response) {
                         if (response.success) {
@@ -209,18 +232,26 @@ $pageTitle = 'My Wishlist';
                 });
             };
 
-            window.addToCart = function(productId) {
+            window.addToCart = function(productId, variantId, size) {
+                const data = { 
+                    product_id: productId,
+                    quantity: 1
+                };
+                if (variantId) {
+                    data.variant_id = variantId;
+                }
+                if (size) {
+                    data.size = size;
+                }
+                
                 $.ajax({
                     url: 'views/Cart_Order/cart.php',
                     method: 'POST',
-                    data: { 
-                        product_id: productId,
-                        quantity: 1
-                    },
+                    data: data,
                     success: function() {
                         showSuccess('Added to cart!');
                         // Optionally remove from wishlist after adding to cart
-                        // removeFromWishlist(productId);
+                        // removeFromWishlist(wishlistId);
                     },
                     error: function() {
                         showError('Failed to add to cart');

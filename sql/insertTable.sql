@@ -294,4 +294,23 @@ CREATE TABLE product_review (
     INDEX idx_created_at (created_at)
 );
 
+CREATE TABLE IF NOT EXISTS wishlist (
+    wishlist_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    product_id INT NOT NULL,
+    variant_id INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES product(product_id) ON DELETE CASCADE,
+    FOREIGN KEY (variant_id) REFERENCES product_variant(variant_id) ON DELETE CASCADE,
+    
+    -- Prevent duplicate entries (same user, product, and variant combination)
+    UNIQUE KEY unique_user_product_variant (user_id, product_id, variant_id),
+    
+    INDEX idx_user_id (user_id),
+    INDEX idx_product_id (product_id),
+    INDEX idx_variant_id (variant_id),
+    INDEX idx_created_at (created_at)
+);
 

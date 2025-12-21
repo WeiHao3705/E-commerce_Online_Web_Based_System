@@ -149,7 +149,7 @@ require __DIR__ . '/../../general/_navbar.php';
 				</button>
 			</form>
 
-			<!-- Add to Wishlist Button (will be shown/hidden dynamically based on variant stock) -->
+			<!-- Add to Wishlist Button (always visible - can add any product to wishlist) -->
 			<div class="wishlist-section" id="wishlistSection" style="display: none;">
 				<button type="button" class="add-to-wishlist-btn wishlist-btn" data-product-id="<?= $product->product_id ?>" data-variant-id="" id="wishlistBtn">
 					<i class="far fa-heart"></i>

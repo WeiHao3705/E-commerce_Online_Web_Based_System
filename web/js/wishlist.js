@@ -40,11 +40,15 @@ class Wishlist {
             const isInWishlist = $(button).hasClass('in-wishlist');
             const action = isInWishlist ? 'remove' : 'add';
 
-            // Get variant_id from button if available
+            // Get variant_id and size from button if available
             const variantId = $(button).data('variant-id') || null;
+            const size = $(button).data('size') || null;
             const data = { action, product_id: productId };
             if (variantId) {
                 data.variant_id = variantId;
+            }
+            if (size) {
+                data.size = size;
             }
 
             const response = await $.ajax({
