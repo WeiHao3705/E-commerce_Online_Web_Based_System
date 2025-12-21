@@ -35,6 +35,7 @@ $pageTitle = 'Member Login';
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="<?php echo $prefix; ?>css/MemberRegister.css">
     <link rel="stylesheet" href="<?php echo $prefix; ?>css/Login.css">
+    <link rel="icon" type="image/png" href="/web/images/logo/logo1.png">
 </head>
 
 <body class="login-page-body">

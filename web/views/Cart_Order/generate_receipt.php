@@ -22,13 +22,16 @@ $userId = $_SESSION['user_id'] ?? $_SESSION['user']->user_id;
 
 // Fetch order details with user information
 $orderQuery = "
-    SELECT o.*, p.payment_method, p.paid_amount, p.payment_date, p.transaction_id,
+    SELECT o.*, p.payment_method, p.paid_amount, p.payment_date,
+           v.code AS voucher_code, v.type AS discount_type, v.discount_value, v.max_discount, v.min_spend,
            u.username, u.email
     FROM orders o
     LEFT JOIN payment p ON o.order_id = p.order_id
+    LEFT JOIN voucher v ON o.voucher_id = v.voucher_id
     LEFT JOIN users u ON o.user_id = u.user_id
     WHERE o.order_id = :order_id AND o.user_id = :user_id
 ";
+
 $orderStmt = $conn->prepare($orderQuery);
 $orderStmt->execute([':order_id' => $orderId, ':user_id' => $userId]);
 $order = $orderStmt->fetch(PDO::FETCH_ASSOC);
@@ -57,6 +60,9 @@ $discount = 0;
 if (!empty($order['voucher_id'])) {
     if ($order['discount_type'] === 'percent') {
         $discount = $subtotal * ($order['discount_value'] / 100);
+        if (!empty($order['max_discount'])) {
+            $discount = min($discount, $order['max_discount']);
+        }
     } elseif ($order['discount_type'] === 'fixed') {
         $discount = $order['discount_value'];
     }
@@ -65,6 +71,7 @@ if (!empty($order['voucher_id'])) {
 $shippingFee = 10.00;
 if (!empty($order['voucher_id']) && $order['discount_type'] === 'freeshipping') {
     $shippingFee = 0.00;
+    $discount = 0; // no monetary discount, just free shipping
 }
 $tax = ($subtotal - $discount) * 0.06;
 $grandTotal = $subtotal - $discount + $shippingFee + $tax;
@@ -77,6 +84,7 @@ $grandTotal = $subtotal - $discount + $shippingFee + $tax;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-Receipt #<?= str_pad($order['order_id'], 6, '0', STR_PAD_LEFT) ?></title>
     <link rel="stylesheet" href="../../css/receipt.css">
+    <link rel="icon" type="image/png" href="/web/images/logo/logo1.png">
 </head>
 <body>
     <div class="receipt-container">
@@ -92,27 +100,30 @@ $grandTotal = $subtotal - $discount + $shippingFee + $tax;
                 <h3>Order Information</h3>
                 <p><strong>Order Number:</strong> #<?= str_pad($order['order_id'], 6, '0', STR_PAD_LEFT) ?></p>
                 <p><strong>Order Date:</strong> <?= date('F d, Y', strtotime($order['create_at'])) ?></p>
-                <p><strong>Order Time:</strong> <?= date('h:i A', strtotime($order['create_at'])) ?></p>
                 <p><strong>Status:</strong> <span class="status-badge status-<?= strtolower($order['order_status']) ?>"><?= ucfirst($order['order_status']) ?></span></p>
             </div>
-
             <div class="info-section">
                 <h3>Customer Information</h3>
                 <p><strong>Name:</strong> <?= htmlspecialchars($order['username']) ?></p>
                 <p><strong>Email:</strong> <?= htmlspecialchars($order['email']) ?></p>
-                <p><strong>Customer ID:</strong> #<?= str_pad($order['user_id'], 5, '0', STR_PAD_LEFT) ?></p>
             </div>
-
             <div class="info-section">
-                <h3>Payment Information</h3>
-                <p><strong>Payment Method:</strong> <?= ucwords(str_replace('_', ' ', $order['payment_method'])) ?></p>
-                <p><strong>Payment Date:</strong> <?= date('F d, Y', strtotime($order['payment_date'])) ?></p>
-                <p><strong>Payment Status:</strong> <span style="color: #28a745; font-weight: 600;">Completed</span></p>
-                <?php if ($order['transaction_id']): ?>
-                    <div class="transaction-id">
-                        <strong>Transaction ID:</strong><br>
-                        <?= htmlspecialchars($order['transaction_id']) ?>
-                    </div>
+                <h3>Voucher Applied</h3>
+                <?php if (!empty($order['voucher_code'])): ?>
+                    <p><strong>Voucher Code:</strong> <?= htmlspecialchars($order['voucher_code']) ?></p>
+                    <p><strong>Type:</strong> <?= htmlspecialchars(ucfirst($order['discount_type'])) ?></p>
+                    <?php if ($order['discount_type'] === 'percent'): ?>
+                        <p><strong>Value:</strong> <?= htmlspecialchars($order['discount_value']) ?>%<?php if (!empty($order['max_discount'])): ?> (Max RM <?= number_format($order['max_discount'],2) ?>)<?php endif; ?></p>
+                    <?php elseif ($order['discount_type'] === 'fixed'): ?>
+                        <p><strong>Value:</strong> RM <?= number_format($order['discount_value'],2) ?></p>
+                    <?php elseif ($order['discount_type'] === 'freeshipping'): ?>
+                        <p><strong>Value:</strong> Free Shipping</p>
+                    <?php endif; ?>
+                    <?php if (!empty($order['min_spend'])): ?>
+                        <p><strong>Min Spend:</strong> RM <?= number_format($order['min_spend'],2) ?></p>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <p>No voucher applied.</p>
                 <?php endif; ?>
             </div>
         </div>
@@ -190,14 +201,5 @@ $grandTotal = $subtotal - $discount + $shippingFee + $tax;
             </button>
         </div>
     </div>
-
-    <script>
-        function downloadPDF() {
-            // Simple print to PDF functionality
-            // Users can use their browser's "Save as PDF" option
-            alert('Please use your browser\'s print dialog and select "Save as PDF" as the destination.');
-            window.print();
-        }
-    </script>
 </body>
 </html>

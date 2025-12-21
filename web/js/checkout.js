@@ -64,9 +64,23 @@ $(document).ready(function() {
         var paymentMethod = $(this).val();
         if (paymentMethod === 'card') {
             $('#card-payment-section').show();
+            $('#online-banking-section').hide();
+            $('#e-wallet-section').hide();
+            $('#other-payment-section').hide();
+        } else if (paymentMethod === 'online-banking') {
+            $('#card-payment-section').hide();
+            $('#online-banking-section').show();
+            $('#e-wallet-section').hide();
+            $('#other-payment-section').hide();
+        } else if (paymentMethod === 'e-wallet') {
+            $('#card-payment-section').hide();
+            $('#online-banking-section').hide();
+            $('#e-wallet-section').show();
             $('#other-payment-section').hide();
         } else {
             $('#card-payment-section').hide();
+            $('#online-banking-section').hide();
+            $('#e-wallet-section').hide();
             $('#other-payment-section').show();
         }
     });
@@ -99,9 +113,25 @@ $(document).ready(function() {
         if (paymentMethod === 'card') {
             // Stripe payment flow
             await processStripePayment();
-        } else {
-            alert('This payment method will be available soon');
-            $(this).prop('disabled', false).text('Place Order');
+        } else if(paymentMethod === 'online-banking' || paymentMethod === 'e-wallet') {
+            // save order by simulated payment method
+            $.ajax({
+                url: 'process_payment.php',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    paymentMethod: paymentMethod,
+                    orderId: ORDER_DATA.orderId,
+                }),
+                success: function(response) {
+                    alert('Order placed successfully! Order ID: ' + ORDER_DATA.orderId);
+                    window.location.href = 'order_confirmation.php?order_id=' + ORDER_DATA.orderId;
+                },
+                error: function(xhr, status, error) {
+                    alert('Failed to place order');
+                    $('#placeOrderBtn').prop('disabled', false).text('Place Order');
+                }
+            });
         }
     });
     

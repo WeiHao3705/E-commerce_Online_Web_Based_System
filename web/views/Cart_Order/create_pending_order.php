@@ -12,11 +12,10 @@ try {
     
     $input = json_decode(file_get_contents('php://input'), true);
     $selectedItemIds = $input['selectedItems'] ?? [];
-    
+    $voucher = $input['voucher'] ?? null;
     if (empty($selectedItemIds)) {
         throw new Exception('No items selected');
     }
-    
     $userId = $_SESSION['user_id'];
     
     // Get database connection
@@ -62,20 +61,60 @@ try {
     $shippingFee = 10.00;
     $taxRate = 0.06;
     $tax = $subtotal * $taxRate;
-    $totalAmount = $subtotal + $shippingFee + $tax;
+    $voucherDiscount = 0;
+    if ($voucher && $subtotal >= ($voucher['minSpend'] ?? 0)) {
+        if ($voucher['type'] === 'percent') {
+            $voucherDiscount = $subtotal * ($voucher['value'] / 100);
+            if (!empty($voucher['maxDiscount'])) {
+                $voucherDiscount = min($voucherDiscount, $voucher['maxDiscount']);
+            }
+        } elseif ($voucher['type'] === 'fixed') {
+            $voucherDiscount = $voucher['value'];
+        } elseif ($voucher['type'] === 'freeshipping') {
+            $voucherDiscount = $shippingFee;
+            $shippingFee = 0;
+        }
+    }
+    $totalAmount = $subtotal + $shippingFee + $tax - $voucherDiscount;
     
     // Create pending order
-    $orderStmt = $conn->prepare("
-        INSERT INTO orders (user_id, total_amount, order_status, create_at)
-        VALUES (:user_id, :total_amount, 'pending', NOW())
-    ");
-    
-    $orderStmt->execute([
-        ':user_id' => $userId,
-        ':total_amount' => $totalAmount
-    ]);
-    
+    $voucherId = null;
+    if ($voucher && !empty($voucher['id'])) {
+        $voucherId = $voucher['id'];
+    }
+    if ($voucherId) {
+        $orderStmt = $conn->prepare("
+            INSERT INTO orders (user_id, total_amount, order_status, create_at, voucher_id)
+            VALUES (:user_id, :total_amount, 'pending', NOW(), :voucher_id)
+        ");
+        $orderStmt->execute([
+            ':user_id' => $userId,
+            ':total_amount' => $totalAmount,
+            ':voucher_id' => $voucherId
+        ]);
+    } else {
+        $orderStmt = $conn->prepare("
+            INSERT INTO orders (user_id, total_amount, order_status, create_at)
+            VALUES (:user_id, :total_amount, 'pending', NOW())
+        ");
+        $orderStmt->execute([
+            ':user_id' => $userId,
+            ':total_amount' => $totalAmount
+        ]);
+    }
     $orderId = $conn->lastInsertId();
+    // Debug logging for voucher id
+    if ($voucher && array_key_exists('id', $voucher)) {
+        error_log('DEBUG: voucher id received: ' . var_export($voucher['id'], true));
+    } else {
+        error_log('DEBUG: no voucher id received');
+    }
+    if ($voucher && !empty($voucher['id'])) {
+        $voucherId = $voucher['id'];
+        error_log('DEBUG: inserting order with voucher_id = ' . $voucherId);
+    } else {
+        error_log('DEBUG: inserting order without voucher_id');
+    }
     
     // Insert order items
     $itemStmt = $conn->prepare("
@@ -105,7 +144,9 @@ try {
         'total_amount' => $totalAmount,
         'subtotal' => $subtotal,
         'shipping' => $shippingFee,
-        'tax' => $tax
+        'tax' => $tax,
+        'voucher' => $voucher,
+        'voucher_discount' => $voucherDiscount
     ];
     
     echo json_encode([

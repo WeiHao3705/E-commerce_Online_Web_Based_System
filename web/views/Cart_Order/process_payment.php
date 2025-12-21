@@ -21,31 +21,15 @@ require __DIR__ . '/../../database/connection.php';
 try {
     $input = json_decode(file_get_contents('php://input'), true);
     $paymentIntentId = $input['paymentIntentId'] ?? null;
-    
-    if (!$paymentIntentId) {
-        throw new Exception('Payment Intent ID missing');
-    }
-    
-    // Verify payment with Stripe
-    $paymentIntent = \Stripe\PaymentIntent::retrieve($paymentIntentId);
-    
-    if ($paymentIntent->status !== 'succeeded') {
-        throw new Exception('Payment not completed');
-    }
-    
-    // Get order ID from session
-    $orderId = $_SESSION['pending_order_id'] ?? null;
+    $paymentMethod = $input['paymentMethod'] ?? null;
+    $orderId = $input['orderId'] ?? ($_SESSION['pending_order_id'] ?? null);
     $userId = $_SESSION['user_id'] ?? null;
-    
-    if (!$orderId || !$userId) {
-        throw new Exception('Order ID not found in session');
-    }
-    
+
     // Start database transaction
     $db = new Database();
     $conn = $db->getConnection();
     $conn->beginTransaction();
-    
+
     // Verify order exists and is pending
     $verifyStmt = $conn->prepare("
         SELECT order_id, total_amount FROM orders 
@@ -53,31 +37,67 @@ try {
     ");
     $verifyStmt->execute([':order_id' => $orderId, ':user_id' => $userId]);
     $order = $verifyStmt->fetch(PDO::FETCH_ASSOC);
-    
+
     if (!$order) {
         throw new Exception('Order not found or already processed');
     }
-    
-    // Update order status to paid
-    $orderStmt = $conn->prepare("
-        UPDATE orders SET order_status = 'paid'
-        WHERE order_id = :order_id
-    ");
-    
-    $orderStmt->execute([':order_id' => $orderId]);
-    
-    // Insert payment record
-    $paymentStmt = $conn->prepare("
-        INSERT INTO payment (order_id, payment_method, payment_status, transaction_id, paid_amount, payment_date)
-        VALUES (:order_id, 'credit_card', 'completed', :transaction_id, :paid_amount, NOW())
-    ");
-    
-    $paymentStmt->execute([
-        ':order_id' => $orderId,
-        ':transaction_id' => $paymentIntentId,
-        ':paid_amount' => $paymentIntent->amount / 100 // Convert from cents
-    ]);
-    
+
+    if ($paymentIntentId) {
+        // Stripe payment flow
+        $paymentIntent = \Stripe\PaymentIntent::retrieve($paymentIntentId);
+        if ($paymentIntent->status !== 'succeeded') {
+            throw new Exception('Payment not completed');
+        }
+        // Update order status to paid
+        $orderStmt = $conn->prepare("
+            UPDATE orders SET order_status = 'paid'
+            WHERE order_id = :order_id
+        ");
+        $orderStmt->execute([':order_id' => $orderId]);
+        // Insert payment record
+        $paymentStmt = $conn->prepare("
+            INSERT INTO payment (order_id, payment_method, payment_status, transaction_id, paid_amount, payment_date)
+            VALUES (:order_id, 'credit_card', 'completed', :transaction_id, :paid_amount, NOW())
+        ");
+        $paymentStmt->execute([
+            ':order_id' => $orderId,
+            ':transaction_id' => $paymentIntentId,
+            ':paid_amount' => $paymentIntent->amount / 100 // Convert from cents
+        ]);
+    } elseif ($paymentMethod === 'online-banking') {
+        // Simulated payment flow for online banking (FPX)
+        $orderStmt = $conn->prepare("
+            UPDATE orders SET order_status = 'paid'
+            WHERE order_id = :order_id
+        ");
+        $orderStmt->execute([':order_id' => $orderId]);
+        $paymentStmt = $conn->prepare("
+            INSERT INTO payment (order_id, payment_method, payment_status, transaction_id, paid_amount, payment_date)
+            VALUES (:order_id, 'online-banking', 'completed', NULL, :paid_amount, NOW())
+        ");
+        $paymentStmt->execute([
+            ':order_id' => $orderId,
+            ':paid_amount' => $order['total_amount']
+        ]);
+    } elseif ($paymentMethod === 'e-wallet') {
+        // Simulated payment flow for e-wallet
+        $orderStmt = $conn->prepare("
+            UPDATE orders SET order_status = 'paid'
+            WHERE order_id = :order_id
+        ");
+        $orderStmt->execute([':order_id' => $orderId]);
+        $paymentStmt = $conn->prepare("
+            INSERT INTO payment (order_id, payment_method, payment_status, transaction_id, paid_amount, payment_date)
+            VALUES (:order_id, 'e-wallet', 'completed', NULL, :paid_amount, NOW())
+        ");
+        $paymentStmt->execute([
+            ':order_id' => $orderId,
+            ':paid_amount' => $order['total_amount']
+        ]);
+    } else {
+        throw new Exception('Invalid payment method or missing payment intent');
+    }
+
     // Get cart items from order_items to delete from cart
     $itemsStmt = $conn->prepare("
         SELECT oi.product_id, oi.quantity 
@@ -86,7 +106,6 @@ try {
     ");
     $itemsStmt->execute([':order_id' => $orderId]);
     $orderItems = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
-    
 
     // Get the user's cart_id
     $cartIdStmt = $conn->prepare("SELECT cart_id FROM shopping_cart WHERE user_id = :user_id LIMIT 1");
@@ -107,15 +126,15 @@ try {
         $deleteStmt->bindValue(':quantity', $item['quantity'], PDO::PARAM_INT);
         $deleteStmt->execute();
     }
-    
+
     $conn->commit();
-    
+
     // Clear session data
     unset($_SESSION['payment_intent_id']);
     unset($_SESSION['pending_order_data']);
     unset($_SESSION['pending_order_id']);
     unset($_SESSION['checkout_items']);
-    
+
     echo json_encode([
         'success' => true,
         'orderId' => $orderId,

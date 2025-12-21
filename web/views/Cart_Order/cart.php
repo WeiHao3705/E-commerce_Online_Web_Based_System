@@ -291,12 +291,13 @@ $grandTotal = $subtotal + $shippingFee + $tax;
             <?php else: ?>
                 <div class="voucher-list">
                     <?php foreach ($vouchers as $voucher): ?>
-                        <div class="voucher-card" 
-                             data-code="<?= htmlspecialchars($voucher['code']) ?>"
-                             data-type="<?= htmlspecialchars($voucher['type']) ?>"
-                             data-value="<?= htmlspecialchars($voucher['discount_value']) ?>"
-                             data-min="<?= htmlspecialchars($voucher['min_spend']) ?? '' ?>"
-                             data-max="<?= htmlspecialchars($voucher['max_discount'] ?? '') ?>">
+                            <div class="voucher-card" 
+                                data-id="<?= htmlspecialchars($voucher['voucher_id']) ?>"
+                                data-code="<?= htmlspecialchars($voucher['code']) ?>"
+                                data-type="<?= htmlspecialchars($voucher['type']) ?>"
+                                data-value="<?= htmlspecialchars($voucher['discount_value']) ?>"
+                                data-min="<?= htmlspecialchars($voucher['min_spend']) ?? '' ?>"
+                                data-max="<?= htmlspecialchars($voucher['max_discount'] ?? '') ?>">
                         <div class="voucher-icon">
                                 <i class="fas fa-ticket-alt"></i>
                             </div>

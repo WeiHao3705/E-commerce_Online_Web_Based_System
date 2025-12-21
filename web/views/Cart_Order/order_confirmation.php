@@ -22,11 +22,14 @@ $userId = $_SESSION['user_id'] ?? $_SESSION['user']->user_id;
 
 // Fetch order details
 $orderQuery = "
-    SELECT o.*, p.payment_method, p.paid_amount, p.payment_date, p.transaction_id
+    SELECT o.*, p.payment_method, p.paid_amount, p.payment_date, p.transaction_id,
+           v.code AS voucher_code, v.type AS discount_type, v.discount_value, v.max_discount
     FROM orders o
     LEFT JOIN payment p ON o.order_id = p.order_id
+    LEFT JOIN voucher v ON o.voucher_id = v.voucher_id
     WHERE o.order_id = :order_id AND o.user_id = :user_id
 ";
+
 $orderStmt = $conn->prepare($orderQuery);
 $orderStmt->execute([':order_id' => $orderId, ':user_id' => $userId]);
 $order = $orderStmt->fetch(PDO::FETCH_ASSOC);
@@ -171,26 +174,46 @@ include '../../general/_header.php';
         <div class="total-section">
             <?php
             $subtotal = array_sum(array_column($orderItems, 'subtotal'));
-            $discount = 0;
+            $voucherDiscount = 0;
+            $voucherLabel = '';
+            $shippingFee = 10.00;
+            // Only use order/payment data for slip
             if (!empty($order['voucher_id'])) {
                 if ($order['discount_type'] === 'percent') {
-                    $discount = $subtotal * ($order['discount_value'] / 100);
+                    $voucherDiscount = $subtotal * ($order['discount_value'] / 100);
+                    if (!empty($order['max_discount'])) {
+                        $voucherDiscount = min($voucherDiscount, $order['max_discount']);
+                    }
+                    $voucherLabel = $order['voucher_code'] . ' (' . $order['discount_value'] . '% OFF)';
                 } elseif ($order['discount_type'] === 'fixed') {
-                    $discount = $order['discount_value'];
+                    $voucherDiscount = $order['discount_value'];
+                    $voucherLabel = $order['voucher_code'] . ' (RM ' . number_format($order['discount_value'], 2) . ' OFF)';
+                } elseif ($order['discount_type'] === 'freeshipping') {
+                    $voucherDiscount = $shippingFee;
+                    $shippingFee = 0;
+                    $voucherLabel = $order['voucher_code'] . ' (Free Shipping)';
                 }
             }
-            $shippingFee = 10.00;
-            if (!empty($order['voucher_id']) && $order['discount_type'] === 'freeshipping') {
-                $shippingFee = 0.00;
-            }
-            $tax = ($subtotal - $discount) * 0.06;
-            $grandTotal = $subtotal - $discount + $shippingFee + $tax;
+            $tax = ($subtotal - $voucherDiscount) * 0.06;
+            // Always use paid_amount from payment table for final slip
+            $grandTotal = isset($order['paid_amount']) ? $order['paid_amount'] : ($subtotal - $voucherDiscount + $shippingFee + $tax);
             ?>
             <div class="total-row"><span>Subtotal</span><span>RM <?= number_format($subtotal, 2) ?></span></div>
             <div class="total-row"><span>Shipping Fee</span><span>RM <?= number_format($shippingFee, 2) ?></span></div>
             <div class="total-row"><span>Tax (6%)</span><span>RM <?= number_format($tax, 2) ?></span></div>
-            <?php if ($discount > 0): ?>
-                <div class="total-row"><span>Discount<?= !empty($order['voucher_code']) ? ' (' . htmlspecialchars($order['voucher_code']) . ')' : '' ?></span><span>-RM <?= number_format($discount, 2) ?></span></div>
+            <?php
+            $voucherCodeDisplay = '';
+            if (isset($_SESSION['pending_order_data']['voucher']['code'])) {
+                $voucherCodeDisplay = $_SESSION['pending_order_data']['voucher']['code'];
+            } elseif (!empty($order['voucher_code'])) {
+                $voucherCodeDisplay = $order['voucher_code'];
+            }
+            ?>
+            <?php if ($voucherCodeDisplay): ?>
+                <div class="total-row"><span>Voucher Used</span><span><?= htmlspecialchars($voucherCodeDisplay) ?></span></div>
+            <?php endif; ?>
+            <?php if ($voucherDiscount > 0): ?>
+                <div class="total-row" style="color:#28a745;"><span>Voucher Discount<?= $voucherLabel ? ' (' . htmlspecialchars($voucherLabel) . ')' : '' ?></span><span>-RM <?= number_format($voucherDiscount, 2) ?></span></div>
             <?php endif; ?>
             <div class="total-row" style="font-weight:700; color:#FF523B;"><span>Total Paid</span><span>RM <?= number_format($grandTotal, 2) ?></span></div>
         </div>
@@ -200,7 +223,7 @@ include '../../general/_header.php';
         <a href="../../orders.php" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to Orders
         </a>
-        <a href="generate_receipt.php?order_id=<?= $orderId ?>" class="btn btn-success" target="_blank">
+        <a href="generate_receipt.php?order_id=<?= $orderId ?>" class="btn btn-success">
             <i class="fas fa-receipt"></i> Generate E-Receipt
         </a>
         <?php if ($order['order_status'] === 'delivered'): ?>

@@ -30,13 +30,18 @@ $(document).ready(function() {
                     selectedIds.forEach(function(id) {
                         $('tr[data-item-id="' + id + '"]').remove();
                     });
+                    localStorage.removeItem('checkedItem');
+                    restoreCheckboxStates();
                     updateOrderSummary();
                     updateCartCount();
                 } else {
                     alert('Failed to delete selected items.');
+                    localStorage.removeItem('checkedItem');
+                    restoreCheckboxStates();
                 }
             }
         });
+        
     });
 
     // refresh the amount of items in the cart icon
@@ -51,8 +56,7 @@ $(document).ready(function() {
         const itemIds = returnedItems.split(',').map(id => parseInt(id));
         
         // Clear all checkboxes first
-        $('.item-checkbox').prop('checked', false);
-        $('#select-all').prop('checked', false);
+        restoreCheckboxStates();
         
         // Restore the previously selected items
         itemIds.forEach(function(itemId) {
@@ -288,6 +292,7 @@ $(document).ready(function() {
         var voucherCard = $button.closest('.voucher-card');
 
         appliedVoucher = {
+            id: voucherCard.data('id'),
             code: voucherCard.data('code'),
             type: voucherCard.data('type'),
             value: parseFloat(voucherCard.data('value')),
@@ -455,6 +460,10 @@ function updateOrderSummary() {
 
 function restoreCheckboxStates() {
 
+    // unchecked first however
+    $('.item-checkbox').prop('checked', false);
+    $('#select-all').prop('checked', false);
+
     // restore checkbox states from localstorage
     let savedItems = JSON.parse(localStorage.getItem('checkedItem')) || [];
     savedItems.forEach(function(itemId) {
@@ -500,13 +509,25 @@ $('#checkout-btn').click(function(e) {
     // Disable button and show loading state
     $(this).prop('disabled', true).text('Creating Order...');
     
-    // Create pending order in database
+    // Create pending order in database, pass voucher info if applied
+    var voucherData = null;
+    if (appliedVoucher) {
+        voucherData = {
+            id: appliedVoucher.id || null,
+            code: appliedVoucher.code,
+            type: appliedVoucher.type,
+            value: appliedVoucher.value,
+            minSpend: appliedVoucher.minSpend,
+            maxDiscount: appliedVoucher.maxDiscount || null
+        };
+    }
     $.ajax({
         url: 'create_pending_order.php',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
-            selectedItems: selectedItems
+            selectedItems: selectedItems,
+            voucher: voucherData
         }),
         success: function(response) {
             if (response.success) {

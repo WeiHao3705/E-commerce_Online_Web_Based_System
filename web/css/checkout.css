@@ -1,3 +1,45 @@
+/* Custom styled select for payment options */
+.custom-select-wrapper {
+    width: 100%;
+    margin: 10px 0 0 0;
+    position: relative;
+}
+
+.custom-select {
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: 12px;
+    border: 2px solid #c5c5c5;
+    background: #fff;
+    font-size: 17px;
+    color: #333;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: border-color 0.3s, box-shadow 0.3s;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    cursor: pointer;
+    outline: none;
+}
+
+.custom-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 4px 16px rgba(0,123,255,0.10);
+}
+
+.custom-select option {
+    padding: 12px 18px;
+    font-size: 16px;
+    background: #f7f7f7;
+    color: #222;
+}
+
+@media (max-width: 768px) {
+    .custom-select {
+        font-size: 15px;
+        padding: 12px 10px;
+    }
+}
 /* Checkout Page */
 .checkout-container {
     max-width: 1500px;

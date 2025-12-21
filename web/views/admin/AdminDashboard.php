@@ -247,6 +247,7 @@ try {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AdminDashboard.css">
+    <link rel="icon" type="image/png" href="/web/images/logo/logo1.png">
 </head>
 
 <body data-user-role="admin" data-user-id="<?php echo htmlspecialchars($_SESSION['user']->user_id ?? ''); ?>">

@@ -26,7 +26,7 @@ include '../../general/_header.php';
 $orderId = null;
 $cartItems = [];
 $subtotal = 0;
-$shippingFee = 10.00;
+$shippingFee = 15.00;
 $tax = 0;
 $grandTotal = 0;
 
@@ -72,10 +72,27 @@ if (isset($_GET['order_id'])) {
         $subtotal += $item['selling_price'] * $item['quantity'];
     }
     $tax = $subtotal * 0.06;
-    $grandTotal = $subtotal + $shippingFee + $tax;
-    
+    $voucherDiscount = 0;
+    $voucherLabel = '';
+    if (isset($_SESSION['pending_order_data']['voucher']) && $subtotal >= ($_SESSION['pending_order_data']['voucher']['minSpend'] ?? 0)) {
+        $voucher = $_SESSION['pending_order_data']['voucher'];
+        if ($voucher['type'] === 'percent') {
+            $voucherDiscount = $subtotal * ($voucher['value'] / 100);
+            if (!empty($voucher['maxDiscount'])) {
+                $voucherDiscount = min($voucherDiscount, $voucher['maxDiscount']);
+            }
+            $voucherLabel = $voucher['code'] . ' (' . $voucher['value'] . '% OFF)';
+        } elseif ($voucher['type'] === 'fixed') {
+            $voucherDiscount = $voucher['value'];
+            $voucherLabel = $voucher['code'] . ' (RM ' . number_format($voucher['value'], 2) . ' OFF)';
+        } elseif ($voucher['type'] === 'freeshipping') {
+            $voucherDiscount = $shippingFee;
+            $shippingFee = 0;
+            $voucherLabel = $voucher['code'] . ' (Free Shipping)';
+        }
+    }
+    $grandTotal = $subtotal + $shippingFee + $tax - $voucherDiscount;
     $_SESSION['pending_order_id'] = $orderId;
-    
     // Format cart items for display
     foreach ($dbCartItems as $item) {
         $cartItems[] = [
@@ -222,7 +239,6 @@ if (isset($_GET['order_id'])) {
                             <span>Credit/Debit Card (Stripe)</span>
                         </div>
                     </label>
-                    
                     <label class="payment-option">
                         <input type="radio" name="payment" value="online-banking">
                         <div class="payment-card">
@@ -230,9 +246,8 @@ if (isset($_GET['order_id'])) {
                             <span>Online Banking</span>
                         </div>
                     </label>
-                    
                     <label class="payment-option">
-                        <input type="radio" name="payment" value="ewallet">
+                        <input type="radio" name="payment" value="e-wallet">
                         <div class="payment-card">
                             <i class="fas fa-wallet"></i>
                             <span>E-Wallet</span>
@@ -247,10 +262,41 @@ if (isset($_GET['order_id'])) {
                     </div>
                     <div id="card-errors" role="alert" style="color: #fa755a; margin-top: 10px;"></div>
                 </div>
-                
-                <!-- Other payment methods (hidden initially) -->
+                <!-- Online Banking selection (hidden initially) -->
+                <div id="online-banking-section" style="display: none; margin-top: 20px;">
+                    <h4><i class="fas fa-university"></i> Select Your Bank</h4>
+                    <div class="custom-select-wrapper">
+                        <select id="bankSelect" name="bankSelect" class="custom-select">
+                            <option value="">--Choose Bank--</option>
+                            <option value="Public Bank">Public Bank</option>
+                            <option value="CIMB">CIMB</option>
+                            <option value="MayBank">MayBank</option>
+                            <option value="Islamic Bank">Islamic Bank</option>
+                            <option value="RHB Bank">RHB Bank</option>
+                            <option value="Hong Leong Bank">Hong Leong Bank</option>
+                            <option value="AmBank">AmBank</option>
+                            <option value="UOB Bank">UOB Bank</option>
+                            <option value="OCBC Bank">OCBC Bank</option>
+                            <option value="HSBC Bank">HSBC Bank</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- E-Wallet selection (hidden initially) -->
+                <div id="e-wallet-section" style="display: none; margin-top: 20px;">
+                    <h4><i class="fas fa-wallet"></i> Select Your E-Wallet</h4>
+                    <div class="custom-select-wrapper">
+                        <select id="eWalletSelect" name="eWalletSelect" class="custom-select">
+                            <option value="">--Choose E-Wallet--</option>
+                            <option value="Touch 'n Go">Touch 'n Go</option>
+                            <option value="GrabPay">GrabPay</option>
+                            <option value="Boost">Boost</option>
+                            <option value="ShopeePay">ShopeePay</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Placeholder for unavailable payment methods -->
                 <div id="other-payment-section" style="display: none; margin-top: 20px;">
-                    <p style="color: #666;">This payment method will be available soon.</p>
+                    <p style="color: #666;">Please select a payment method above.</p>
                 </div>
             </div>
             
@@ -291,6 +337,12 @@ if (isset($_GET['order_id'])) {
                         <span>Tax (6%):</span>
                         <span>RM <?= number_format($tax, 2) ?></span>
                     </div>
+                    <?php if ($voucherDiscount > 0): ?>
+                    <div class="total-line" style="color: #28a745;">
+                        <span>Voucher Discount<?= $voucherLabel ? ' (' . htmlspecialchars($voucherLabel) . ')' : '' ?>:</span>
+                        <span>- RM <?= number_format($voucherDiscount, 2) ?></span>
+                    </div>
+                    <?php endif; ?>
                     <hr>
                     <div class="total-line grand-total">
                         <span><strong>Total:</strong></span>
