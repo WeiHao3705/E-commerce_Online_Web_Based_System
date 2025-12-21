@@ -50,6 +50,30 @@ $pageTitle = 'My Wishlist';
         </div>
     </div>
 
+    <!-- Custom Confirmation Modal -->
+    <div id="wishlist-confirm-modal" class="wishlist-modal">
+        <div class="wishlist-modal-overlay"></div>
+        <div class="wishlist-modal-content">
+            <div class="wishlist-modal-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 class="wishlist-modal-title">Remove from Wishlist?</h3>
+            <p class="wishlist-modal-message">Are you sure you want to remove this item from your wishlist?</p>
+            <div class="wishlist-modal-actions">
+                <button class="btn btn-secondary wishlist-modal-cancel">Cancel</button>
+                <button class="btn btn-primary wishlist-modal-confirm">Remove</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Notification Toast -->
+    <div id="wishlist-notification" class="wishlist-notification">
+        <div class="wishlist-notification-content">
+            <i class="wishlist-notification-icon"></i>
+            <span class="wishlist-notification-message"></span>
+        </div>
+    </div>
+
     <?php include 'general/_footer.php'; ?>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -207,12 +231,40 @@ $pageTitle = 'My Wishlist';
                 $('#wishlist-value').text('RM ' + totalValue.toFixed(2));
             }
 
-            // Make functions globally accessible
-            window.removeFromWishlist = function(wishlistId) {
-                if (!confirm('Remove this item from your wishlist?')) {
-                    return;
-                }
+            // Custom confirmation modal functions
+            let pendingWishlistId = null;
 
+            function showConfirmModal(wishlistId) {
+                pendingWishlistId = wishlistId;
+                $('#wishlist-confirm-modal').addClass('active');
+            }
+
+            function hideConfirmModal() {
+                $('#wishlist-confirm-modal').removeClass('active');
+                pendingWishlistId = null;
+            }
+
+            // Modal event handlers
+            $('.wishlist-modal-cancel, .wishlist-modal-overlay').on('click', function() {
+                hideConfirmModal();
+            });
+
+            $('.wishlist-modal-confirm').on('click', function() {
+                if (pendingWishlistId) {
+                    const wishlistId = pendingWishlistId;
+                    hideConfirmModal();
+                    performRemove(wishlistId);
+                }
+            });
+
+            // Close modal on Escape key
+            $(document).on('keydown', function(e) {
+                if (e.key === 'Escape' && $('#wishlist-confirm-modal').hasClass('active')) {
+                    hideConfirmModal();
+                }
+            });
+
+            function performRemove(wishlistId) {
                 $.ajax({
                     url: 'controller/WishlistController.php',
                     method: 'POST',
@@ -230,6 +282,11 @@ $pageTitle = 'My Wishlist';
                         showError('Error removing item');
                     }
                 });
+            }
+
+            // Make functions globally accessible
+            window.removeFromWishlist = function(wishlistId) {
+                showConfirmModal(wishlistId);
             };
 
             window.addToCart = function(productId, variantId, size) {
@@ -260,11 +317,38 @@ $pageTitle = 'My Wishlist';
             };
 
             function showSuccess(message) {
-                alert('✓ ' + message);
+                showNotification(message, 'success');
             }
 
             function showError(message) {
-                alert('✗ ' + message);
+                showNotification(message, 'error');
+            }
+
+            function showNotification(message, type) {
+                const notification = $('#wishlist-notification');
+                const notificationContent = notification.find('.wishlist-notification-content');
+                const icon = notification.find('.wishlist-notification-icon');
+                const messageSpan = notification.find('.wishlist-notification-message');
+                
+                // Set icon and class based on type
+                if (type === 'success') {
+                    icon.removeClass('fa-times-circle fa-exclamation-circle').addClass('fas fa-check-circle');
+                    notification.removeClass('error').addClass('success');
+                } else {
+                    icon.removeClass('fa-check-circle fa-exclamation-circle').addClass('fas fa-times-circle');
+                    notification.removeClass('success').addClass('error');
+                }
+                
+                // Set message
+                messageSpan.text(message);
+                
+                // Show notification
+                notification.addClass('active');
+                
+                // Auto hide after 3 seconds
+                setTimeout(function() {
+                    notification.removeClass('active');
+                }, 3000);
             }
         });
     </script>

@@ -338,3 +338,225 @@ body {
         flex-direction: column;
     }
 }
+
+/* Confirmation Modal Styles */
+.wishlist-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.wishlist-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.wishlist-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.wishlist-modal-content {
+    position: relative;
+    background: var(--white);
+    border-radius: 15px;
+    padding: 2rem;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+    text-align: center;
+}
+
+.wishlist-modal.active .wishlist-modal-content {
+    transform: scale(1);
+}
+
+.wishlist-modal-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.5rem;
+    background: rgba(255, 82, 59, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wishlist-modal-icon i {
+    font-size: 2.5rem;
+    color: var(--primary);
+}
+
+.wishlist-modal-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 0.75rem;
+}
+
+.wishlist-modal-message {
+    font-size: 1rem;
+    color: var(--text-light);
+    margin-bottom: 2rem;
+    line-height: 1.5;
+}
+
+.wishlist-modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.wishlist-modal-actions .btn {
+    min-width: 120px;
+    padding: 0.75rem 1.5rem;
+}
+
+.wishlist-modal-actions .btn-secondary {
+    background: transparent;
+    color: var(--text-dark);
+    border: 2px solid var(--border);
+}
+
+.wishlist-modal-actions .btn-secondary:hover {
+    background: var(--background);
+    border-color: var(--border);
+    transform: none;
+}
+
+.wishlist-modal-actions .btn-primary {
+    background: var(--primary);
+    color: white;
+    border: 2px solid var(--primary);
+}
+
+.wishlist-modal-actions .btn-primary:hover {
+    background: #e04733;
+    border-color: #e04733;
+}
+
+/* Responsive modal */
+@media (max-width: 480px) {
+    .wishlist-modal-content {
+        padding: 1.5rem;
+    }
+    
+    .wishlist-modal-icon {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 1rem;
+    }
+    
+    .wishlist-modal-icon i {
+        font-size: 2rem;
+    }
+    
+    .wishlist-modal-title {
+        font-size: 1.25rem;
+    }
+    
+    .wishlist-modal-message {
+        font-size: 0.875rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .wishlist-modal-actions {
+        flex-direction: column;
+    }
+    
+    .wishlist-modal-actions .btn {
+        width: 100%;
+    }
+}
+
+/* Notification Toast Styles */
+.wishlist-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10001;
+    min-width: 300px;
+    max-width: 500px;
+    opacity: 0;
+    transform: translateX(400px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+}
+
+.wishlist-notification.active {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+}
+
+.wishlist-notification-content {
+    background: var(--white);
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-left: 4px solid;
+}
+
+.wishlist-notification.success .wishlist-notification-content {
+    border-left-color: #10b981;
+    background: linear-gradient(to right, rgba(16, 185, 129, 0.1), var(--white));
+}
+
+.wishlist-notification.error .wishlist-notification-content {
+    border-left-color: #ef4444;
+    background: linear-gradient(to right, rgba(239, 68, 68, 0.1), var(--white));
+}
+
+.wishlist-notification-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.wishlist-notification.success .wishlist-notification-icon {
+    color: #10b981;
+}
+
+.wishlist-notification.error .wishlist-notification-icon {
+    color: #ef4444;
+}
+
+.wishlist-notification-message {
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    font-weight: 500;
+    flex: 1;
+}
+
+/* Responsive notification */
+@media (max-width: 480px) {
+    .wishlist-notification {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        min-width: auto;
+        max-width: none;
+    }
+    
+    .wishlist-notification.active {
+        transform: translateX(0);
+    }
+}
