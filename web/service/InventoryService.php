@@ -192,7 +192,7 @@ class InventoryService {
      */
     private function getWishlistMembers($productId) {
         $sql = "
-            SELECT DISTINCT w.user_id, u.full_name, u.username, u.contact_no
+            SELECT DISTINCT w.user_id, u.full_name, u.username
             FROM wishlist w
             JOIN users u ON w.user_id = u.user_id
             WHERE w.product_id = :product_id
@@ -302,24 +302,6 @@ class InventoryService {
                         $errors[] = "Failed to insert message for member {$member['user_id']} ({$member['full_name']})";
                         continue;
                     }
-                    
-                    // Send WhatsApp notification if phone number is available
-                    if (!empty($member['contact_no'])) {
-                        try {
-                            require_once __DIR__ . '/WhatsAppService.php';
-                            $whatsappService = new WhatsAppService($this->conn);
-                            $whatsappResult = $whatsappService->sendMessage($member['contact_no'], $message);
-                            
-                            if (!$whatsappResult['success']) {
-                                // Log but don't fail the entire notification
-                                $errors[] = "WhatsApp notification failed for {$member['full_name']}: " . ($whatsappResult['error'] ?? 'Unknown error');
-                            }
-                        } catch (Exception $e) {
-                            // WhatsApp service not available or error, continue without failing
-                            $errors[] = "WhatsApp service unavailable for {$member['full_name']}";
-                        }
-                    }
-                    
                     $notifiedCount++;
                 } catch (Exception $e) {
                     $memberName = isset($member['full_name']) ? $member['full_name'] : 'Unknown';
