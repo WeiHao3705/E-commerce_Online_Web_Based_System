@@ -2049,12 +2049,8 @@ function getProfilePhotoUrl($photoPath, $imageBasePath)
                     }
                 });
             } else {
-                // Remove all current page members from selection
-                const selected = getSelectedMembers();
-                $('.member-checkbox').each(function() {
-                    selected.delete($(this).val());
-                });
-                saveSelectedMembers(selected);
+                // Clear ALL selections (not just current page)
+                clearSelectedMembers();
                 updateBulkActions();
             }
         });

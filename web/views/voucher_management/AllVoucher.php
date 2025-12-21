@@ -1605,12 +1605,8 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                     }
                 });
             } else {
-                // Remove all current page vouchers from selection
-                const selected = getSelectedVouchers();
-                $('.voucher-checkbox').each(function() {
-                    selected.delete($(this).val());
-                });
-                saveSelectedVouchers(selected);
+                // Clear ALL selections (not just current page)
+                clearSelectedVouchers();
                 updateBulkActions();
             }
         });
