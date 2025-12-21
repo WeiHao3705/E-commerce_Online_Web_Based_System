@@ -17,6 +17,8 @@ if (!isset($prefix)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=0.5, user-scalable=yes">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title><?php echo isset($pageTitle) ? $pageTitle . ' - NGEAR' : 'NGEAR - Sports & Fitness Store'; ?></title>
+    <!-- Use absolute path to shows due to certain pages do not capture the favicon correctly -->
+    <link rel="icon" type="image/png" href="/web/images/logo/logo1.png">
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
