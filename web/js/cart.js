@@ -2,6 +2,42 @@
 var appliedVoucher = null;
 
 $(document).ready(function() {
+    // Batch delete selected items
+    $('#delete-selected-btn').click(function() {
+        var selectedIds = [];
+        $('.item-checkbox:checked').each(function() {
+            selectedIds.push($(this).data('item-id'));
+        });
+        if (selectedIds.length === 0) {
+            alert('Please select items to delete.');
+            return;
+        }
+        if (!confirm('Are you sure you want to delete the selected items?')) {
+            return;
+        }
+        // AJAX batch delete
+        $.ajax({
+            url: '../../controller/CartController.php',
+            type: 'POST',
+            data: {
+                action: 'batch_delete',
+                cart_item_ids: selectedIds
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    // Remove rows from table
+                    selectedIds.forEach(function(id) {
+                        $('tr[data-item-id="' + id + '"]').remove();
+                    });
+                    updateOrderSummary();
+                    updateCartCount();
+                } else {
+                    alert('Failed to delete selected items.');
+                }
+            }
+        });
+    });
 
     // refresh the amount of items in the cart icon
     updateCartCount();

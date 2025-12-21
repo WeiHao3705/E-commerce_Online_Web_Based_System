@@ -167,22 +167,35 @@ $pageTitle = "Order #" . str_pad($orderId, 6, '0', STR_PAD_LEFT);
                             } elseif ($order['discount_type'] === 'fixed') {
                                 $discount = $order['discount_value'];
                             }
-                            // freeshipping type doesn't affect total here
                         }
+                        $shippingFee = 10.00;
+                        if ($order['voucher_id'] && $order['discount_type'] === 'freeshipping') {
+                            $shippingFee = 0.00;
+                        }
+                        $tax = ($subtotal - $discount) * 0.06;
+                        $grandTotal = $subtotal - $discount + $shippingFee + $tax;
                         ?>
-                        <div class="summary-row">
-                            <span>Subtotal</span>
+                        <div class="summary-row" style="font-weight:600;">
+                            <span><i class="fas fa-money-bill-wave"></i> Subtotal</span>
                             <span>RM <?= number_format($subtotal, 2) ?></span>
                         </div>
+                        <div class="summary-row" style="font-weight:600; color:#2563eb;">
+                            <span><i class="fas fa-shipping-fast"></i> Shipping Fee</span>
+                            <span>RM <?= number_format($shippingFee, 2) ?></span>
+                        </div>
+                        <div class="summary-row" style="font-weight:600; color:#059669;">
+                            <span><i class="fas fa-receipt"></i> Tax (6%)</span>
+                            <span>RM <?= number_format($tax, 2) ?></span>
+                        </div>
                         <?php if ($discount > 0): ?>
-                            <div class="summary-row">
-                                <span>Discount (<?= htmlspecialchars($order['voucher_code']) ?>)</span>
+                            <div class="summary-row" style="font-weight:600; color:#dc2626;">
+                                <span><i class="fas fa-ticket-alt"></i> Discount (<?= htmlspecialchars($order['voucher_code']) ?>)</span>
                                 <span>-RM <?= number_format($discount, 2) ?></span>
                             </div>
                         <?php endif; ?>
                         <div class="summary-row total">
-                            <span>Total</span>
-                            <span>RM <?= number_format($order['total_amount'], 2) ?></span>
+                            <span><i class="fas fa-calculator"></i> Total</span>
+                            <span>RM <?= number_format($grandTotal, 2) ?></span>
                         </div>
                     </div>
                 </div>

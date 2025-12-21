@@ -1,3 +1,28 @@
+/* Batch Delete Button Styling */
+#delete-selected-btn {
+    background: linear-gradient(90deg, #FF5252 60%, #dc3545 100%);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 22px;
+    font-size: 1rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(255,82,82,0.12);
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+#delete-selected-btn:hover {
+    background: linear-gradient(90deg, #e04848 60%, #c82333 100%);
+    box-shadow: 0 4px 16px rgba(255,82,82,0.18);
+    transform: translateY(-2px) scale(1.04);
+}
+#delete-selected-btn .material-symbols-outlined {
+    font-size: 1.3em;
+    margin-right: 0.2em;
+}
 /* Cart Page Styles */
 .container {
     max-width: 1200px;

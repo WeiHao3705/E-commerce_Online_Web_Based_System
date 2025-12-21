@@ -5,6 +5,26 @@ require __DIR__ . '/../database/connection.php';
 header('Content-Type: application/json');
 
 class CartController {
+        public function batchDeleteCartItems() {
+            $userId = $this->getUserId();
+            if (!$userId) {
+                echo json_encode(['success' => false, 'message' => 'User not logged in']);
+                return;
+            }
+            $ids = $_POST['cart_item_ids'] ?? [];
+            if (!is_array($ids) || empty($ids)) {
+                echo json_encode(['success' => false, 'message' => 'No items selected']);
+                return;
+            }
+            // Sanitize IDs
+            $ids = array_map('intval', $ids);
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $deleteQuery = "DELETE ci FROM cart_item ci JOIN shopping_cart sc ON ci.cart_id = sc.cart_id WHERE ci.cart_item_id IN ($placeholders) AND sc.user_id = ?";
+            $stmt = $this->conn->prepare($deleteQuery);
+            $params = array_merge($ids, [$userId]);
+            $stmt->execute($params);
+            echo json_encode(['success' => $stmt->rowCount() > 0]);
+        }
     private $conn;
     
     public function __construct($connection) {
@@ -88,6 +108,9 @@ $controller = new CartController($conn);
 $action = $_POST['action'] ?? '';
 
 switch ($action) {
+        case 'batch_delete':
+            $controller->batchDeleteCartItems();
+            break;
     case 'delete':
         $controller->deleteCartItem();
         break;

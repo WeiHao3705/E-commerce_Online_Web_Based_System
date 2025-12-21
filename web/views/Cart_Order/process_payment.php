@@ -60,7 +60,7 @@ try {
     
     // Update order status to paid
     $orderStmt = $conn->prepare("
-        UPDATE orders SET order_status = 'paid', update_at = NOW()
+        UPDATE orders SET order_status = 'paid'
         WHERE order_id = :order_id
     ");
     
@@ -87,15 +87,22 @@ try {
     $itemsStmt->execute([':order_id' => $orderId]);
     $orderItems = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
     
+
+    // Get the user's cart_id
+    $cartIdStmt = $conn->prepare("SELECT cart_id FROM shopping_cart WHERE user_id = :user_id LIMIT 1");
+    $cartIdStmt->execute([':user_id' => $userId]);
+    $cartRow = $cartIdStmt->fetch(PDO::FETCH_ASSOC);
+    $cartId = $cartRow ? $cartRow['cart_id'] : null;
+
     // Delete corresponding items from cart
     foreach ($orderItems as $item) {
         $deleteStmt = $conn->prepare("
             DELETE FROM cart_item 
-            WHERE user_id = :user_id 
+            WHERE cart_id = :cart_id 
             AND product_id = :product_id 
             LIMIT :quantity
         ");
-        $deleteStmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $deleteStmt->bindValue(':cart_id', $cartId, PDO::PARAM_INT);
         $deleteStmt->bindValue(':product_id', $item['product_id'], PDO::PARAM_INT);
         $deleteStmt->bindValue(':quantity', $item['quantity'], PDO::PARAM_INT);
         $deleteStmt->execute();

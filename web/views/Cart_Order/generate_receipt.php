@@ -48,12 +48,26 @@ $itemsStmt->execute([':order_id' => $orderId]);
 $orderItems = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Calculate totals
+
 $subtotal = 0;
 foreach ($orderItems as $item) {
     $subtotal += $item['subtotal'];
 }
-$tax = 0; // Add tax calculation if needed
-$total = $order['total_amount'];
+$discount = 0;
+if (!empty($order['voucher_id'])) {
+    if ($order['discount_type'] === 'percent') {
+        $discount = $subtotal * ($order['discount_value'] / 100);
+    } elseif ($order['discount_type'] === 'fixed') {
+        $discount = $order['discount_value'];
+    }
+    // freeshipping type doesn't affect discount, but affects shipping fee
+}
+$shippingFee = 10.00;
+if (!empty($order['voucher_id']) && $order['discount_type'] === 'freeshipping') {
+    $shippingFee = 0.00;
+}
+$tax = ($subtotal - $discount) * 0.06;
+$grandTotal = $subtotal - $discount + $shippingFee + $tax;
 
 ?>
 <!DOCTYPE html>
@@ -133,15 +147,23 @@ $total = $order['total_amount'];
                 <div class="label">Subtotal:</div>
                 <div class="value">RM <?= number_format($subtotal, 2) ?></div>
             </div>
-            <?php if ($tax > 0): ?>
+            <div class="totals-row">
+                <div class="label">Shipping Fee:</div>
+                <div class="value">RM <?= number_format($shippingFee, 2) ?></div>
+            </div>
+            <div class="totals-row">
+                <div class="label">Tax (6%):</div>
+                <div class="value">RM <?= number_format($tax, 2) ?></div>
+            </div>
+            <?php if ($discount > 0): ?>
                 <div class="totals-row">
-                    <div class="label">Tax:</div>
-                    <div class="value">RM <?= number_format($tax, 2) ?></div>
+                    <div class="label">Discount<?= !empty($order['voucher_code']) ? ' (' . htmlspecialchars($order['voucher_code']) . ')' : '' ?>:</div>
+                    <div class="value">-RM <?= number_format($discount, 2) ?></div>
                 </div>
             <?php endif; ?>
             <div class="totals-row grand-total">
                 <div class="label">TOTAL PAID:</div>
-                <div class="value">RM <?= number_format($total, 2) ?></div>
+                <div class="value">RM <?= number_format($grandTotal, 2) ?></div>
             </div>
         </div>
 

@@ -44,7 +44,7 @@
                     $controllerBasePath = $webBasePath . 'controller/';
                     ?>
                     <li><a href="<?php echo $controllerBasePath; ?>VoucherController.php?action=showMemberVouchers">My Vouchers</a></li>
-                    <li><a href="<?php echo $webBasePath; ?>return-policy.php">Return Policy</a></li>
+                    <li><a href="<?php echo $webBasePath; ?>views/return_policy/returnPolicy.php">Return Policy</a></li>
                     <li><a href="<?php echo $webBasePath; ?>contact.php">Contact</a></li>
                 </ul>
             </div>

@@ -169,8 +169,30 @@ include '../../general/_header.php';
         </div>
 
         <div class="total-section">
-            <div>Total Paid</div>
-            <div class="total-amount">RM <?= number_format($order['total_amount'], 2) ?></div>
+            <?php
+            $subtotal = array_sum(array_column($orderItems, 'subtotal'));
+            $discount = 0;
+            if (!empty($order['voucher_id'])) {
+                if ($order['discount_type'] === 'percent') {
+                    $discount = $subtotal * ($order['discount_value'] / 100);
+                } elseif ($order['discount_type'] === 'fixed') {
+                    $discount = $order['discount_value'];
+                }
+            }
+            $shippingFee = 10.00;
+            if (!empty($order['voucher_id']) && $order['discount_type'] === 'freeshipping') {
+                $shippingFee = 0.00;
+            }
+            $tax = ($subtotal - $discount) * 0.06;
+            $grandTotal = $subtotal - $discount + $shippingFee + $tax;
+            ?>
+            <div class="total-row"><span>Subtotal</span><span>RM <?= number_format($subtotal, 2) ?></span></div>
+            <div class="total-row"><span>Shipping Fee</span><span>RM <?= number_format($shippingFee, 2) ?></span></div>
+            <div class="total-row"><span>Tax (6%)</span><span>RM <?= number_format($tax, 2) ?></span></div>
+            <?php if ($discount > 0): ?>
+                <div class="total-row"><span>Discount<?= !empty($order['voucher_code']) ? ' (' . htmlspecialchars($order['voucher_code']) . ')' : '' ?></span><span>-RM <?= number_format($discount, 2) ?></span></div>
+            <?php endif; ?>
+            <div class="total-row" style="font-weight:700; color:#FF523B;"><span>Total Paid</span><span>RM <?= number_format($grandTotal, 2) ?></span></div>
         </div>
     </div>
 
@@ -201,7 +223,7 @@ include '../../general/_header.php';
                 </a>
             <?php endif; ?>
         <?php endif; ?>
-        <a href="../../index.php" class="btn btn-primary">Continue Shopping</a>
+        <a href="../../views/product/ProductPage.php" class="btn btn-primary">Continue Shopping</a>
     </div>
 </div>
 

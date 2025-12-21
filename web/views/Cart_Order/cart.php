@@ -155,6 +155,11 @@ $grandTotal = $subtotal + $shippingFee + $tax;
     <div class="cart-layout">
         <!-- Cart Items Section -->
         <div class="cart-items-section">
+            <div style="margin-bottom:1rem; display:flex; align-items:center; gap:1rem;">
+                <button id="delete-selected-btn" class="btn btn-danger" style="display:flex; align-items:center; gap:0.5rem;">
+                    <span class="material-symbols-outlined">delete</span> Delete Selected
+                </button>
+            </div>
             <table class="cart-table">
                 <thead>
                     <tr>
