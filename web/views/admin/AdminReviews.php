@@ -187,7 +187,6 @@ $rating_filter = $_GET['rating'] ?? '';
                                 <td>
                                     <div>
                                         <strong><?= htmlspecialchars($review->product_name) ?></strong>
-                                        <small style="display: block; color: #6b7280;">ID: <?= $review->product_id ?></small>
                                     </div>
                                 </td>
                                 <td>

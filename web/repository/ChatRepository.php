@@ -126,6 +126,7 @@ class ChatRepository
                     m.created_at,
                     CASE 
                         WHEN m.sender_id = r.member_id THEN COALESCE(u.full_name, 'Unknown')
+                        WHEN u.username = 'system' THEN 'System'
                         WHEN m.sender_id = r.admin_id AND r.admin_id IS NOT NULL THEN COALESCE(u.full_name, 'Unknown')
                         ELSE 'System'
                     END as sender_name,
@@ -133,6 +134,7 @@ class ChatRepository
                     r.admin_id,
                     CASE 
                         WHEN m.sender_id = r.member_id THEN 'member'
+                        WHEN u.username = 'system' THEN 'system'
                         WHEN m.sender_id = r.admin_id AND r.admin_id IS NOT NULL THEN 'admin'
                         ELSE 'system'
                     END as sender_role
@@ -297,6 +299,65 @@ class ChatRepository
         } catch (PDOException $e) {
             error_log('ChatRepository getOrCreateChatRoomForMember error: ' . $e->getMessage());
             throw new Exception('Failed to get or create chat room: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get or create chat room for system messages
+     * This method checks both open and closed chatrooms to reuse existing ones
+     * Returns chat room ID (will be reopened if it was closed)
+     * IMPORTANT: Assigns chatroom to system user (admin_id = system user ID) so it shows as assigned
+     */
+    public function getOrCreateChatRoomForSystemMessage($memberId, $systemUserId)
+    {
+        try {
+            // Get system user ID if not provided
+            if (!$systemUserId) {
+                $systemUserSql = "SELECT user_id FROM users WHERE username = 'system' AND role = 'admin' LIMIT 1";
+                $systemUserStmt = $this->db->prepare($systemUserSql);
+                $systemUserStmt->execute();
+                $systemUser = $systemUserStmt->fetch(PDO::FETCH_ASSOC);
+                if ($systemUser) {
+                    $systemUserId = (int)$systemUser['user_id'];
+                } else {
+                    throw new Exception('System user not found');
+                }
+            }
+            
+            // First, try to find any existing chat room (open or closed) for this member
+            $sql = "SELECT chat_room_id, status, admin_id FROM chat_room WHERE member_id = ? ORDER BY created_at DESC LIMIT 1";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$memberId]);
+            $existingRoom = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($existingRoom) {
+                $chatRoomId = $existingRoom['chat_room_id'];
+                
+                // Assign chatroom to system user so it shows as assigned (not unassigned)
+                if ($existingRoom['admin_id'] != $systemUserId) {
+                    $assignAdminSql = "UPDATE chat_room SET admin_id = ? WHERE chat_room_id = ?";
+                    $assignAdminStmt = $this->db->prepare($assignAdminSql);
+                    $assignAdminStmt->execute([$systemUserId, $chatRoomId]);
+                    error_log("ChatRepository: Assigned chatroom {$chatRoomId} to system user {$systemUserId}");
+                }
+                
+                // If chat room is closed, reopen it for system notifications
+                if ($existingRoom['status'] === 'closed') {
+                    $this->reopenChatRoom($chatRoomId);
+                }
+                return $chatRoomId;
+            }
+
+            // If no chat room exists at all, create a new one assigned to system user
+            $sql = "INSERT INTO chat_room (member_id, admin_id, status) VALUES (?, ?, 'open')";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$memberId, $systemUserId]);
+            $newChatRoomId = $this->db->lastInsertId();
+            error_log("ChatRepository: Created new chatroom {$newChatRoomId} assigned to system user {$systemUserId} for member {$memberId}");
+            return $newChatRoomId;
+        } catch (PDOException $e) {
+            error_log('ChatRepository getOrCreateChatRoomForSystemMessage error: ' . $e->getMessage());
+            throw new Exception('Failed to get or create chat room for system message: ' . $e->getMessage());
         }
     }
 

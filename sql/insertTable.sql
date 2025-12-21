@@ -26,6 +26,33 @@ CREATE TABLE users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+INSERT INTO users (
+    username,
+    full_name,
+    email,
+    password,
+    role,
+    status,
+    email_verified,
+    DateOfBirth,
+    gender,
+    contact_no
+)
+SELECT 
+    'system' AS username,
+    'System' AS full_name,
+    'system@ngear.com' AS email,
+    '$2y$10$1.aE.FvO6cSM7iGJkCe2x.FGt9rKvyJJQdO1sQ0AC2Yu6/Karyd36' AS password,
+    'admin' AS role,
+    'active' AS status,
+    1 AS email_verified,
+    '2000-01-01' AS DateOfBirth,
+    'Other' AS gender,
+    NULL AS contact_no
+WHERE NOT EXISTS (
+    SELECT 1 FROM users WHERE username = 'system' AND role = 'admin'
+);
+
 -- Product table
 CREATE TABLE product (
     product_id INT AUTO_INCREMENT PRIMARY KEY,

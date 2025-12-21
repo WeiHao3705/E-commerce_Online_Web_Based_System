@@ -162,29 +162,40 @@ class InventoryService {
 
     /**
      * Get or create system user for sending system notifications
-     * Returns any admin user_id that can be used to send system messages
+     * Returns a dedicated system user_id that will be used to send system messages
      * The message will be displayed as 'System' based on sender_role logic
+     * 
+     * IMPORTANT: This method MUST always return the system user ID, never the logged-in admin's ID
      */
     private function getOrCreateSystemUser() {
-        // Get any admin user (preferably one that exists)
-        $sql = "SELECT user_id FROM users WHERE role = 'admin' AND status = 'active' LIMIT 1";
+        // First, try to find an existing system user (username = 'system')
+        // Use exact match to ensure we get the system user, not any admin
+        $sql = "SELECT user_id, username, full_name FROM users WHERE username = 'system' AND role = 'admin' LIMIT 1";
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
-        $adminUser = $stmt->fetch(PDO::FETCH_ASSOC);
+        $systemUser = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($adminUser) {
-            return (int)$adminUser['user_id'];
+        if ($systemUser && isset($systemUser['user_id'])) {
+            $systemUserId = (int)$systemUser['user_id'];
+            // Double-check it's actually the system user
+            if ($systemUser['username'] === 'system') {
+                error_log("InventoryService: Using existing system user (ID: {$systemUserId})");
+                return $systemUserId;
+            }
         }
 
-        // If no admin exists, create a system user
-        // This should rarely happen, but we need a user_id to insert the message
-        $sql = "INSERT INTO users (username, full_name, email, password, role, status, email_verified, DateOfBirth) 
-                VALUES ('system', 'System', 'system@ngear.com', :password, 'admin', 'active', 1, '2000-01-01')";
+        // If no system user exists, create one
+        // This is a dedicated system user that will be used for all system notifications
+        error_log("InventoryService: System user not found, creating new system user");
+        $sql = "INSERT INTO users (username, full_name, email, password, role, status, email_verified, DateOfBirth, gender) 
+                VALUES ('system', 'System', 'system@ngear.com', :password, 'admin', 'active', 1, '2000-01-01', 'Other')";
         $stmt = $this->conn->prepare($sql);
         // Use a random password that will never be used for login
         $hashedPassword = password_hash(uniqid('system_', true), PASSWORD_DEFAULT);
         $stmt->execute([':password' => $hashedPassword]);
-        return (int)$this->conn->lastInsertId();
+        $systemUserId = (int)$this->conn->lastInsertId();
+        error_log("InventoryService: Created new system user (ID: {$systemUserId})");
+        return $systemUserId;
     }
 
     /**
@@ -240,13 +251,30 @@ class InventoryService {
             }
 
             // Get or create system user
+            // CRITICAL: Always use system user, never use logged-in admin's ID
             try {
                 $systemUserId = $this->getOrCreateSystemUser();
                 if (!$systemUserId || $systemUserId <= 0) {
+                    error_log("InventoryService: Failed to get system user - invalid ID: {$systemUserId}");
                     $result['error'] = 'Failed to get or create system user for notifications';
                     return $result;
                 }
+                
+                // Verify the system user exists and is correct
+                $verifySql = "SELECT user_id, username, full_name FROM users WHERE user_id = ? AND username = 'system' AND role = 'admin' LIMIT 1";
+                $verifyStmt = $this->conn->prepare($verifySql);
+                $verifyStmt->execute([$systemUserId]);
+                $verifiedUser = $verifyStmt->fetch(PDO::FETCH_ASSOC);
+                
+                if (!$verifiedUser || $verifiedUser['username'] !== 'system') {
+                    error_log("InventoryService: System user verification failed. Expected system user ID {$systemUserId}, but got: " . json_encode($verifiedUser));
+                    $result['error'] = 'System user verification failed. Please ensure system user exists in database.';
+                    return $result;
+                }
+                
+                error_log("InventoryService: Verified system user (ID: {$systemUserId}, Username: {$verifiedUser['username']})");
             } catch (Exception $e) {
+                error_log("InventoryService: Exception getting system user: " . $e->getMessage());
                 $result['error'] = 'Failed to get system user: ' . $e->getMessage();
                 return $result;
             }
@@ -268,22 +296,33 @@ class InventoryService {
             $errors = [];
             foreach ($members as $member) {
                 try {
-                    // Get or create chat room for member (pass null for adminId so it doesn't get assigned)
-                    $chatRoomId = $chatRepository->getOrCreateChatRoomForMember($member['user_id'], null);
+                    // Get or create chat room for system message (checks both open and closed chatrooms)
+                    // This will assign the chatroom to the system user so it shows as assigned
+                    $chatRoomId = $chatRepository->getOrCreateChatRoomForSystemMessage($member['user_id'], $systemUserId);
                     
                     if (!$chatRoomId) {
                         $errors[] = "Failed to create/get chat room for member {$member['user_id']} ({$member['full_name']})";
                         continue;
                     }
                     
-                    // Check if chat room exists and is accessible
+                    // Verify chat room exists and is accessible
                     $chatRoom = $chatRepository->getChatRoomById($chatRoomId, $systemUserId);
                     if (!$chatRoom) {
                         $errors[] = "Chat room {$chatRoomId} not found for member {$member['user_id']} ({$member['full_name']})";
                         continue;
                     }
                     
-                    // If chat room is closed, reopen it for system notifications
+                    // Ensure chatroom is assigned to system user (so it shows as assigned, not unassigned)
+                    if ($chatRoom['admin_id'] != $systemUserId) {
+                        $assignAdminSql = "UPDATE chat_room SET admin_id = ? WHERE chat_room_id = ?";
+                        $assignAdminStmt = $this->conn->prepare($assignAdminSql);
+                        $assignAdminStmt->execute([$systemUserId, $chatRoomId]);
+                        error_log("InventoryService: Assigned chatroom {$chatRoomId} to system user {$systemUserId}");
+                        // Refresh chatroom data
+                        $chatRoom = $chatRepository->getChatRoomById($chatRoomId, $systemUserId);
+                    }
+                    
+                    // Ensure chat room is open (getOrCreateChatRoomForSystemMessage should handle this, but double-check)
                     if ($chatRoom['status'] === 'closed') {
                         $reopened = $chatRepository->reopenChatRoom($chatRoomId);
                         if (!$reopened) {
@@ -295,8 +334,23 @@ class InventoryService {
                     // Create notification message
                     $message = "Good news! The item \"{$productName}\" from your wishlist is now back in stock. You can add it to your cart now!";
                     
-                    // Send message as system user (directly to repository to bypass role checks)
+                    // CRITICAL: Send message as system user ONLY (never use logged-in admin's ID)
+                    // Directly to repository to bypass role checks and ensure system user is used
+                    error_log("InventoryService: Sending restock notification to member {$member['user_id']} from system user {$systemUserId} in chatroom {$chatRoomId}");
                     $messageId = $chatRepository->addMessage($chatRoomId, $systemUserId, $message);
+                    
+                    // Verify the message was sent with the correct sender_id
+                    if ($messageId) {
+                        $verifyMsgSql = "SELECT sender_id FROM chat_message WHERE message_id = ? LIMIT 1";
+                        $verifyMsgStmt = $this->conn->prepare($verifyMsgSql);
+                        $verifyMsgStmt->execute([$messageId]);
+                        $sentMessage = $verifyMsgStmt->fetch(PDO::FETCH_ASSOC);
+                        if ($sentMessage && (int)$sentMessage['sender_id'] !== $systemUserId) {
+                            error_log("InventoryService: ERROR - Message sent with wrong sender_id. Expected {$systemUserId}, got {$sentMessage['sender_id']}");
+                        } else {
+                            error_log("InventoryService: Message sent successfully with system user ID {$systemUserId}");
+                        }
+                    }
                     
                     if (!$messageId) {
                         $errors[] = "Failed to insert message for member {$member['user_id']} ({$member['full_name']})";
