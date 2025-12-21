@@ -10,6 +10,23 @@ document.addEventListener('DOMContentLoaded', function() {
 	const variantImagesPreview = document.getElementById('variantImagesPreview');
 	const variantMainIndexInput = document.getElementById('variant_main_image_index');
 	const productForm = document.getElementById('productForm');
+		const hasVariantsCheckbox = document.getElementById('has_variants');
+		const initialVariantColorInput = document.getElementById('initial_variant_color');
+		const initialVariantColorGroup = document.getElementById('initial_variant_color_group');
+		// Toggle initial variant color on checkbox
+		function toggleVariantInputs() {
+			if (!hasVariantsCheckbox || !initialVariantColorGroup) return;
+			const enabled = !!hasVariantsCheckbox.checked;
+			initialVariantColorGroup.style.display = enabled ? 'block' : 'none';
+			if (initialVariantColorInput) {
+				initialVariantColorInput.required = enabled;
+			}
+		}
+
+		if (hasVariantsCheckbox) {
+			hasVariantsCheckbox.addEventListener('change', toggleVariantInputs);
+			toggleVariantInputs();
+		}
 	const variantForm = document.getElementById('variantForm');
 	const tabProduct = document.getElementById('tab-product');
 	const tabVariant = document.getElementById('tab-variant');
@@ -121,6 +138,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	// Validate product form
 	productForm.addEventListener('submit', function(e) {
+				// If variants enabled, ensure color provided
+				if (hasVariantsCheckbox && hasVariantsCheckbox.checked) {
+					const colorVal = (initialVariantColorInput && initialVariantColorInput.value.trim()) || '';
+					if (!colorVal) {
+						e.preventDefault();
+						alert('Please specify an initial variant color.');
+						return;
+					}
+				}
 		const cost = parseFloat(costInput.value) || 0;
 		const original = parseFloat(originalPriceInput.value) || 0;
 		const selling = parseFloat(sellingPriceInput.value) || 0;

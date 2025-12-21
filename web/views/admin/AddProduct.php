@@ -54,6 +54,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				'selling_price' => $_POST['selling_price'] ?? null,
 			];
 
+			$hasVariants = isset($_POST['has_variants']) && $_POST['has_variants'] === '1';
+			$initialVariantColor = trim($_POST['initial_variant_color'] ?? '');
+
 			// Handle file upload via service (multiple images)
 			$imagePaths = [];
 			$mainIndex = null;
@@ -72,6 +75,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 			// Create product via service
 			$productId = $productService->createProduct($productData, $imagePaths, $conn, $mainIndex);
+
+			// If variants enabled, create initial variant with provided color
+			if ($hasVariants) {
+				if ($initialVariantColor === '') {
+					throw new Exception('Please specify an initial variant color.');
+				}
+				$productService->createVariant([
+					'product_id' => (int)$productId,
+					'color' => $initialVariantColor,
+				], [], null);
+			}
 
 			// Success: set message and redirect
 			$_SESSION['success_message'] = 'Product created successfully.';
@@ -223,6 +237,31 @@ $pageTitle = 'Add Product';
 						<small>Optional - Select multiple images. Choose one as Main (max 5MB each)</small>
 						<input type="hidden" name="main_image_index" id="main_image_index" value="0">
 						<div id="imagesPreview" class="images-preview" style="display:none;margin-top:10px;"></div>
+					</div>
+				</div>
+
+				<!-- Variants Option -->
+				<div class="form-grid">
+					<div class="form-group">
+						<label for="has_variants">
+							<span class="material-symbols-outlined">tune</span>
+							This product has variants?
+						</label>
+						<label style="display:inline-flex;align-items:center;gap:8px;">
+							<input type="checkbox" id="has_variants" name="has_variants" value="1">
+							Enable variants
+						</label>
+						<small>When enabled, specify the color to create the first variant.</small>
+					</div>
+
+					<div class="form-group" id="initial_variant_color_group" style="display:none;">
+						<label for="initial_variant_color">
+							<span class="material-symbols-outlined">palette</span>
+							Initial Variant Color
+							<span class="required">*</span>
+						</label>
+						<input type="text" id="initial_variant_color" name="initial_variant_color" placeholder="e.g., Black / Navy">
+						<small>This will create a variant in product_variant table.</small>
 					</div>
 				</div>
 
