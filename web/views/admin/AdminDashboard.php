@@ -245,6 +245,7 @@ try {
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     <!-- Font Awesome for chat icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AdminDashboard.css">
 </head>
 
@@ -387,22 +388,9 @@ try {
                             <p class="admin-chart-value">RM <?php echo number_format($currentWeekSales, 2); ?></p>
                             <p class="admin-chart-change"><?php echo $weekSalesChangeFormatted; ?></p>
                         </div>
-                        <p class="admin-chart-period" id="selected-week-label">This Week</p>
-                        <div class="admin-chart-bars">
-                            <?php
-                            $maxWeeklySales = max($weeklySalesData);
-                            if ($maxWeeklySales == 0) $maxWeeklySales = 1; // Prevent division by zero
-                            for ($i = 0; $i < 4; $i++):
-                                $height = ($weeklySalesData[$i] / $maxWeeklySales) * 100;
-                                $isActive = ($i == 3) ? 'active' : '';
-                                $weekLabel = ($i == 3) ? 'This Week' : (4 - $i) . ' weeks ago';
-                                $weeksAgo = 3 - $i;
-                            ?>
-                                <div class="week-bar-container" data-week-index="<?php echo $i; ?>" data-weeks-ago="<?php echo $weeksAgo; ?>" data-sales="<?php echo $weeklySalesData[$i]; ?>" data-label="<?php echo $weekLabel; ?>" style="cursor: pointer;">
-                                    <div class="admin-chart-bar <?php echo $isActive; ?>" style="height: <?php echo max($height, 5); ?>%;"></div>
-                                    <p class="admin-chart-label <?php echo $isActive; ?>"><?php echo $weekLabel; ?></p>
-                                </div>
-                            <?php endfor; ?>
+                        <p class="admin-chart-period">Last 4 Weeks</p>
+                        <div class="admin-chart-container">
+                            <canvas id="salesLineChart"></canvas>
                         </div>
                     </div>
 
@@ -485,6 +473,14 @@ try {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         // Pass PHP variables to JavaScript
+        var weeklySalesData = <?php echo json_encode($weeklySalesData); ?>;
+        var weeklyLabels = <?php echo json_encode([
+            '3 weeks ago',
+            '2 weeks ago',
+            '1 week ago',
+            'This Week'
+        ]); ?>;
+        
         $(document).ready(function() {
             $('#dashboard-view').attr('data-views-base-path', '<?php echo $viewsBasePath; ?>');
             $('#dashboard-view').attr('data-web-base-path', '<?php echo $webBasePath; ?>');

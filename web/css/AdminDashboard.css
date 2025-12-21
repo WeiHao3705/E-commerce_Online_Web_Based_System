@@ -558,39 +558,12 @@ body {
     line-height: 1.5;
 }
 
-/* Chart Bars */
-.admin-chart-bars {
-    display: grid;
-    grid-auto-flow: column;
-    gap: 1.5rem;
-    grid-template-rows: 1fr auto;
-    align-items: end;
-    justify-items: center;
-    min-height: 220px;
-    padding: 1rem 0.75rem 0;
-}
-
-.admin-chart-bar {
+/* Chart Container */
+.admin-chart-container {
+    position: relative;
     width: 100%;
-    background-color: rgba(255, 82, 59, 0.2);
-    border-radius: 0.25rem 0.25rem 0 0;
-}
-
-.admin-chart-bar.active {
-    background-color: var(--primary);
-}
-
-.admin-chart-label {
-    color: var(--subtle-text-light);
-    font-size: 0.875rem;
-    font-weight: 500;
-    line-height: 1.5;
-    margin-top: 0.5rem;
-}
-
-.admin-chart-label.active {
-    color: var(--primary);
-    font-weight: 700;
+    height: 280px;
+    margin-top: 1rem;
 }
 
 /* Recent Orders Card */

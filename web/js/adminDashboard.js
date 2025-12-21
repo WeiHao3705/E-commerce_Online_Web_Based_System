@@ -1,4 +1,10 @@
+// Global variable for sales line chart
+var salesLineChart = null;
+
 $(document).ready(function() {
+    // Initialize sales line chart
+    initializeSalesLineChart();
+    
     // Auto-hide success/error popups
     $('.success-popup').each(function() {
         var $popup = $(this);
@@ -121,15 +127,16 @@ $(document).ready(function() {
                         $('.admin-chart-value').text('RM ' + parseFloat(response.weekly_sales.current).toLocaleString('en-MY', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
                         $('.admin-chart-change').text(response.weekly_sales.change);
                         
-                        // Update chart bars
+                        // Update or initialize line chart
                         if (response.weekly_sales.data && response.weekly_sales.data.length === 4) {
-                            var maxSales = Math.max.apply(null, response.weekly_sales.data);
-                            if (maxSales === 0) maxSales = 1;
-                            
-                            $('.admin-chart-bars > div').each(function(index) {
-                                var height = (response.weekly_sales.data[index] / maxSales) * 100;
-                                $(this).find('.admin-chart-bar').css('height', Math.max(height, 5) + '%');
-                            });
+                            if (salesLineChart) {
+                                salesLineChart.data.datasets[0].data = response.weekly_sales.data;
+                                salesLineChart.update();
+                            } else {
+                                // Initialize chart if it doesn't exist yet
+                                weeklySalesData = response.weekly_sales.data;
+                                initializeSalesLineChart();
+                            }
                         }
                     }
                     
@@ -324,39 +331,101 @@ $(document).ready(function() {
         }
     });
 
-    // Weekly sales bar click handler
-    $('.week-bar-container').on('click', function() {
-        var weekIndex = $(this).data('week-index');
-        var weeksAgo = $(this).data('weeks-ago');
-        var sales = parseFloat($(this).data('sales'));
-        var label = $(this).data('label');
-        
-        // Remove active class from all bars
-        $('.admin-chart-bar').removeClass('active');
-        $('.admin-chart-label').removeClass('active');
-        
-        // Add active class to clicked bar
-        $(this).find('.admin-chart-bar').addClass('active');
-        $(this).find('.admin-chart-label').addClass('active');
-        
-        // Update the display
-        $('.admin-chart-value').text('RM ' + sales.toLocaleString('en-MY', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
-        $('#selected-week-label').text(label);
-        
-        // Calculate change from previous week if available
-        var allBars = $('.week-bar-container');
-        if (weekIndex > 0) {
-            var prevSales = parseFloat(allBars.eq(weekIndex - 1).data('sales'));
-            if (prevSales > 0) {
-                var change = ((sales - prevSales) / prevSales) * 100;
-                var changeText = (change >= 0 ? '+' : '') + change.toFixed(1) + '% from previous week';
-                $('.admin-chart-change').text(changeText);
-            } else {
-                $('.admin-chart-change').text('No previous data');
+});
+
+// Initialize sales line chart
+function initializeSalesLineChart() {
+    var ctx = document.getElementById('salesLineChart');
+    if (!ctx) return;
+    
+    var chartData = typeof weeklySalesData !== 'undefined' ? weeklySalesData : [0, 0, 0, 0];
+    var chartLabels = typeof weeklyLabels !== 'undefined' ? weeklyLabels : ['3 weeks ago', '2 weeks ago', '1 week ago', 'This Week'];
+    
+    salesLineChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                label: 'Sales (RM)',
+                data: chartData,
+                borderColor: '#FF523B',
+                backgroundColor: 'rgba(255, 82, 59, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#FF523B',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointHoverBackgroundColor: '#FF523B',
+                pointHoverBorderColor: '#ffffff',
+                pointHoverBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    callbacks: {
+                        label: function(context) {
+                            return 'RM ' + parseFloat(context.parsed.y).toLocaleString('en-MY', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            });
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'RM ' + parseFloat(value).toLocaleString('en-MY', {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0
+                            });
+                        },
+                        font: {
+                            size: 11
+                        },
+                        color: '#6b7280'
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: 11
+                        },
+                        color: '#6b7280'
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
             }
-        } else {
-            $('.admin-chart-change').text('Oldest week');
         }
     });
-});
+}
 
