@@ -1427,16 +1427,27 @@ function getProfilePhotoUrl($photoPath, $imageBasePath)
             const tbody = $('#members-table tbody');
             tbody.empty();
 
-            // Clear selection when table updates
-            selectedMembers.clear();
-            $('#selectAllCheckbox').prop('checked', false);
-            updateBulkActions();
+            // Get selected members from sessionStorage
+            const selected = getSelectedMembers();
 
             if (response.members && response.members.length > 0) {
                 response.members.forEach(function(member) {
                     const row = buildMemberRow(member);
                     tbody.append(row);
                 });
+                
+                // Restore checkbox states from sessionStorage
+                $('.member-checkbox').each(function() {
+                    const memberId = $(this).val();
+                    if (selected.has(memberId)) {
+                        $(this).prop('checked', true);
+                    }
+                });
+                
+                // Update select all checkbox state
+                const allChecked = $('.member-checkbox').length > 0 && 
+                    $('.member-checkbox').length === $('.member-checkbox:checked').length;
+                $('#selectAllCheckbox').prop('checked', allChecked);
             } else {
                 tbody.append(`
                     <tr>
@@ -1449,6 +1460,8 @@ function getProfilePhotoUrl($photoPath, $imageBasePath)
                     </tr>
                 `);
             }
+            
+            updateBulkActions();
         }
 
         function buildMemberRow(member) {
@@ -1957,8 +1970,36 @@ function getProfilePhotoUrl($photoPath, $imageBasePath)
             );
         });
 
-        // Bulk selection functionality
-        let selectedMembers = new Set();
+        // Bulk selection functionality using sessionStorage
+        const STORAGE_KEY = 'selectedMembers';
+        
+        // Helper functions for sessionStorage
+        function getSelectedMembers() {
+            const stored = sessionStorage.getItem(STORAGE_KEY);
+            return stored ? new Set(JSON.parse(stored)) : new Set();
+        }
+        
+        function saveSelectedMembers(selectedSet) {
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(selectedSet)));
+        }
+        
+        function addSelectedMember(memberId) {
+            const selected = getSelectedMembers();
+            selected.add(memberId);
+            saveSelectedMembers(selected);
+            return selected;
+        }
+        
+        function removeSelectedMember(memberId) {
+            const selected = getSelectedMembers();
+            selected.delete(memberId);
+            saveSelectedMembers(selected);
+            return selected;
+        }
+        
+        function clearSelectedMembers() {
+            sessionStorage.removeItem(STORAGE_KEY);
+        }
 
         // Select all checkbox
         $('#selectAllCheckbox').on('change', function() {
@@ -1966,23 +2007,65 @@ function getProfilePhotoUrl($photoPath, $imageBasePath)
             $('.member-checkbox').prop('checked', isChecked);
 
             if (isChecked) {
-                $('.member-checkbox').each(function() {
-                    selectedMembers.add($(this).val());
+                // Fetch ALL member IDs matching current filters
+                const searchTerm = $('#filterSearch').val().trim();
+                const status = $('#filterStatus').val();
+                
+                $.ajax({
+                    url: 'MemberController.php',
+                    method: 'GET',
+                    data: {
+                        action: 'showAll',
+                        ajax: '1',
+                        getAllIds: '1',
+                        search: searchTerm,
+                        status: status
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success && response.ids) {
+                            // Store all matching IDs in sessionStorage
+                            const allIds = new Set(response.ids.map(String));
+                            saveSelectedMembers(allIds);
+                            
+                            // Update checkboxes on current page
+                            $('.member-checkbox').each(function() {
+                                const memberId = $(this).val();
+                                if (allIds.has(memberId)) {
+                                    $(this).prop('checked', true);
+                                }
+                            });
+                            
+                            updateBulkActions();
+                        } else {
+                            alert('Error fetching all member IDs: ' + (response.error || 'Unknown error'));
+                            $('#selectAllCheckbox').prop('checked', false);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX Error:', error);
+                        alert('Error fetching all member IDs. Please try again.');
+                        $('#selectAllCheckbox').prop('checked', false);
+                    }
                 });
             } else {
-                selectedMembers.clear();
+                // Remove all current page members from selection
+                const selected = getSelectedMembers();
+                $('.member-checkbox').each(function() {
+                    selected.delete($(this).val());
+                });
+                saveSelectedMembers(selected);
+                updateBulkActions();
             }
-
-            updateBulkActions();
         });
 
         // Individual checkbox change
         $(document).on('change', '.member-checkbox', function() {
             const memberId = $(this).val();
             if ($(this).is(':checked')) {
-                selectedMembers.add(memberId);
+                addSelectedMember(memberId);
             } else {
-                selectedMembers.delete(memberId);
+                removeSelectedMember(memberId);
                 $('#selectAllCheckbox').prop('checked', false);
             }
             updateBulkActions();
@@ -1990,7 +2073,8 @@ function getProfilePhotoUrl($photoPath, $imageBasePath)
 
         // Update bulk actions visibility and count
         function updateBulkActions() {
-            const count = selectedMembers.size;
+            const selected = getSelectedMembers();
+            const count = selected.size;
             $('#selectedCount').text(count);
 
             if (count > 0) {
@@ -2004,13 +2088,14 @@ function getProfilePhotoUrl($photoPath, $imageBasePath)
         $('#clearSelectionBtn').on('click', function() {
             $('.member-checkbox').prop('checked', false);
             $('#selectAllCheckbox').prop('checked', false);
-            selectedMembers.clear();
+            clearSelectedMembers();
             updateBulkActions();
         });
 
         // Bulk delete
         $('#bulkDeleteBtn').on('click', function() {
-            const count = selectedMembers.size;
+            const selected = getSelectedMembers();
+            const count = selected.size;
             if (count === 0) {
                 alert('Please select at least one member to delete.');
                 return;
@@ -2023,17 +2108,38 @@ function getProfilePhotoUrl($photoPath, $imageBasePath)
                 // Clear existing hidden inputs
                 $('#bulkDeleteForm input[name="user_ids[]"]').remove();
 
-                // Add selected member IDs
-                selectedMembers.forEach(function(memberId) {
+                // Add selected member IDs from sessionStorage
+                selected.forEach(function(memberId) {
                     $('#bulkDeleteForm').append(`<input type="hidden" name="user_ids[]" value="${memberId}">`);
                 });
 
+                // Clear selection after deletion
+                clearSelectedMembers();
+                
                 $('#bulkDeleteForm').submit();
             }
             );
         });
 
-        // Update bulk actions when table is updated via AJAX
+        // Restore selections on initial page load
+        $(document).ready(function() {
+            // Restore checkbox states from sessionStorage
+            const selected = getSelectedMembers();
+            $('.member-checkbox').each(function() {
+                const memberId = $(this).val();
+                if (selected.has(memberId)) {
+                    $(this).prop('checked', true);
+                }
+            });
+            
+            // Update select all checkbox state
+            const allChecked = $('.member-checkbox').length > 0 && 
+                $('.member-checkbox').length === $('.member-checkbox:checked').length;
+            $('#selectAllCheckbox').prop('checked', allChecked);
+            
+            // Update bulk actions
+            updateBulkActions();
+        });
     </script>
 
     <!-- Edit Modal -->

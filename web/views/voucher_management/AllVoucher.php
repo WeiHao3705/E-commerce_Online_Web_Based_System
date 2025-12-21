@@ -993,16 +993,27 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
             const tbody = $('#vouchers-table tbody');
             tbody.empty();
             
-            // Clear selection when table updates
-            selectedVouchers.clear();
-            $('#selectAllCheckbox').prop('checked', false);
-            updateBulkActions();
+            // Get selected vouchers from sessionStorage
+            const selected = getSelectedVouchers();
             
             if (response.vouchers && response.vouchers.length > 0) {
                 response.vouchers.forEach(function(voucher) {
                     const row = buildVoucherRow(voucher);
                     tbody.append(row);
                 });
+                
+                // Restore checkbox states from sessionStorage
+                $('.voucher-checkbox').each(function() {
+                    const voucherId = $(this).val();
+                    if (selected.has(voucherId)) {
+                        $(this).prop('checked', true);
+                    }
+                });
+                
+                // Update select all checkbox state
+                const allChecked = $('.voucher-checkbox').length > 0 && 
+                    $('.voucher-checkbox').length === $('.voucher-checkbox:checked').length;
+                $('#selectAllCheckbox').prop('checked', allChecked);
             } else {
                 tbody.append(`
                     <tr>
@@ -1015,6 +1026,8 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                     </tr>
                 `);
             }
+            
+            updateBulkActions();
         }
 
         function buildVoucherRow(voucher) {
@@ -1511,8 +1524,36 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
             });
         });
 
-        // Bulk selection functionality
-        let selectedVouchers = new Set();
+        // Bulk selection functionality using sessionStorage
+        const STORAGE_KEY = 'selectedVouchers';
+        
+        // Helper functions for sessionStorage
+        function getSelectedVouchers() {
+            const stored = sessionStorage.getItem(STORAGE_KEY);
+            return stored ? new Set(JSON.parse(stored)) : new Set();
+        }
+        
+        function saveSelectedVouchers(selectedSet) {
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(selectedSet)));
+        }
+        
+        function addSelectedVoucher(voucherId) {
+            const selected = getSelectedVouchers();
+            selected.add(voucherId);
+            saveSelectedVouchers(selected);
+            return selected;
+        }
+        
+        function removeSelectedVoucher(voucherId) {
+            const selected = getSelectedVouchers();
+            selected.delete(voucherId);
+            saveSelectedVouchers(selected);
+            return selected;
+        }
+        
+        function clearSelectedVouchers() {
+            sessionStorage.removeItem(STORAGE_KEY);
+        }
 
         // Select all checkbox
         $('#selectAllCheckbox').on('change', function() {
@@ -1520,23 +1561,67 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
             $('.voucher-checkbox').prop('checked', isChecked);
             
             if (isChecked) {
-                $('.voucher-checkbox').each(function() {
-                    selectedVouchers.add($(this).val());
+                // Fetch ALL voucher IDs matching current filters
+                const searchTerm = $('#filterSearch').val();
+                const status = $('#filterStatus').val();
+                const type = $('#filterType').val();
+                
+                $.ajax({
+                    url: 'VoucherController.php',
+                    method: 'GET',
+                    data: {
+                        action: 'showAll',
+                        ajax: '1',
+                        getAllIds: '1',
+                        search: searchTerm,
+                        status: status,
+                        type: type
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success && response.ids) {
+                            // Store all matching IDs in sessionStorage
+                            const allIds = new Set(response.ids.map(String));
+                            saveSelectedVouchers(allIds);
+                            
+                            // Update checkboxes on current page
+                            $('.voucher-checkbox').each(function() {
+                                const voucherId = $(this).val();
+                                if (allIds.has(voucherId)) {
+                                    $(this).prop('checked', true);
+                                }
+                            });
+                            
+                            updateBulkActions();
+                        } else {
+                            alert('Error fetching all voucher IDs: ' + (response.error || 'Unknown error'));
+                            $('#selectAllCheckbox').prop('checked', false);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX Error:', error);
+                        alert('Error fetching all voucher IDs. Please try again.');
+                        $('#selectAllCheckbox').prop('checked', false);
+                    }
                 });
             } else {
-                selectedVouchers.clear();
+                // Remove all current page vouchers from selection
+                const selected = getSelectedVouchers();
+                $('.voucher-checkbox').each(function() {
+                    selected.delete($(this).val());
+                });
+                saveSelectedVouchers(selected);
+                updateBulkActions();
             }
-            
-            updateBulkActions();
         });
 
         // Individual checkbox change
         $(document).on('change', '.voucher-checkbox', function() {
             const voucherId = $(this).val();
             if ($(this).is(':checked')) {
-                selectedVouchers.add(voucherId);
+                addSelectedVoucher(voucherId);
             } else {
-                selectedVouchers.delete(voucherId);
+                removeSelectedVoucher(voucherId);
                 $('#selectAllCheckbox').prop('checked', false);
             }
             updateBulkActions();
@@ -1544,7 +1629,8 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
 
         // Update bulk actions visibility and count
         function updateBulkActions() {
-            const count = selectedVouchers.size;
+            const selected = getSelectedVouchers();
+            const count = selected.size;
             $('#selectedCount').text(count);
             
             if (count > 0) {
@@ -1558,13 +1644,14 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
         $('#clearSelectionBtn').on('click', function() {
             $('.voucher-checkbox').prop('checked', false);
             $('#selectAllCheckbox').prop('checked', false);
-            selectedVouchers.clear();
+            clearSelectedVouchers();
             updateBulkActions();
         });
 
         // Bulk delete
         $('#bulkDeleteBtn').on('click', function() {
-            const count = selectedVouchers.size;
+            const selected = getSelectedVouchers();
+            const count = selected.size;
             if (count === 0) {
                 alert('Please select at least one voucher to delete.');
                 return;
@@ -1577,14 +1664,37 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                     // Clear existing hidden inputs
                     $('#bulkDeleteForm input[name="voucher_ids[]"]').remove();
                     
-                    // Add selected voucher IDs
-                    selectedVouchers.forEach(function(voucherId) {
+                    // Add selected voucher IDs from sessionStorage
+                    selected.forEach(function(voucherId) {
                         $('#bulkDeleteForm').append(`<input type="hidden" name="voucher_ids[]" value="${voucherId}">`);
                     });
+                    
+                    // Clear selection after deletion
+                    clearSelectedVouchers();
                     
                     $('#bulkDeleteForm').submit();
                 }
             );
+        });
+        
+        // Restore selections on initial page load
+        $(document).ready(function() {
+            // Restore checkbox states from sessionStorage
+            const selected = getSelectedVouchers();
+            $('.voucher-checkbox').each(function() {
+                const voucherId = $(this).val();
+                if (selected.has(voucherId)) {
+                    $(this).prop('checked', true);
+                }
+            });
+            
+            // Update select all checkbox state
+            const allChecked = $('.voucher-checkbox').length > 0 && 
+                $('.voucher-checkbox').length === $('.voucher-checkbox:checked').length;
+            $('#selectAllCheckbox').prop('checked', allChecked);
+            
+            // Update bulk actions
+            updateBulkActions();
         });
     </script>
 

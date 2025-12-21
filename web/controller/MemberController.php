@@ -358,6 +358,21 @@ class MemberController
     private function getMembersAjax()
     {
         try {
+            // Check if this is a request for all IDs
+            if (isset($_GET['getAllIds']) && $_GET['getAllIds'] == '1') {
+                $searchTerm = isset($_GET['search']) ? trim($_GET['search']) : '';
+                $status = isset($_GET['status']) ? trim($_GET['status']) : '';
+                
+                $memberIds = $this->membershipServices->getAllMemberIds($searchTerm, $status);
+                
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true,
+                    'ids' => $memberIds
+                ]);
+                exit;
+            }
+
             // Get pagination, search, sort and status parameters
             $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
             $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;

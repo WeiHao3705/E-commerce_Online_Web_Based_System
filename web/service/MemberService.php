@@ -286,6 +286,14 @@ class MembershipServices
     }
 
     /**
+     * Get all member IDs matching filters
+     */
+    public function getAllMemberIds($searchTerm = '', $statusFilter = ''): array
+    {
+        return $this->membershipRepository->getAllMemberIds($searchTerm, $statusFilter);
+    }
+
+    /**
      * Bulk delete members
      */
     public function bulkDeleteMembers(array $userIds): array

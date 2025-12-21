@@ -110,11 +110,6 @@ class AdminService
         return $this->adminRepository->deleteAdmin($userId);
     }
 
-    public function bulkDeleteAdmins(array $userIds): array
-    {
-        return $this->adminRepository->bulkDeleteAdmins($userIds);
-    }
-
     public function getAdminById($userId)
     {
         return $this->adminRepository->getAdminById($userId);

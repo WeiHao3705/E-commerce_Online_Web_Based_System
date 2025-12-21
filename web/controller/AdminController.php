@@ -263,38 +263,6 @@ class AdminController
         }
     }
 
-    public function bulkDeleteAdmins(): void
-    {
-        $this->requireAdmin();
-
-        try {
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                if (!isset($_POST['user_ids'])) {
-                    throw new Exception('No admins selected for deletion');
-                }
-
-                $userIds = $_POST['user_ids'];
-                if (!is_array($userIds)) {
-                    $userIds = [$userIds];
-                }
-
-                $result = $this->adminService->bulkDeleteAdmins($userIds);
-
-                if ($result['success']) {
-                    $_SESSION['success_message'] = $result['message'];
-                } else {
-                    throw new Exception($result['message']);
-                }
-
-                header('Location: ../controller/AdminController.php?action=showAll');
-                exit;
-            }
-        } catch (Exception $e) {
-            $_SESSION['error_message'] = $e->getMessage();
-            header('Location: ../controller/AdminController.php?action=showAll');
-            exit;
-        }
-    }
 
     public function getRefundReason(): void
     {
@@ -472,8 +440,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $controller->updateAdminStatus();
     } elseif ($action === 'delete') {
         $controller->deleteAdmin();
-    } elseif ($action === 'bulkDelete') {
-        $controller->bulkDeleteAdmins();
     } elseif ($action === 'updateOrderStatus') {
         $controller->updateOrderStatus();
     }

@@ -254,6 +254,49 @@ class MembershipRepository
     }
 
 
+    /**
+     * Get all member IDs matching the filters (no pagination)
+     */
+    public function getAllMemberIds($searchTerm = '', $statusFilter = ''): array
+    {
+        try {
+            // Trim and normalize search term and status
+            $searchTerm = trim($searchTerm);
+            $statusFilter = trim($statusFilter);
+
+            $sql = "SELECT user_id FROM users WHERE role = 'member'";
+            $params = [];
+
+            if (!empty($searchTerm)) {
+                $sql .= " AND (
+                    username LIKE :search OR
+                    full_name LIKE :search OR
+                    email LIKE :search OR
+                    contact_no LIKE :search
+                )";
+                $params[':search'] = "%{$searchTerm}%";
+            }
+
+            // Add status filter if provided and valid
+            if (!empty($statusFilter)) {
+                $allowedStatuses = ['active', 'inactive', 'banned', 'blocked'];
+                if (in_array($statusFilter, $allowedStatuses, true)) {
+                    $sql .= " AND status = :status";
+                    $params[':status'] = $statusFilter;
+                }
+            }
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+
+            $results = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            return array_map('intval', $results);
+        } catch (PDOException $e) {
+            error_log("Database error in getAllMemberIds: " . $e->getMessage());
+            throw new Exception("Error retrieving member IDs");
+        }
+    }
+
     public function getTotalMembersCount($searchTerm = '', $statusFilter = '')
     {
         try {

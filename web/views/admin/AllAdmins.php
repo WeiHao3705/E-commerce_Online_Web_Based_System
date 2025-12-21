@@ -423,9 +423,6 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
             background: #dc2626;
         }
         
-        .col-checkbox {
-            width: 40px;
-        }
         .member-profile-photo {
             width: 40px;
             height: 40px;
@@ -1396,26 +1393,12 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
             </form>
         </section>
 
-        <!-- Bulk Actions Section -->
-        <div class="bulk-actions-section" style="display: none;" id="bulkActionsSection">
-            <button type="button" class="btn btn-danger" id="bulkDeleteBtn">
-                <i class="fas fa-trash"></i>
-                <span>Delete Selected (<span id="selectedCount">0</span>)</span>
-            </button>
-            <button type="button" class="btn btn-secondary" id="clearSelectionBtn">
-                <i class="fas fa-times"></i>
-                <span>Clear Selection</span>
-            </button>
-        </div>
 
         <!-- Admins Table -->
         <section class="table-container" id="admins-table-wrapper">
             <table class="orders-table" id="admins-table">
                         <thead>
                             <tr>
-                                <th class="col-checkbox">
-                                    <input type="checkbox" id="selectAllCheckbox" title="Select all">
-                                </th>
                                 <th>Photo</th>
                                 <th>Admin Info</th>
                                 <th>Contact</th>
@@ -1429,9 +1412,6 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                             <?php if (!empty($admins)): ?>
                                 <?php foreach ($admins as $admin): ?>
                                     <tr>
-                                        <td class="col-checkbox">
-                                            <input type="checkbox" class="admin-checkbox" name="admin_ids[]" value="<?php echo $admin['user_id']; ?>" data-admin-name="<?php echo htmlspecialchars($admin['full_name'], ENT_QUOTES); ?>">
-                                        </td>
                                         <td>
                                             <?php
                                             $photoUrl = getProfilePhotoUrl($admin['profile_photo'] ?? '', $imageBasePath);
@@ -1551,7 +1531,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="8" class="text-center">
+                                    <td colspan="7" class="text-center">
                                         <div class="empty-state">
                                             <i class="fas fa-inbox"></i>
                                             <p>No admins found<?php echo !empty($_GET['search']) ? '. Try a different search term.' : ''; ?></p>
@@ -1641,10 +1621,6 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
     <form id="deleteForm" method="POST" action="AdminController.php" style="display: none;">
         <input type="hidden" name="action" value="delete">
         <input type="hidden" name="user_id" id="deleteUserId">
-    </form>
-
-    <form id="bulkDeleteForm" method="POST" action="AdminController.php" style="display: none;">
-        <input type="hidden" name="action" value="bulkDelete">
     </form>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

@@ -125,6 +125,14 @@ class VoucherService
     }
 
     /**
+     * Get all voucher IDs matching filters
+     */
+    public function getAllVoucherIds($searchTerm = '', $statusFilter = '', $typeFilter = ''): array
+    {
+        return $this->voucherRepository->getAllVoucherIds($searchTerm, $statusFilter, $typeFilter);
+    }
+
+    /**
      * Bulk delete vouchers
      */
     public function bulkDeleteVouchers(array $voucherIds): array

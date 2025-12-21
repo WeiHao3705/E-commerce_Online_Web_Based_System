@@ -223,37 +223,4 @@ class AdminRepository
         $stmt->execute([$userId]);
         return $stmt->rowCount() > 0;
     }
-
-    public function bulkDeleteAdmins(array $userIds): array
-    {
-        if (empty($userIds)) {
-            return ['success' => false, 'message' => 'No admins selected for deletion'];
-        }
-
-        $validUserIds = [];
-        foreach ($userIds as $userId) {
-            $userId = (int)$userId;
-            if ($userId > 0) {
-                $validUserIds[] = $userId;
-            }
-        }
-
-        if (empty($validUserIds)) {
-            return ['success' => false, 'message' => 'No valid admin IDs provided'];
-        }
-
-        $placeholders = str_repeat('?,', count($validUserIds) - 1) . '?';
-        $sql = "DELETE FROM users WHERE user_id IN ($placeholders) AND role = 'admin'";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($validUserIds);
-
-        $deletedCount = $stmt->rowCount();
-
-        return [
-            'success' => true,
-            'deleted_count' => $deletedCount,
-            'message' => "Successfully deleted $deletedCount admin(s)."
-        ];
-    }
 }

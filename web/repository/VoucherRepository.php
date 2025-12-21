@@ -131,6 +131,54 @@ class VoucherRepository
         }
     }
 
+    /**
+     * Get all voucher IDs matching the filters (no pagination)
+     */
+    public function getAllVoucherIds($searchTerm = '', $statusFilter = '', $typeFilter = ''): array
+    {
+        try {
+            $searchTerm = trim($searchTerm);
+            $statusFilter = trim($statusFilter);
+            $typeFilter = trim($typeFilter);
+
+            $sql = "SELECT voucher_id FROM voucher WHERE 1=1";
+            $params = [];
+
+            if (!empty($searchTerm)) {
+                $sql .= " AND (
+                    code LIKE :search OR
+                    description LIKE :search
+                )";
+                $params[':search'] = "%{$searchTerm}%";
+            }
+
+            if (!empty($statusFilter)) {
+                $allowedStatuses = ['active', 'inactive', 'expired'];
+                if (in_array($statusFilter, $allowedStatuses, true)) {
+                    $sql .= " AND status = :status";
+                    $params[':status'] = $statusFilter;
+                }
+            }
+
+            if (!empty($typeFilter)) {
+                $allowedTypes = ['percent', 'fixed', 'freeshipping'];
+                if (in_array($typeFilter, $allowedTypes, true)) {
+                    $sql .= " AND type = :type";
+                    $params[':type'] = $typeFilter;
+                }
+            }
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+
+            $results = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            return array_map('intval', $results);
+        } catch (PDOException $e) {
+            error_log("Database error in getAllVoucherIds: " . $e->getMessage());
+            throw new Exception("Error retrieving voucher IDs");
+        }
+    }
+
     public function getTotalVouchersCount($searchTerm = '')
     {
         try {

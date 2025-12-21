@@ -74,6 +74,22 @@ class VoucherController
     private function getVouchersAjax()
     {
         try {
+            // Check if this is a request for all IDs
+            if (isset($_GET['getAllIds']) && $_GET['getAllIds'] == '1') {
+                $searchTerm = isset($_GET['search']) ? trim($_GET['search']) : '';
+                $status = isset($_GET['status']) ? trim($_GET['status']) : '';
+                $type = isset($_GET['type']) ? trim($_GET['type']) : '';
+                
+                $voucherIds = $this->voucherService->getAllVoucherIds($searchTerm, $status, $type);
+                
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true,
+                    'ids' => $voucherIds
+                ]);
+                exit;
+            }
+
             // Get pagination, search, and sort parameters
             $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
             $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
