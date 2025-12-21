@@ -109,15 +109,22 @@ $pageTitle = 'My Wishlist';
                 let html = '<div class="wishlist-grid">';
 
                 items.forEach(function(item) {
-                    const sellingPrice = parseFloat(item.selling_price);
-                    const originalPrice = parseFloat(item.original_price);
-                    const hasDiscount = sellingPrice < originalPrice;
-                    const discountPercent = hasDiscount ? Math.round(((originalPrice - sellingPrice) / originalPrice) * 100) : 0;
+                    const originalPrice = parseFloat(item.original_price) || 0;
+                    const sellingPrice = parseFloat(item.selling_price) || originalPrice;
+                    // Use original_price as the display price (consistent with product pages)
+                    const displayPrice = originalPrice;
                     
-                    totalValue += sellingPrice;
+                    totalValue += displayPrice;
                     
-                    const imagePath = item.image_path ? `images/${item.image_path}` : 'images/products/default.jpg';
-                    const stock = parseInt(item.quantity_available || 0);
+                    // Image path is stored as full path (e.g., "web/images/products/file.jpg")
+                    // Use same pattern as ProductPage.php - prepend with / and use as-is
+                    let imagePath = '/web/images/products/default.jpg';
+                    if (item.image_path) {
+                        // Remove leading slashes and prepend with single slash
+                        const cleanPath = item.image_path.replace(/^\/+/, '');
+                        imagePath = '/' + cleanPath;
+                    }
+                    const stock = parseInt(item.stock_quantity || 0);
                     let stockClass = 'stock-out';
                     let stockText = 'Out of Stock';
                     let stockIcon = 'fa-times-circle';
@@ -142,12 +149,7 @@ $pageTitle = 'My Wishlist';
                                 <h3 class="wishlist-item-name">${item.product_name}</h3>
                                 <p class="wishlist-item-description">${item.description || ''}</p>
                                 <div class="wishlist-item-price">
-
-                                <span class="wishlist-current-price">RM ${sellingPrice.toFixed(2)}</span>
-                                    ${hasDiscount ? `
-                                        <span class="wishlist-original-price">RM ${originalPrice.toFixed(2)}</span>
-                                        <span class="wishlist-discount-badge">-${discountPercent}%</span>
-                                    ` : ''}
+                                    <span class="wishlist-current-price">RM ${displayPrice.toFixed(2)}</span>
                                 </div>
                                 <div class="wishlist-stock-status ${stockClass}">
                                     <i class="fas ${stockIcon}"></i>

@@ -832,15 +832,24 @@ $(document).ready(function() {
                 const isSent = msg.sender_role === this.userRole;
                 const time = this.formatTime(msg.created_at);
                 
+                // System messages should always be displayed as received
+                const isSystem = msg.sender_role === 'system';
+                const displayAsSent = isSent && !isSystem;
+                
                 const $message = $('<div class="message"></div>');
-                $message.addClass(isSent ? 'sent' : 'received');
+                $message.addClass(displayAsSent ? 'sent' : 'received');
+                
+                // Add special styling for system messages
+                if (isSystem) {
+                    $message.addClass('system-message');
+                }
                 
                 $message.html(`
                     <div class="message-bubble">${this.escapeHtml(msg.message)}</div>
                     <div class="message-info">
                         <span class="sender-name">${msg.sender_name || 'Unknown'}</span>
                         <span class="message-time">${time}</span>
-                        ${isSent && msg.is_read ? '<i class="fas fa-check-double read-icon"></i>' : ''}
+                        ${displayAsSent && msg.is_read ? '<i class="fas fa-check-double read-icon"></i>' : ''}
                     </div>
                 `);
                 

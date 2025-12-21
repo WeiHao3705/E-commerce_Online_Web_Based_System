@@ -22,5 +22,3 @@ CREATE TABLE product_review (
     INDEX idx_user_id (user_id),
     INDEX idx_created_at (created_at)
 );
-
-

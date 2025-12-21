@@ -1,3 +1,14 @@
+<?php
+// Calculate base path if not already set
+if (!isset($prefix)) {
+    $currentFileDir = dirname(__FILE__);
+    $webRootDir = dirname($currentFileDir);
+    $docRoot = $_SERVER['DOCUMENT_ROOT'];
+    $relativePath = str_replace($docRoot, '', $webRootDir);
+    $webBasePath = str_replace('\\', '/', $relativePath) . '/';
+    $prefix = $webBasePath;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -14,7 +25,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="web/css/navbar.css">
+    <link rel="stylesheet" href="<?php echo $prefix; ?>css/navbar.css?v=<?php echo filemtime(__DIR__ . '/../css/navbar.css'); ?>">
 
     <style>
         * {

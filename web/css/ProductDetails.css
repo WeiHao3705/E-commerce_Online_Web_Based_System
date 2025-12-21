@@ -363,3 +363,78 @@
 .login-modal__btn:active {
     transform: translateY(1px);
 }
+
+/* Stock Status */
+.stock-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.stock-status.in-stock {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.stock-status.in-stock i {
+    color: #10b981;
+}
+
+.stock-status.out-of-stock {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.stock-status.out-of-stock i {
+    color: #ef4444;
+}
+
+/* Wishlist Section */
+.wishlist-section {
+    margin-top: 20px;
+}
+
+.add-to-wishlist-btn {
+    width: 100%;
+    padding: 14px 20px;
+    background-color: #ffffff;
+    border: 2px solid #ef8324;
+    color: #ef8324;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+
+.add-to-wishlist-btn:hover {
+    background-color: #ef8324;
+    color: #ffffff;
+}
+
+.add-to-wishlist-btn.in-wishlist {
+    background-color: #ef8324;
+    color: #ffffff;
+}
+
+.add-to-wishlist-btn.in-wishlist:hover {
+    background-color: #d66a1a;
+    border-color: #d66a1a;
+}
+
+.add-to-wishlist-btn i {
+    font-size: 18px;
+}
+
+.add-to-wishlist-btn.in-wishlist i {
+    color: #ffffff;
+}

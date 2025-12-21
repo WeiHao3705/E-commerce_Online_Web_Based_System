@@ -70,6 +70,12 @@ class ProductService {
             }
         }
         
+        // Calculate total stock for the product
+        $totalStock = $this->getProductTotalStock($product_id);
+        
+        // Get stock per variant
+        $variantStock = $this->getVariantStock($product_id);
+        
         // Return formatted data for controller/view
         return [
             'pageTitle' => $product->product_name,
@@ -85,7 +91,10 @@ class ProductService {
             'average_rating' => $reviewsData['average_rating'],
             'review_count' => $reviewsData['review_count'],
             'can_review' => $canReview,
-            'eligible_order_items' => $eligibleOrderItems
+            'eligible_order_items' => $eligibleOrderItems,
+            'total_stock' => $totalStock,
+            'is_out_of_stock' => $totalStock <= 0,
+            'variant_stock' => $variantStock
         ];
     }
     
@@ -366,6 +375,63 @@ class ProductService {
      */
     public function getCategories() {
         return $this->productRepository->getAllCategories();
+    }
+    
+    /**
+     * Get total stock quantity for a product (sum of all inventory entries)
+     * @param int $product_id Product ID
+     * @return int Total stock quantity
+     */
+    public function getProductTotalStock($product_id) {
+        $sql = "
+            SELECT COALESCE(SUM(i.stock_quantity), 0) as total_stock
+            FROM inventory i
+            WHERE i.product_id = :product_id 
+               OR i.variant_id IN (
+                   SELECT variant_id FROM product_variant WHERE product_id = :product_id
+               )
+        ";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([':product_id' => $product_id]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return (int)($result['total_stock'] ?? 0);
+    }
+
+    /**
+     * Get stock quantity per variant
+     * @param int $product_id Product ID
+     * @return array Array of variant_id => total_stock
+     */
+    public function getVariantStock($product_id) {
+        $sql = "
+            SELECT 
+                i.variant_id,
+                COALESCE(SUM(i.stock_quantity), 0) as total_stock
+            FROM inventory i
+            WHERE i.variant_id IN (
+                SELECT variant_id FROM product_variant WHERE product_id = :product_id
+            )
+            GROUP BY i.variant_id
+        ";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([':product_id' => $product_id]);
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $variantStock = [];
+        foreach ($results as $row) {
+            $variantStock[(int)$row['variant_id']] = (int)$row['total_stock'];
+        }
+        
+        // Also include variants with no inventory (0 stock)
+        $variantsList = $this->productRepository->getVariantsByProductId($product_id);
+        foreach ($variantsList as $variant) {
+            $vid = (int)$variant->variant_id;
+            if (!isset($variantStock[$vid])) {
+                $variantStock[$vid] = 0;
+            }
+        }
+        
+        return $variantStock;
     }
 
     /**

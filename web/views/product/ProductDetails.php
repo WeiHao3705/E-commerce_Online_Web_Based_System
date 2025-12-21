@@ -50,7 +50,7 @@ require __DIR__ . '/../../general/_navbar.php';
 <link rel="stylesheet" href="<?= $assetPrefix ?>css/ProductDetails.css?v=<?= filemtime(__DIR__ . '/../../css/ProductDetails.css'); ?>">
 <link rel="stylesheet" href="<?= $assetPrefix ?>css/reviews.css?v=<?= filemtime(__DIR__ . '/../../css/reviews.css'); ?>">
 
-<div class="product-detail-container" id="productDetailRoot" data-variant-sizes='<?= htmlspecialchars(json_encode($variantSizes), ENT_QUOTES, 'UTF-8') ?>' data-login-url="<?= htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8') ?>">
+<div class="product-detail-container" id="productDetailRoot" data-variant-sizes='<?= htmlspecialchars(json_encode($variantSizes), ENT_QUOTES, 'UTF-8') ?>' data-variant-stock='<?= htmlspecialchars(json_encode($variant_stock), ENT_QUOTES, 'UTF-8') ?>' data-login-url="<?= htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8') ?>" data-product-id="<?= $product->product_id ?>" data-is-out-of-stock="<?= $is_out_of_stock ? 'true' : 'false' ?>" data-total-stock="<?= $total_stock ?>">
 	<a class="back-link" href="ProductPage.php">&#8592; Back</a>
 	<h1 class="product-detail-title">
 		<?= htmlspecialchars($product->product_name) ?>
@@ -116,8 +116,14 @@ require __DIR__ . '/../../general/_navbar.php';
 
 			<p class="product-description"><?= nl2br(htmlspecialchars($product->description)) ?></p>
 
+			<!-- Stock Status (will be updated dynamically based on selected variant) -->
+			<div class="stock-status" id="stockStatus">
+				<i class="fas fa-check-circle"></i>
+				<span id="stockStatusText">Select a variant to check availability</span>
+			</div>
+
 			<!-- Add to Cart Form -->
-			<form method="POST" action="../Cart_Order/cart.php" class="options-section">
+			<form method="POST" action="../Cart_Order/cart.php" class="options-section" id="addToCartForm">
 				<input type="hidden" name="product_id" value="<?= $product->product_id ?>">
 				<input type="hidden" id="selectedVariantId" name="variant_id" value="<?= htmlspecialchars($selectedVariant->variant_id ?? '') ?>">
 
@@ -137,11 +143,19 @@ require __DIR__ . '/../../general/_navbar.php';
 					<input type="number" id="quantityInput" name="quantity" value="1" min="1" max="99">
 				</div>
 
-				<!-- Add to Cart Button -->
-				<button type="submit" class="add-to-cart-btn">
+				<!-- Add to Cart Button (will be updated dynamically) -->
+				<button type="submit" class="add-to-cart-btn" id="addToCartBtn">
 					Add to Cart
 				</button>
 			</form>
+
+			<!-- Add to Wishlist Button (will be shown/hidden dynamically based on variant stock) -->
+			<div class="wishlist-section" id="wishlistSection" style="display: none;">
+				<button type="button" class="add-to-wishlist-btn wishlist-btn" data-product-id="<?= $product->product_id ?>" data-variant-id="" id="wishlistBtn">
+					<i class="far fa-heart"></i>
+					<span>Add to Wishlist</span>
+				</button>
+			</div>
 		</div>
 	</div>
 	
@@ -259,7 +273,51 @@ require __DIR__ . '/../../general/_navbar.php';
 	</div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    // Pass controller URL to JavaScript before loading wishlist.js
+    window.wishlistControllerUrl = '<?= $assetPrefix ?>controller/WishlistController.php';
+</script>
+<script src="<?= $assetPrefix ?>js/wishlist.js?v=<?= filemtime(__DIR__ . '/../../js/wishlist.js'); ?>"></script>
 <script src="<?= $assetPrefix ?>js/productDetails.js?v=<?= filemtime(__DIR__ . '/../../js/productDetails.js'); ?>"></script>
 <script src="<?= $assetPrefix ?>js/reviews.js?v=<?= filemtime(__DIR__ . '/../../js/reviews.js'); ?>"></script>
+<script>
+$(document).ready(function() {
+    // Wait for wishlist manager to be initialized
+    setTimeout(function() {
+        // Check wishlist status on page load
+        const wishlistBtn = $('#wishlistBtn');
+        if (wishlistBtn.length && window.wishlistManager) {
+            const productId = wishlistBtn.data('product-id');
+            if (productId) {
+                window.wishlistManager.checkWishlistStatus(productId).then(function(inWishlist) {
+                    if (inWishlist) {
+                        wishlistBtn.addClass('in-wishlist');
+                        wishlistBtn.find('i').removeClass('fa-regular').addClass('fa-solid');
+                        wishlistBtn.find('span').text('Remove from Wishlist');
+                    }
+                }).catch(function(error) {
+                    console.error('Error checking wishlist status:', error);
+                });
+            }
+        }
+        
+        // Update wishlist button variant_id when variant changes
+        const selectedVariantInput = document.getElementById('selectedVariantId');
+        if (selectedVariantInput && wishlistBtn.length) {
+            const updateWishlistVariant = function() {
+                const variantId = selectedVariantInput.value;
+                wishlistBtn.attr('data-variant-id', variantId || '');
+            };
+            
+            // Update on variant change
+            $(selectedVariantInput).on('change', updateWishlistVariant);
+            
+            // Initial update
+            updateWishlistVariant();
+        }
+    }, 100);
+});
+</script>
 
 <?php require __DIR__ . '/../../general/_footer.php'; ?>

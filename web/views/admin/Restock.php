@@ -33,6 +33,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 0;
         $service->restock($productId, $variantId, $size, $quantity);
         $success = 'Stock updated successfully.';
+        
+        // Check if notifications were sent
+        if (isset($_SESSION['restock_notification'])) {
+            $notif = $_SESSION['restock_notification'];
+            unset($_SESSION['restock_notification']);
+            
+            // Only show notification messages if product or variant was out of stock
+            if (isset($notif['was_out_of_stock']) && ($notif['was_out_of_stock'] || (isset($notif['variant_was_out_of_stock']) && $notif['variant_was_out_of_stock']))) {
+                if ($notif['total'] > 0) {
+                    if ($notif['success'] && $notif['notified'] > 0) {
+                        $success .= " Notified {$notif['notified']} out of {$notif['total']} wishlist member(s).";
+                    } else if ($notif['notified'] == 0) {
+                        $errorMsg = !empty($notif['error']) ? $notif['error'] : 'Failed to send notifications.';
+                        $error = ($error ? $error . ' ' : '') . "Failed to notify wishlist members. " . $errorMsg;
+                    } else {
+                        $success .= " Notified {$notif['notified']} out of {$notif['total']} wishlist member(s).";
+                        if (!empty($notif['error'])) {
+                            $error = ($error ? $error . ' ' : '') . "Some notifications failed: " . $notif['error'];
+                        }
+                    }
+                }
+            }
+        }
     } catch (Exception $e) {
         $error = $e->getMessage();
     }
@@ -53,8 +76,13 @@ require __DIR__ . '/../../general/_header.php';
 ?>
 <link rel="stylesheet" href="<?= $assetPrefix ?>css/Restock.css?v=<?= filemtime(__DIR__ . '/../../css/Restock.css'); ?>">
 <div class="page-container">
-    <a class="back-link" href="AdminProduct.php">&#8592; Back</a>
-    <h1 class="page-title">Restock Inventory</h1>
+    <div class="page-header">
+        <a class="back-button" href="AdminProduct.php">
+            <i class="fas fa-arrow-left"></i>
+            <span>Back to Products</span>
+        </a>
+        <h1 class="page-title">Restock Inventory</h1>
+    </div>
 
     <?php if ($success): ?><div class="message message-success"><?= htmlspecialchars($success) ?></div><?php endif; ?>
     <?php if ($error): ?><div class="message message-error"><?= htmlspecialchars($error) ?></div><?php endif; ?>

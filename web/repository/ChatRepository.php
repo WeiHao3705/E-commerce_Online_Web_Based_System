@@ -104,10 +104,15 @@ class ChatRepository
 
     public function addMessage($chatRoomId, $senderId, $message)
     {
-        $sql = "INSERT INTO chat_message (chat_room_id, sender_id, message) VALUES (?, ?, ?)";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$chatRoomId, $senderId, $message]);
-        return $this->db->lastInsertId();
+        try {
+            $sql = "INSERT INTO chat_message (chat_room_id, sender_id, message) VALUES (?, ?, ?)";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$chatRoomId, $senderId, $message]);
+            return $this->db->lastInsertId();
+        } catch (PDOException $e) {
+            error_log('ChatRepository addMessage error: ' . $e->getMessage());
+            throw new Exception('Failed to add message: ' . $e->getMessage());
+        }
     }
 
     public function getMessagesByChatRoom($chatRoomId, $limit = 50)
@@ -119,13 +124,17 @@ class ChatRepository
                     m.message,
                     m.is_read,
                     m.created_at,
-                    COALESCE(u.full_name, 'Unknown') as sender_name,
+                    CASE 
+                        WHEN m.sender_id = r.member_id THEN COALESCE(u.full_name, 'Unknown')
+                        WHEN m.sender_id = r.admin_id AND r.admin_id IS NOT NULL THEN COALESCE(u.full_name, 'Unknown')
+                        ELSE 'System'
+                    END as sender_name,
                     r.member_id,
                     r.admin_id,
                     CASE 
                         WHEN m.sender_id = r.member_id THEN 'member'
                         WHEN m.sender_id = r.admin_id AND r.admin_id IS NOT NULL THEN 'admin'
-                        ELSE 'member'
+                        ELSE 'system'
                     END as sender_role
                     FROM chat_message m
                     LEFT JOIN users u ON m.sender_id = u.user_id
@@ -181,10 +190,11 @@ class ChatRepository
             $stmt = $this->db->prepare($sql);
             $stmt->execute();
         } else {
+            // For members: count messages from admin OR system (any sender that is not the member)
             $sql = "SELECT COUNT(*) as count
                     FROM chat_message cm
                     JOIN chat_room r ON cm.chat_room_id = r.chat_room_id
-                    WHERE cm.sender_id = r.admin_id
+                    WHERE cm.sender_id != r.member_id
                     AND cm.is_read = FALSE
                     AND r.member_id = ?
                     AND r.status = 'open'";

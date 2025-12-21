@@ -1,7 +1,8 @@
 // Wishlist functionality
 class Wishlist {
     constructor() {
-        this.baseUrl = 'controller/WishlistController.php';
+        // Use global controller URL if available (set by page), otherwise use relative path
+        this.baseUrl = window.wishlistControllerUrl || '../../controller/WishlistController.php';
         this.init();
     }
 
@@ -14,21 +15,42 @@ class Wishlist {
         // Wishlist button clicks
         $(document).on('click', '.wishlist-btn, .add-to-wishlist', (e) => {
             e.preventDefault();
-            const productId = $(e.currentTarget).data('product-id');
-            this.toggleWishlist(productId, e.currentTarget);
+            const button = $(e.currentTarget);
+            
+            // Don't proceed if button is disabled
+            if (button.prop('disabled')) {
+                return;
+            }
+            
+            const productId = button.data('product-id');
+            if (productId) {
+                this.toggleWishlist(productId, button);
+            }
         });
     }
 
     async toggleWishlist(productId, button) {
         try {
+            // Check if button is disabled (should not happen, but safety check)
+            if ($(button).prop('disabled')) {
+                return;
+            }
+
             // Check current state
             const isInWishlist = $(button).hasClass('in-wishlist');
             const action = isInWishlist ? 'remove' : 'add';
 
+            // Get variant_id from button if available
+            const variantId = $(button).data('variant-id') || null;
+            const data = { action, product_id: productId };
+            if (variantId) {
+                data.variant_id = variantId;
+            }
+
             const response = await $.ajax({
                 url: this.baseUrl,
                 method: 'POST',
-                data: { action, product_id: productId },
+                data: data,
                 dataType: 'json'
             });
 
@@ -40,8 +62,10 @@ class Wishlist {
                 const icon = $(button).find('i');
                 if (isInWishlist) {
                     icon.removeClass('fa-solid').addClass('fa-regular');
+                    $(button).find('span').text('Add to Wishlist');
                 } else {
                     icon.removeClass('fa-regular').addClass('fa-solid');
+                    $(button).find('span').text('Remove from Wishlist');
                 }
 
                 // Update count

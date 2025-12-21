@@ -50,6 +50,7 @@ try {
     switch ($action) {
         case 'add':
             $productId = $_POST['product_id'] ?? null;
+            $variantId = isset($_POST['variant_id']) && $_POST['variant_id'] !== '' ? (int)$_POST['variant_id'] : null;
             
             if (!$productId) {
                 echo json_encode(['success' => false, 'message' => 'Product ID is required']);
@@ -63,6 +64,52 @@ try {
             if (!$checkProduct->fetch()) {
                 echo json_encode(['success' => false, 'message' => 'Product not found']);
                 exit;
+            }
+            
+            // Check stock quantity for the specific variant (if provided) or total product stock
+            if ($variantId) {
+                // Check stock for specific variant
+                $stockQuery = "
+                    SELECT COALESCE(SUM(i.stock_quantity), 0) as total_stock
+                    FROM inventory i
+                    WHERE i.variant_id = :variant_id
+                ";
+                $stockStmt = $conn->prepare($stockQuery);
+                $stockStmt->execute([':variant_id' => $variantId]);
+                $stockResult = $stockStmt->fetch(PDO::FETCH_ASSOC);
+                $variantStock = (int)($stockResult['total_stock'] ?? 0);
+                
+                // Only allow adding to wishlist if this variant is out of stock
+                if ($variantStock > 0) {
+                    echo json_encode([
+                        'success' => false, 
+                        'message' => 'This variant is in stock. You can only add out-of-stock variants to your wishlist.'
+                    ]);
+                    exit;
+                }
+            } else {
+                // If no variant specified, check total product stock
+                $stockQuery = "
+                    SELECT COALESCE(SUM(i.stock_quantity), 0) as total_stock
+                    FROM inventory i
+                    WHERE i.product_id = :product_id 
+                       OR i.variant_id IN (
+                           SELECT variant_id FROM product_variant WHERE product_id = :product_id
+                       )
+                ";
+                $stockStmt = $conn->prepare($stockQuery);
+                $stockStmt->execute([':product_id' => $productId]);
+                $stockResult = $stockStmt->fetch(PDO::FETCH_ASSOC);
+                $totalStock = (int)($stockResult['total_stock'] ?? 0);
+                
+                // Only allow adding to wishlist if stock is 0 (out of stock)
+                if ($totalStock > 0) {
+                    echo json_encode([
+                        'success' => false, 
+                        'message' => 'This item is in stock. You can only add out-of-stock items to your wishlist.'
+                    ]);
+                    exit;
+                }
             }
             
             // Add to wishlist (ignore if already exists)
@@ -137,17 +184,42 @@ try {
             
         case 'list':
             $listQuery = "
-                SELECT w.wishlist_id, w.product_id, w.created_at,
-                       p.product_name, p.description,
-                       pp.original_price, pp.selling_price,
-                       pi.image_path,
-                       inv.stock_quantity
+                SELECT 
+                    w.wishlist_id, 
+                    w.product_id, 
+                    w.created_at,
+                    p.product_name, 
+                    p.description,
+                    pp.original_price, 
+                    pp.selling_price,
+                    COALESCE((
+                        SELECT pi.image_path
+                        FROM product_image pi
+                        WHERE pi.product_id = p.product_id 
+                          AND pi.type = 'main'
+                          AND pi.variant_id IS NULL
+                        ORDER BY pi.id ASC
+                        LIMIT 1
+                    ), (
+                        SELECT pi.image_path
+                        FROM product_image pi
+                        WHERE pi.product_id = p.product_id
+                        ORDER BY CASE WHEN pi.type = 'main' THEN 0 ELSE 1 END, pi.id ASC
+                        LIMIT 1
+                    )) as image_path,
+                    COALESCE((
+                        SELECT SUM(i.stock_quantity)
+                        FROM inventory i
+                        WHERE i.product_id = p.product_id 
+                           OR i.variant_id IN (
+                               SELECT variant_id FROM product_variant WHERE product_id = p.product_id
+                           )
+                    ), 0) as stock_quantity
                 FROM wishlist w
                 JOIN product p ON w.product_id = p.product_id
                 LEFT JOIN product_price pp ON p.product_id = pp.product_id
-                LEFT JOIN product_image pi ON p.product_id = pi.product_id AND pi.type = 'main'
-                LEFT JOIN inventory inv ON p.product_id = inv.product_id
                 WHERE w.user_id = :user_id
+                GROUP BY w.wishlist_id, w.product_id, w.created_at, p.product_name, p.description, pp.original_price, pp.selling_price
                 ORDER BY w.created_at DESC
             ";
             $listStmt = $conn->prepare($listQuery);
