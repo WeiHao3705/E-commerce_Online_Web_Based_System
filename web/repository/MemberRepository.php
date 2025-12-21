@@ -193,7 +193,7 @@ class MembershipRepository
                 $sortOrder = 'DESC';
             }
 
-            // Base query
+            // Base query - exclude deleted members by default
             $sql = "SELECT 
                     user_id,
                     username,
@@ -206,7 +206,7 @@ class MembershipRepository
                     DateOfBirth,
                     created_at
                 FROM users
-                WHERE role = 'member'";
+                WHERE role = 'member' AND status != 'deleted'";
 
             $params = [];
 
@@ -224,8 +224,12 @@ class MembershipRepository
             // Add status filter if provided and valid
             if (!empty($statusFilter)) {
                 // Only allow known statuses to avoid SQL injection / invalid values
-                $allowedStatuses = ['active', 'inactive', 'banned', 'blocked'];
+                $allowedStatuses = ['active', 'inactive', 'banned', 'blocked', 'deleted'];
                 if (in_array($statusFilter, $allowedStatuses, true)) {
+                    // If filtering for deleted, remove the default exclusion
+                    if ($statusFilter === 'deleted') {
+                        $sql = str_replace(" AND status != 'deleted'", "", $sql);
+                    }
                     $sql .= " AND status = :status";
                     $params[':status'] = $statusFilter;
                 }
@@ -264,7 +268,8 @@ class MembershipRepository
             $searchTerm = trim($searchTerm);
             $statusFilter = trim($statusFilter);
 
-            $sql = "SELECT user_id FROM users WHERE role = 'member'";
+            // Exclude deleted members by default
+            $sql = "SELECT user_id FROM users WHERE role = 'member' AND status != 'deleted'";
             $params = [];
 
             if (!empty($searchTerm)) {
@@ -279,8 +284,12 @@ class MembershipRepository
 
             // Add status filter if provided and valid
             if (!empty($statusFilter)) {
-                $allowedStatuses = ['active', 'inactive', 'banned', 'blocked'];
+                $allowedStatuses = ['active', 'inactive', 'banned', 'blocked', 'deleted'];
                 if (in_array($statusFilter, $allowedStatuses, true)) {
+                    // If filtering for deleted, remove the default exclusion
+                    if ($statusFilter === 'deleted') {
+                        $sql = str_replace(" AND status != 'deleted'", "", $sql);
+                    }
                     $sql .= " AND status = :status";
                     $params[':status'] = $statusFilter;
                 }
@@ -304,7 +313,8 @@ class MembershipRepository
             $searchTerm = trim($searchTerm);
             $statusFilter = trim($statusFilter);
 
-            $sql = "SELECT COUNT(*) as total FROM users WHERE role ='member'";
+            // Exclude deleted members by default
+            $sql = "SELECT COUNT(*) as total FROM users WHERE role = 'member' AND status != 'deleted'";
             $params = [];
 
             if (!empty($searchTerm)) {
@@ -320,8 +330,12 @@ class MembershipRepository
 
             // Add status filter if provided and valid
             if (!empty($statusFilter)) {
-                $allowedStatuses = ['active', 'inactive', 'banned', 'blocked'];
+                $allowedStatuses = ['active', 'inactive', 'banned', 'blocked', 'deleted'];
                 if (in_array($statusFilter, $allowedStatuses, true)) {
+                    // If filtering for deleted, remove the default exclusion
+                    if ($statusFilter === 'deleted') {
+                        $sql = str_replace(" AND status != 'deleted'", "", $sql);
+                    }
                     $sql .= " AND status = ?";
                     $params[] = $statusFilter;
                 }
@@ -392,7 +406,8 @@ class MembershipRepository
     public function getMemberByUsername($username)
     {
         try {
-            $sql = "SELECT * FROM users WHERE username = ? LIMIT 1";
+            // Exclude deleted members from authentication
+            $sql = "SELECT * FROM users WHERE username = ? AND status != 'deleted' LIMIT 1";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$username]);
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -410,7 +425,8 @@ class MembershipRepository
     public function getMemberByEmail($email)
     {
         try {
-            $sql = "SELECT * FROM users WHERE email = ? LIMIT 1";
+            // Exclude deleted members
+            $sql = "SELECT * FROM users WHERE email = ? AND status != 'deleted' LIMIT 1";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$email]);
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -518,7 +534,7 @@ class MembershipRepository
     {
         try {
             // Validate status
-            $allowedStatuses = ['active', 'inactive', 'banned'];
+            $allowedStatuses = ['active', 'inactive', 'banned', 'blocked', 'deleted'];
             if (!in_array($status, $allowedStatuses)) {
                 throw new Exception("Invalid status value");
             }
@@ -537,7 +553,8 @@ class MembershipRepository
     public function deleteMember($userId): bool
     {
         try {
-            $sql = "DELETE FROM users WHERE user_id = ? AND role = 'member'";
+            // Soft delete: set status to 'deleted' instead of actually deleting
+            $sql = "UPDATE users SET status = 'deleted' WHERE user_id = ? AND role = 'member'";
 
             $stmt = $this->db->prepare($sql);
             $result = $stmt->execute([$userId]);
@@ -575,7 +592,8 @@ class MembershipRepository
             // Create placeholders for IN clause
             $placeholders = str_repeat('?,', count($validUserIds) - 1) . '?';
 
-            $sql = "DELETE FROM users WHERE user_id IN ($placeholders) AND role = 'member'";
+            // Soft delete: set status to 'deleted' instead of actually deleting
+            $sql = "UPDATE users SET status = 'deleted' WHERE user_id IN ($placeholders) AND role = 'member'";
             $stmt = $this->db->prepare($sql);
             $result = $stmt->execute($validUserIds);
 

@@ -35,8 +35,8 @@ class VoucherRepository
 
     public function checkExistingVoucher($code): array
     {
-        // Check code
-        $sql = "SELECT COUNT(*) as count FROM voucher WHERE code = ?";
+        // Check code (exclude deleted vouchers so codes can be reused)
+        $sql = "SELECT COUNT(*) as count FROM voucher WHERE code = ? AND status != 'deleted'";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$code]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -50,8 +50,8 @@ class VoucherRepository
 
     public function checkExistingVoucherForUpdate($voucherId, $code): array
     {
-        // Check code (excluding current voucher)
-        $sql = "SELECT COUNT(*) as count FROM voucher WHERE code = ? AND voucher_id != ?";
+        // Check code (excluding current voucher and deleted vouchers)
+        $sql = "SELECT COUNT(*) as count FROM voucher WHERE code = ? AND voucher_id != ? AND status != 'deleted'";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$code, $voucherId]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -82,7 +82,7 @@ class VoucherRepository
                 $sortOrder = 'DESC';
             }
 
-            // Base query - Note: using discount_value (correct spelling) instead of diacount_value
+            // Base query - exclude deleted vouchers by default
             $sql = "SELECT 
                     voucher_id,
                     code,
@@ -96,7 +96,7 @@ class VoucherRepository
                     status,
                     is_redeemable
                 FROM voucher
-                WHERE 1=1";
+                WHERE status != 'deleted'";
 
             $params = [];
 
@@ -141,7 +141,8 @@ class VoucherRepository
             $statusFilter = trim($statusFilter);
             $typeFilter = trim($typeFilter);
 
-            $sql = "SELECT voucher_id FROM voucher WHERE 1=1";
+            // Exclude deleted vouchers by default
+            $sql = "SELECT voucher_id FROM voucher WHERE status != 'deleted'";
             $params = [];
 
             if (!empty($searchTerm)) {
@@ -153,8 +154,12 @@ class VoucherRepository
             }
 
             if (!empty($statusFilter)) {
-                $allowedStatuses = ['active', 'inactive', 'expired'];
+                $allowedStatuses = ['active', 'inactive', 'expired', 'deleted'];
                 if (in_array($statusFilter, $allowedStatuses, true)) {
+                    // If filtering for deleted, remove the default exclusion
+                    if ($statusFilter === 'deleted') {
+                        $sql = str_replace(" WHERE status != 'deleted'", " WHERE 1=1", $sql);
+                    }
                     $sql .= " AND status = :status";
                     $params[':status'] = $statusFilter;
                 }
@@ -182,7 +187,8 @@ class VoucherRepository
     public function getTotalVouchersCount($searchTerm = '')
     {
         try {
-            $sql = "SELECT COUNT(*) as total FROM voucher WHERE 1=1";
+            // Exclude deleted vouchers by default
+            $sql = "SELECT COUNT(*) as total FROM voucher WHERE status != 'deleted'";
             $params = [];
 
             if (!empty($searchTerm)) {
@@ -298,7 +304,7 @@ class VoucherRepository
     {
         try {
             // Validate status
-            $allowedStatuses = ['active', 'inactive', 'expired'];
+            $allowedStatuses = ['active', 'inactive', 'expired', 'deleted'];
             if (!in_array($status, $allowedStatuses)) {
                 throw new Exception("Invalid status value");
             }
@@ -317,7 +323,8 @@ class VoucherRepository
     public function deleteVoucher($voucherId): bool
     {
         try {
-            $sql = "DELETE FROM voucher WHERE voucher_id = ?";
+            // Soft delete: set status to 'deleted' instead of actually deleting
+            $sql = "UPDATE voucher SET status = 'deleted' WHERE voucher_id = ?";
 
             $stmt = $this->db->prepare($sql);
             $result = $stmt->execute([$voucherId]);
@@ -355,7 +362,8 @@ class VoucherRepository
             // Create placeholders for IN clause
             $placeholders = str_repeat('?,', count($validVoucherIds) - 1) . '?';
             
-            $sql = "DELETE FROM voucher WHERE voucher_id IN ($placeholders)";
+            // Soft delete: set status to 'deleted' instead of actually deleting
+            $sql = "UPDATE voucher SET status = 'deleted' WHERE voucher_id IN ($placeholders)";
             $stmt = $this->db->prepare($sql);
             $result = $stmt->execute($validVoucherIds);
 
@@ -595,7 +603,7 @@ class VoucherRepository
                     FROM voucher_assignment va
                     INNER JOIN voucher v ON va.voucher_id = v.voucher_id
                     LEFT JOIN voucher_usage vu ON va.voucher_id = vu.voucher_id AND va.user_id = vu.user_id
-                    WHERE va.user_id = :user_id";
+                    WHERE va.user_id = :user_id AND v.status != 'deleted'";
             
             $params = [':current_date' => $currentDate, ':user_id' => $userId];
             
@@ -640,11 +648,11 @@ class VoucherRepository
             $currentDate = date('Y-m-d');
             $currentDateTime = date('Y-m-d H:i:s');
 
-            // First, check if voucher exists and is valid
+            // First, check if voucher exists and is valid (exclude deleted vouchers)
             $sql = "SELECT voucher_id, code, description, type, discount_value, min_spend, max_discount, 
                            start_date, end_date, status, is_redeemable
                     FROM voucher 
-                    WHERE code = ?";
+                    WHERE code = ? AND status != 'deleted'";
             
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$code]);
