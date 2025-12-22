@@ -4,6 +4,7 @@ require_once __DIR__ . '/../database/connection.php';
 require_once __DIR__ . '/../repository/AdminRepository.php';
 require_once __DIR__ . '/../service/AdminService.php';
 require_once __DIR__ . '/../DTO/AdminDTO.php';
+require_once __DIR__ . '/../helpers/ActivityLogger.php';
 
 class AdminController
 {
@@ -133,10 +134,15 @@ class AdminController
                     $email
                 );
 
-                $result = $this->adminService->registerAdmin($adminDTO);
+                $newAdminId = $this->adminService->registerAdmin($adminDTO);
 
-                if ($result) {
+                if ($newAdminId) {
+                    // Log the admin creation using the returned admin ID
+                    ActivityLogger::logAdminCreate($newAdminId, $username);
+                    
                     $_SESSION['success_message'] = 'Admin created successfully.';
+                } else {
+                    throw new Exception('Failed to create admin. Please try again.');
                 }
 
                 header('Location: ../controller/AdminController.php?action=showAll');
@@ -177,6 +183,17 @@ class AdminController
                 // Just trim it, no need to extract digits or validate length since different countries have different formats
                 $contactNo = $contactNo === '' ? '' : trim($contactNo);
 
+                // Get old values before update for logging
+                $database = new Database();
+                $repository = new AdminRepository($database);
+                $oldAdmin = $repository->getAdminById((int)$_POST['user_id']);
+                $oldValues = $oldAdmin ? [
+                    'full_name' => $oldAdmin['full_name'],
+                    'email' => $oldAdmin['email'],
+                    'gender' => $oldAdmin['gender'],
+                    'contact_no' => $oldAdmin['contact_no']
+                ] : null;
+
                 $adminDTO = new AdminUpdateDTO(
                     (int)$_POST['user_id'],
                     $username,
@@ -189,6 +206,15 @@ class AdminController
                 $result = $this->adminService->updateAdmin($adminDTO);
 
                 if ($result) {
+                    // Log the update
+                    $newValues = [
+                        'full_name' => $fullName,
+                        'email' => $email,
+                        'gender' => $gender,
+                        'contact_no' => $contactNo
+                    ];
+                    ActivityLogger::logAdminUpdate((int)$_POST['user_id'], $username, $oldValues, $newValues);
+                    
                     $_SESSION['success_message'] = 'Admin updated successfully.';
                 }
 
@@ -215,9 +241,21 @@ class AdminController
                     throw new Exception('User ID and status are required');
                 }
 
+                // Get old status before update
+                $database = new Database();
+                $repository = new AdminRepository($database);
+                $oldAdmin = $repository->getAdminById($userId);
+                $oldStatus = $oldAdmin ? $oldAdmin['status'] : null;
+                $username = $oldAdmin ? $oldAdmin['username'] : 'Unknown';
+
                 $result = $this->adminService->updateAdminStatus($userId, $status);
 
                 if ($result) {
+                    // Log status change
+                    if ($oldStatus && $oldStatus !== $status) {
+                        ActivityLogger::logAdminStatusChange($userId, $username, $oldStatus, $status);
+                    }
+                    
                     $_SESSION['success_message'] = 'Status updated successfully.';
                 } else {
                     $_SESSION['error_message'] = 'No changes were made.';
@@ -245,9 +283,18 @@ class AdminController
                     throw new Exception('Invalid user ID');
                 }
 
+                // Get admin info before delete for logging
+                $database = new Database();
+                $repository = new AdminRepository($database);
+                $adminToDelete = $repository->getAdminById($userId);
+                $username = $adminToDelete ? $adminToDelete['username'] : 'Unknown';
+
                 $result = $this->adminService->deleteAdmin($userId);
 
                 if ($result) {
+                    // Log deletion
+                    ActivityLogger::logAdminDelete($userId, $username);
+                    
                     $_SESSION['success_message'] = 'Admin deleted successfully.';
                 } else {
                     $_SESSION['error_message'] = 'Unable to delete admin.';
@@ -368,6 +415,9 @@ class AdminController
                 throw new Exception('Order not found');
             }
 
+            // Store old status for logging
+            $oldOrderStatus = $order['order_status'];
+
             // Build update query
             $updateFields = ['order_status = :order_status'];
             $params = [
@@ -389,6 +439,11 @@ class AdminController
             $updateQuery = "UPDATE orders SET " . implode(', ', $updateFields) . " WHERE order_id = :order_id";
             $updateStmt = $conn->prepare($updateQuery);
             $updateStmt->execute($params);
+
+            // Log order status change
+            if ($oldOrderStatus !== $orderStatus) {
+                ActivityLogger::logOrderStatusChange($orderId, $oldOrderStatus, $orderStatus);
+            }
 
             // Insert admin notes if provided
             if ($adminNotes) {

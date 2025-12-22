@@ -185,6 +185,8 @@ $(document).ready(function() {
             title = 'Orders Management';
         } else if (view === 'reviews') {
             title = 'Reviews Management';
+        } else if (view === 'activity_logs') {
+            title = 'Activity Logs';
         } else if (view === 'admin_profile') {
             title = 'Admin Profile';
         }
@@ -231,7 +233,7 @@ $(document).ready(function() {
         var view = parts[0];
         var url = parts.length > 1 ? decodeURIComponent(parts[1]) : null;
 
-        if (view === 'members' || view === 'admins' || view === 'products' || view === 'vouchers' || view === 'orders' || view === 'reviews' || view === 'admin_profile') {
+        if (view === 'members' || view === 'admins' || view === 'products' || view === 'vouchers' || view === 'orders' || view === 'reviews' || view === 'activity_logs' || view === 'admin_profile') {
             // Get URL from navigation item if not in hash
             if (!url) {
                 var navItem = $('.admin-nav-item[data-view="' + view + '"]');

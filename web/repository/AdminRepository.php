@@ -11,13 +11,13 @@ class AdminRepository
         $this->db = $databaseConnection->getConnection();
     }
 
-    public function createAdmin(AdminRegistrationDTO $adminDTO): bool
+    public function createAdmin(AdminRegistrationDTO $adminDTO): ?int
     {
         $sql = "INSERT INTO users (username, password, full_name, email, contact_no, gender, role, status, email_verified, profile_photo) \n                VALUES (?, ?, ?, ?, ?, ?, 'admin', 'active', 1, ? )";
 
         $stmt = $this->db->prepare($sql);
 
-        return $stmt->execute([
+        $result = $stmt->execute([
             $adminDTO->getUsername(),
             $adminDTO->getPassword(),
             $adminDTO->getFullName(),
@@ -26,6 +26,12 @@ class AdminRepository
             $adminDTO->getGender(),
             $adminDTO->getProfilePhoto()
         ]);
+
+        if ($result) {
+            return (int)$this->db->lastInsertId();
+        }
+        
+        return null;
     }
 
     public function checkExistingAdmin($username, $email, $contactNo): array

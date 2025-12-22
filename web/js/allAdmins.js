@@ -642,7 +642,8 @@ $(document).ready(function() {
             hideConfirmationModal();
         }
     });
-});
+
+    function validateAddAdminPhoneNumber() {
         const countryCode = $('#addAdminCountryCode').val();
         const phoneNumber = $('#addAdminPhoneNumber').val().replace(/\s+/g, ' ').trim();
         const config = phonePatterns[countryCode];
@@ -972,14 +973,18 @@ $(document).ready(function() {
         }
     });
 
-    // Add admin modal
-    $('#openAddAdminBtn').on('click', function() {
+    // Function to open add admin modal
+    function openAddAdminModal() {
         const form = $('#addAdminForm');
-        form[0].reset();
+        if (form.length) {
+            form[0].reset();
+        }
         
         // Reset phone fields
         $('#addAdminCountryCode').val('+60');
-        updateAddAdminPhoneFormatHint();
+        if (typeof updateAddAdminPhoneFormatHint === 'function') {
+            updateAddAdminPhoneFormatHint();
+        }
         $('#addAdminPhoneNumber').val('');
         $('#addAdminContactNo').val('');
         $('#addAdminPhoneValidationError').text('').hide();
@@ -1000,7 +1005,26 @@ $(document).ready(function() {
         $('.form-input').removeClass('input-error input-success');
         
         $('#addAdminModal').removeClass('hidden');
+    }
+    
+    // Add admin modal - Use event delegation to work in iframe context
+    $(document).on('click', '#openAddAdminBtn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        openAddAdminModal();
     });
+    
+    // Also bind directly (for iframe compatibility)
+    setTimeout(function() {
+        const btn = $('#openAddAdminBtn');
+        if (btn.length) {
+            btn.off('click.addAdmin').on('click.addAdmin', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                openAddAdminModal();
+            });
+        }
+    }, 200);
 
     $(document).on('click', '.btn-close-add-modal', function() {
         $('#addAdminModal').addClass('hidden');

@@ -12,7 +12,7 @@ class AdminService
         $this->adminRepository = $adminRepository;
     }
 
-    public function registerAdmin(AdminRegistrationDTO $adminDTO): bool
+    public function registerAdmin(AdminRegistrationDTO $adminDTO): ?int
     {
         $existing = $this->adminRepository->checkExistingAdmin(
             $adminDTO->getUsername(),

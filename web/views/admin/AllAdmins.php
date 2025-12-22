@@ -13,6 +13,7 @@ $docRoot = $_SERVER['DOCUMENT_ROOT'];
 $relativePath = str_replace($docRoot, '', $webRootDir);
 $imageBasePath = str_replace('\\', '/', $relativePath) . '/';
 $cssBasePath = $imageBasePath . 'css/';
+$controllerBasePath = $imageBasePath . 'controller/';
 
 // Check if user is logged in
 if (!isset($_SESSION['user'])) {
@@ -94,7 +95,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $pageTitle; ?> - NGear</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AdminOrder.css">
     <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AllTables.css">
@@ -1468,6 +1469,14 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                         </td>
                                         <td class="col-actions">
                                             <div class="action-buttons">
+                                                <a
+                                                    href="<?php echo $controllerBasePath; ?>ActivityLogController.php?action=showAll&admin_id=<?php echo $admin['user_id']; ?>"
+                                                    class="action-btn"
+                                                    title="Download Activity Logs PDF"
+                                                    style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">
+                                                    <i class="fas fa-file-pdf"></i>
+                                                </a>
+
                                                 <button
                                                     class="action-btn edit-btn"
                                                     data-user-id="<?php echo $admin['user_id']; ?>"
@@ -1659,7 +1668,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                 <div class="form-input-wrapper">
                                     <input type="text" name="username" id="addAdminUsername" class="form-input has-icon" placeholder="e.g. jane.admin" required />
                                     <span class="form-input-icon material-symbols-outlined">person</span>
-                                    <span class="validation-icon" id="usernameValidationIcon" style="display: none;"></span>
+                                    <span class="validation-icon material-symbols-outlined" id="usernameValidationIcon" style="display: none;"></span>
                                 </div>
                             </div>
 
@@ -1682,7 +1691,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                 <div class="form-input-wrapper">
                                     <input type="email" name="email" id="addAdminEmail" class="form-input has-icon" placeholder="jane@example.com" required />
                                     <span class="form-input-icon material-symbols-outlined">email</span>
-                                    <span class="validation-icon" id="emailValidationIcon" style="display: none;"></span>
+                                    <span class="validation-icon material-symbols-outlined" id="emailValidationIcon" style="display: none;"></span>
                                 </div>
                                 <p class="form-hint">
                                     <span class="material-symbols-outlined">verified</span>
@@ -1752,7 +1761,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                     <button type="button" class="password-toggle" id="togglePassword" title="Show/Hide Password">
                                         <span class="material-symbols-outlined">visibility</span>
                                     </button>
-                                    <span class="validation-icon" id="passwordValidationIcon" style="display: none;"></span>
+                                    <span class="validation-icon material-symbols-outlined" id="passwordValidationIcon" style="display: none;"></span>
                                 </div>
                                 
                                 <div id="passwordStrengthIndicator" class="password-strength" style="display: none;">
@@ -1804,7 +1813,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                     <button type="button" class="password-toggle" id="toggleRepeatPassword" title="Show/Hide Password">
                                         <span class="material-symbols-outlined">visibility</span>
                                     </button>
-                                    <span class="validation-icon" id="repeatPasswordValidationIcon" style="display: none;"></span>
+                                    <span class="validation-icon material-symbols-outlined" id="repeatPasswordValidationIcon" style="display: none;"></span>
                                 </div>
                                 <p id="passwordMatchMessage" class="form-hint" style="display: none;"></p>
                             </div>
