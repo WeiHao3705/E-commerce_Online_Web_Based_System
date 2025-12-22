@@ -440,28 +440,32 @@ class AdminController
             // Store old status for logging
             $oldOrderStatus = $order['order_status'];
 
-            // Build update query
+
+            // Build update query for orders table
             $updateFields = ['order_status = :order_status'];
             $params = [
                 ':order_id' => $orderId,
                 ':order_status' => $orderStatus
             ];
 
-            if ($paymentStatus) {
-                $updateFields[] = 'payment_status = :payment_status';
-                $params[':payment_status'] = $paymentStatus;
-            }
-
             if ($trackingNumber) {
                 $updateFields[] = 'tracking_number = :tracking_number';
                 $params[':tracking_number'] = $trackingNumber;
             }
 
-            // Update order
+            // Update orders table
             $updateQuery = "UPDATE orders SET " . implode(', ', $updateFields) . " WHERE order_id = :order_id";
             $updateStmt = $conn->prepare($updateQuery);
             $updateStmt->execute($params);
 
+            // Update payment_status in payment table if provided
+            if ($paymentStatus) {
+                $paymentUpdateStmt = $conn->prepare("UPDATE payment SET payment_status = :payment_status WHERE order_id = :order_id");
+                $paymentUpdateStmt->execute([
+                    ':payment_status' => $paymentStatus,
+                    ':order_id' => $orderId
+                ]);
+            }
             // Log order status change
             if ($oldOrderStatus !== $orderStatus) {
                 ActivityLogger::logOrderStatusChange($orderId, $oldOrderStatus, $orderStatus);

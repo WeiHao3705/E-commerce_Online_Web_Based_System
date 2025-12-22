@@ -103,6 +103,10 @@ $pageTitle = "Manage Orders - Admin";
     <link rel="stylesheet" href="<?php echo $cssBasePath; ?>AdminOrder.css">
 </head>
 <body>
+        <!-- Notification Modal -->
+        <div id="notificationModal" class="notification-modal" style="display:none;">
+            <div class="notification-content" id="notificationContent"></div>
+        </div>
     <div class="page-container">
         <!-- Header -->
         <header class="header-actions">
@@ -127,6 +131,44 @@ $pageTitle = "Manage Orders - Admin";
                 <div class="stat-icon orange"><i class="fas fa-clock"></i></div>
                 <div class="stat-info">
             <style>
+                /* Notification Modal Styles */
+                .notification-modal {
+                    position: fixed;
+                    top: 30px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    z-index: 9999;
+                    min-width: 280px;
+                    max-width: 90vw;
+                    background: rgba(0,0,0,0.2);
+                    border: none;
+                    display: flex;
+                    align-items: flex-start;
+                    justify-content: center;
+                    pointer-events: none;
+                }
+                .notification-content {
+                    background: #fff;
+                    color: #222;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 16px rgba(0,0,0,0.15);
+                    padding: 1.2rem 2rem;
+                    font-size: 1.1rem;
+                    font-weight: 500;
+                    min-width: 220px;
+                    max-width: 400px;
+                    text-align: center;
+                    pointer-events: auto;
+                    border-left: 6px solid var(--primary);
+                    margin-top: 0.5rem;
+                }
+                .notification-content.success { border-left-color: var(--success); }
+                .notification-content.error { border-left-color: var(--danger); }
+                .notification-content.info { border-left-color: var(--info); }
+                .notification-content.warning { border-left-color: var(--warning); }
+                @media (max-width: 600px) {
+                    .notification-content { font-size: 1rem; padding: 1rem 0.5rem; }
+                }
                 /* Modal General Fixes */
                 
             </style>
@@ -314,15 +356,6 @@ $pageTitle = "Manage Orders - Admin";
                         </select>
                     </div>
 
-                    <div class="form-group">
-                        <label for="payment_status"><i class="fas fa-credit-card"></i> Payment Status</label>
-                        <select id="payment_status" name="payment_status">
-                            <option value="pending">Pending</option>
-                            <option value="completed">Completed</option>
-                            <option value="failed">Failed</option>
-                            <option value="refunded">Refunded</option>
-                        </select>
-                    </div>
 
                     <div class="form-group">
                         <label for="tracking_number"><i class="fas fa-truck"></i> Tracking Number (Optional)</label>
@@ -390,6 +423,15 @@ $pageTitle = "Manage Orders - Admin";
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        // Notification Modal JS
+        function showNotification(message, type = 'info', duration = 2500) {
+            const modal = document.getElementById('notificationModal');
+            const content = document.getElementById('notificationContent');
+            content.textContent = message;
+            content.className = 'notification-content ' + type;
+            modal.style.display = 'flex';
+            setTimeout(() => { modal.style.display = 'none'; }, duration);
+        }
     function showMessageModal(message) {
         document.getElementById('messageModalText').textContent = message;
         document.getElementById('messageModal').style.display = 'block';
@@ -457,16 +499,23 @@ $pageTitle = "Manage Orders - Admin";
         // Get current order data
         const orderRow = event.target.closest('tr');
         const currentStatus = orderRow.querySelector('.status-badge').textContent.trim().toLowerCase();
-        const currentPaymentStatus = orderRow.querySelector('.payment-badge').textContent.trim().toLowerCase();
-        
+        let currentPaymentStatus = '';
+        const paymentBadge = orderRow.querySelector('.payment-badge');
+        if (paymentBadge) {
+            currentPaymentStatus = paymentBadge.textContent.trim().toLowerCase();
+        }
+        if (!currentPaymentStatus) {
+            currentPaymentStatus = 'pending';
+        }
+
         // Populate modal
         document.getElementById('order_id').value = orderId;
         document.getElementById('order_status').value = currentStatus;
-        document.getElementById('payment_status').value = currentPaymentStatus;
+        // document.getElementById('payment_status').value = currentPaymentStatus; // Removed field
         document.getElementById('tracking_number').value = '';
         document.getElementById('admin_notes').value = '';
         document.getElementById('send_email').checked = true;
-        
+
         // Show modal
         document.getElementById('updateStatusModal').style.display = 'flex';
     }
@@ -581,14 +630,14 @@ $pageTitle = "Manage Orders - Admin";
     $(document).ready(function() {
         $('#updateStatusForm').on('submit', function(e) {
             e.preventDefault();
-            
+
             const formData = $(this).serialize();
             const submitBtn = $(this).find('button[type="submit"]');
             const originalText = submitBtn.html();
-            
+
             // Disable button and show loading
             submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
-            
+
             $.ajax({
                 url: '<?php echo $controllerBasePath; ?>AdminController.php?action=updateOrderStatus',
                 method: 'POST',
@@ -596,16 +645,16 @@ $pageTitle = "Manage Orders - Admin";
                 dataType: 'json',
                 success: function(response) {
                     if (response.success) {
-                        alert('✓ Order status updated successfully!');
-                        location.reload();
+                        showNotification('✓ Order status updated successfully!', 'success');
+                        setTimeout(() => { location.reload(); }, 1200);
                     } else {
-                        alert('✗ Error: ' + (response.message || 'Failed to update order status'));
+                        showNotification('✗ Error: ' + (response.message || 'Failed to update order status'), 'error');
                         submitBtn.prop('disabled', false).html(originalText);
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error('AJAX Error:', error);
-                    alert('✗ Error: Failed to update order status. Please try again.');
+                    showNotification('✗ Error: Failed to update order status. Please try again.', 'error');
                     submitBtn.prop('disabled', false).html(originalText);
                 }
             });

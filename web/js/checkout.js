@@ -93,46 +93,69 @@ $(document).ready(function() {
             $('#addressForm')[0].reportValidity();
             return;
         }
-        
+
         // Get selected payment method
         var paymentMethod = $('input[name="payment"]:checked').val();
-        
+
         // Collect address data
         ORDER_DATA.address = $('#address1').val() + ' ' + $('#address2').val();
         ORDER_DATA.city = $('#city').val();
         ORDER_DATA.postcode = $('#postcode').val();
         ORDER_DATA.state = $('#state').val();
-        
+
         // Progress to step 2 (Payment)
         currentStep = 2;
         updateProgressSteps(currentStep);
-        
+
         // Disable button to prevent double submission
         $(this).prop('disabled', true).text('Processing...');
-        
-        if (paymentMethod === 'card') {
-            // Stripe payment flow
-            await processStripePayment();
-        } else if(paymentMethod === 'online-banking' || paymentMethod === 'e-wallet') {
-            // save order by simulated payment method
-            $.ajax({
-                url: 'process_payment.php',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    paymentMethod: paymentMethod,
-                    orderId: ORDER_DATA.orderId,
-                }),
-                success: function(response) {
-                    alert('Order placed successfully! Order ID: ' + ORDER_DATA.orderId);
-                    window.location.href = 'order_confirmation.php?order_id=' + ORDER_DATA.orderId;
-                },
-                error: function(xhr, status, error) {
-                    alert('Failed to place order');
+
+        // Always create the order first (pending)
+        $.ajax({
+            url: 'create_pending_order.php',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                // You may need to collect selectedItems and voucher from the page or session
+                selectedItems: window.selectedItems || [],
+                voucher: window.voucherData || null
+            }),
+            success: async function(response) {
+                if (response.success && response.orderId) {
+                    ORDER_DATA.orderId = response.orderId;
+                    ORDER_DATA.total_amount = response.total_amount || 0;
+                    // Now proceed to payment
+                    if (paymentMethod === 'card') {
+                        await processStripePayment();
+                    } else if(paymentMethod === 'online-banking' || paymentMethod === 'e-wallet') {
+                        $.ajax({
+                            url: 'process_payment.php',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify({
+                                paymentMethod: paymentMethod,
+                                orderId: ORDER_DATA.orderId,
+                            }),
+                            success: function(response) {
+                                alert('Order placed successfully! Order ID: ' + ORDER_DATA.orderId);
+                                window.location.href = 'order_confirmation.php?order_id=' + ORDER_DATA.orderId;
+                            },
+                            error: function(xhr, status, error) {
+                                alert('Payment failed. Your order is saved as pending. Please try again.');
+                                $('#placeOrderBtn').prop('disabled', false).text('Retry Payment');
+                            }
+                        });
+                    }
+                } else {
+                    alert('Failed to create order: ' + (response.error || 'Unknown error'));
                     $('#placeOrderBtn').prop('disabled', false).text('Place Order');
                 }
-            });
-        }
+            },
+            error: function(xhr, status, error) {
+                alert('Failed to create order. Please try again.');
+                $('#placeOrderBtn').prop('disabled', false).text('Place Order');
+            }
+        });
     });
     
     // Add visual feedback for payment method selection
@@ -250,7 +273,7 @@ async function processStripePayment() {
         }
         
     } catch (error) {
-        alert('Payment failed: ' + error.message);
+        alert('Payment failed: ' + error.message + '\nYour order is saved as pending. Please try again.');
         $('#placeOrderBtn').prop('disabled', false).text('Place Order');
     }
 }
