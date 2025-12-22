@@ -83,6 +83,7 @@
             var cost = this.getAttribute('data-cost');
             var originalPrice = this.getAttribute('data-original');
             var sellingPrice = this.getAttribute('data-selling');
+            var variantCount = parseInt(this.getAttribute('data-variant-count')) || 0;
 
             // Populate the edit form
             document.getElementById('edit_product_id').value = productId;
@@ -93,10 +94,54 @@
             document.getElementById('edit_original_price').value = originalPrice;
             document.getElementById('edit_selling_price').value = sellingPrice;
 
+            // Handle variant toggle based on existing variants
+            var enableVariantToggle = document.getElementById('edit_enable_variant');
+            var variantColorGroup = document.getElementById('edit_variant_color_group');
+            var variantColorInput = document.getElementById('edit_variant_color');
+            var variantStatus = document.getElementById('edit_variant_status');
+
+            if (variantCount > 0) {
+                // Product has variants - set toggle ON and make it readonly
+                enableVariantToggle.checked = true;
+                enableVariantToggle.disabled = true;
+                variantColorGroup.style.display = 'none';
+                variantColorInput.removeAttribute('required');
+                variantColorInput.value = '';
+                variantStatus.textContent = 'This product has ' + variantCount + ' variant(s). Variant mode cannot be disabled.';
+                variantStatus.style.color = '#667eea';
+            } else {
+                // Product has no variants - set toggle OFF and make it editable
+                enableVariantToggle.checked = false;
+                enableVariantToggle.disabled = false;
+                variantColorGroup.style.display = 'none';
+                variantColorInput.removeAttribute('required');
+                variantColorInput.value = '';
+                variantStatus.textContent = 'Enable this to create the first variant for this product.';
+                variantStatus.style.color = '#6c757d';
+            }
+
             // Open the edit modal
             openEditModal();
         });
     });
+
+    // Handle enable variant checkbox toggle
+    var enableVariantCheckbox = document.getElementById('edit_enable_variant');
+    var variantColorGroup = document.getElementById('edit_variant_color_group');
+    var variantColorInput = document.getElementById('edit_variant_color');
+
+    if (enableVariantCheckbox) {
+        enableVariantCheckbox.addEventListener('change', function () {
+            if (this.checked) {
+                variantColorGroup.style.display = 'block';
+                variantColorInput.setAttribute('required', 'required');
+            } else {
+                variantColorGroup.style.display = 'none';
+                variantColorInput.removeAttribute('required');
+                variantColorInput.value = '';
+            }
+        });
+    }
 
     var deleteForms = document.querySelectorAll('.delete-form');
     deleteForms.forEach(function (form) {

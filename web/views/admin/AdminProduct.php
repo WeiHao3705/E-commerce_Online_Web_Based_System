@@ -59,6 +59,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		$cost = $_POST['cost'] ?? null;
 		$originalPrice = $_POST['original_price'] ?? null;
 		$sellingPrice = $_POST['selling_price'] ?? null;
+		$enableVariant = isset($_POST['enable_variant']) && $_POST['enable_variant'] === '1';
+		$variantColor = trim($_POST['variant_color'] ?? '');
 
 		try {
 			if ($productId <= 0) {
@@ -67,6 +69,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 			if ($name === '' || $category === '') {
 				throw new Exception('Product name and category are required.');
+			}
+
+			if ($enableVariant && $variantColor === '') {
+				throw new Exception('Variant color is required when enabling variants.');
 			}
 
 			foreach ([['Cost', $cost], ['Original price', $originalPrice], ['Selling price', $sellingPrice]] as [$label, $value]) {
@@ -111,6 +117,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				':id' => $productId,
 			]);
 
+			// Handle variant creation if enabled
+			if ($enableVariant) {
+				// Check if variant already exists for this product and color
+				$checkStmt = $conn->prepare('SELECT variant_id FROM product_variant WHERE product_id = :pid AND color = :color');
+				$checkStmt->execute([':pid' => $productId, ':color' => $variantColor]);
+				$existingVariant = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+				if ($existingVariant) {
+					throw new Exception('Variant with color "' . html_escape($variantColor) . '" already exists for this product.');
+				}
+
+				// Create new variant
+				$variantStmt = $conn->prepare('INSERT INTO product_variant (product_id, color) VALUES (:pid, :color)');
+				$variantStmt->execute([':pid' => $productId, ':color' => $variantColor]);
+			}
+
 			$conn->commit();
 			
 			// Log product update
@@ -126,7 +148,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				ActivityLogger::logProductUpdate($productId, $name, $oldValues, $newValues);
 			}
 			
-			$_SESSION['success_message'] = 'Product updated successfully.';
+			$successMsg = 'Product updated successfully.';
+			if ($enableVariant) {
+				$successMsg .= ' Variant "' . html_escape($variantColor) . '" has been created.';
+			}
+			$_SESSION['success_message'] = $successMsg;
 		} catch (Exception $e) {
 			if ($conn->inTransaction()) {
 				$conn->rollBack();
@@ -429,6 +455,20 @@ $pageTitle = 'Admin Products';
 		.toast .msg{font-size:13px;color:#374151}
 		.toast .close{margin-left:auto;background:transparent;border:none;font-size:16px;cursor:pointer;color:#64748b}
 		@keyframes toast-in{to{opacity:1;transform:translateY(0)}}
+
+		/* Toggle Switch Styles */
+		.toggle-switch-wrapper{position:relative;display:inline-block}
+		.toggle-switch-input{display:none}
+		.toggle-switch-label{display:block;width:50px;height:26px;background-color:#cbd5e0;border-radius:26px;position:relative;cursor:pointer;transition:background-color 0.3s ease;margin:0}
+		.toggle-switch-label:hover{background-color:#a0aec0}
+		.toggle-switch-input:checked + .toggle-switch-label{background:linear-gradient(135deg, #667eea 0%, #764ba2 100%)}
+		.toggle-switch-input:checked + .toggle-switch-label:hover{background:linear-gradient(135deg, #5568d3 0%, #6a4190 100%)}
+		.toggle-switch-switch{position:absolute;top:2px;left:2px;width:22px;height:22px;background-color:white;border-radius:50%;transition:transform 0.3s ease;box-shadow:0 2px 4px rgba(0, 0, 0, 0.2)}
+		.toggle-switch-input:checked + .toggle-switch-label .toggle-switch-switch{transform:translateX(24px)}
+		.toggle-switch-input:disabled + .toggle-switch-label{opacity:0.6;cursor:not-allowed;background-color:#e2e8f0}
+		.toggle-switch-input:disabled:checked + .toggle-switch-label{background:linear-gradient(135deg, #a5b4fc 0%, #c4b5fd 100%);opacity:0.7}
+		.toggle-switch-input:disabled + .toggle-switch-label:hover{background-color:#e2e8f0}
+		.toggle-switch-input:disabled:checked + .toggle-switch-label:hover{background:linear-gradient(135deg, #a5b4fc 0%, #c4b5fd 100%)}
 	</style>
 </head>
 
@@ -563,7 +603,7 @@ $pageTitle = 'Admin Products';
 									<td><span class="badge <?php echo $stockBadge; ?>"><?php echo $stockText; ?> (<?php echo $stock; ?>)</span></td>
 									<td style="text-align:right;">
 										<div class="action-buttons">
-											<a class="action-btn btn-view" href="<?php echo $viewsBasePath; ?>product/ProductDetails.php?id=<?php echo (int)$product['product_id']; ?>" target="_blank" title="View">
+											<a class="action-btn btn-view" href="ViewProduct.php?id=<?php echo (int)$product['product_id']; ?>" title="View">
 												<i class="fas fa-eye"></i>
 											</a>										<button class="action-btn btn-edit" 
 											data-id="<?php echo (int)$product['product_id']; ?>"
@@ -572,8 +612,7 @@ $pageTitle = 'Admin Products';
 											data-description="<?php echo html_escape($product['description'] ?? ''); ?>"
 											data-cost="<?php echo $product['cost'] ?? ''; ?>"
 											data-original="<?php echo $product['original_price'] ?? ''; ?>"
-											data-selling="<?php echo $product['selling_price'] ?? ''; ?>"
-											title="Edit">
+											data-selling="<?php echo $product['selling_price'] ?? ''; ?>"											data-variant-count="<?php echo (int)$product['variant_count']; ?>"											title="Edit">
 											<i class="fas fa-edit"></i>
 										</button>											<form method="POST" action="AdminProduct.php" class="delete-form" style="margin:0;display:inline;">
 												<input type="hidden" name="action" value="delete_product">
@@ -652,8 +691,24 @@ $pageTitle = 'Admin Products';
 				<div class="form-group" style="margin-top:10px;">
 					<label for="edit_description">Description</label>
 					<textarea id="edit_description" name="description" placeholder="Short description"></textarea>
-				</div>
-				<div class="modal-footer">
+				</div>			<div class="form-group" style="margin-top:10px;">
+				<label style="display: flex; align-items: center; justify-content: space-between;">
+					<span>Enable variant for this product</span>
+					<div class="toggle-switch-wrapper">
+						<input type="checkbox" id="edit_enable_variant" name="enable_variant" value="1" class="toggle-switch-input">
+						<label for="edit_enable_variant" class="toggle-switch-label">
+							<span class="toggle-switch-inner"></span>
+							<span class="toggle-switch-switch"></span>
+						</label>
+					</div>
+				</label>
+				<small id="edit_variant_status" style="color:#6c757d; display:block; margin-top:4px;"></small>
+			</div>
+			<div class="form-group" id="edit_variant_color_group" style="margin-top:10px; display:none;">
+				<label for="edit_variant_color">Variant Color <span style="color:#dc3545;">*</span></label>
+				<input type="text" id="edit_variant_color" name="variant_color" placeholder="e.g. Red, Blue, Black">
+				<small style="color:#6c757d; display:block; margin-top:4px;">This will create a new variant with the specified color.</small>
+			</div>				<div class="modal-footer">
 					<button type="button" class="btn btn-ghost" id="cancelEdit">Cancel</button>
 					<button type="submit" class="btn btn-primary">Update</button>
 				</div>

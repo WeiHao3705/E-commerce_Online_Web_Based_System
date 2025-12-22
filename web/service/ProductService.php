@@ -629,4 +629,81 @@ class ProductService {
             'grouped' => $grouped
         ];
     }
+
+    /**
+     * Get comprehensive product details for admin view
+     * Includes all variants, images, inventory, and pricing info
+     * @param int $product_id Product ID
+     * @return array|null Detailed product information or null if not found
+     */
+    public function getProductDetailsForAdmin($product_id) {
+        // Get basic product info
+        $product = $this->productRepository->getProductById($product_id);
+        
+        if (!$product) {
+            return null;
+        }
+
+        // Get pricing info
+        $sql = "SELECT cost, original_price, selling_price FROM product_price WHERE product_id = :id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([':id' => $product_id]);
+        $pricing = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Get all variants with detailed info
+        $variantsList = $this->productRepository->getVariantsByProductId($product_id);
+        
+        // Get images for each variant
+        $variantsWithImages = [];
+        foreach ($variantsList as $variant) {
+            $variantImages = $this->productRepository->getImagesForVariant((int)$variant->variant_id);
+            $variantsWithImages[] = [
+                'variant' => $variant,
+                'images' => $variantImages
+            ];
+        }
+
+        // Get product-level images
+        $productImages = $this->productRepository->getImagesForProduct($product_id);
+
+        // Get inventory for all variants
+        $inventorySql = "
+            SELECT 
+                i.id,
+                i.variant_id,
+                i.size,
+                i.stock_quantity,
+                pv.color
+            FROM inventory i
+            LEFT JOIN product_variant pv ON i.variant_id = pv.variant_id
+            WHERE i.product_id = :id OR i.variant_id IN (
+                SELECT variant_id FROM product_variant WHERE product_id = :id
+            )
+            ORDER BY pv.color, i.size
+        ";
+        $stmt = $this->conn->prepare($inventorySql);
+        $stmt->execute([':id' => $product_id]);
+        $inventory = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Get sizes per variant
+        $variantSizes = $this->productRepository->getSizesByProductId($product_id);
+
+        // Calculate total stock
+        $totalStock = $this->getProductTotalStock($product_id);
+        
+        // Get variant stock
+        $variantStock = $this->getVariantStock($product_id);
+
+        return [
+            'pageTitle' => $product->product_name . ' - Details',
+            'product' => $product,
+            'pricing' => $pricing,
+            'variants' => $variantsWithImages,
+            'productImages' => $productImages,
+            'inventory' => $inventory,
+            'variantSizes' => $variantSizes,
+            'total_stock' => $totalStock,
+            'variant_stock' => $variantStock
+        ];
+    }
 }
