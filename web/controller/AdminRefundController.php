@@ -9,6 +9,8 @@ if (!isset($_SESSION['user']) || $_SESSION['user']->role !== 'admin') {
 
 require_once __DIR__ . '/../database/connection.php';
 require_once __DIR__ . '/../helpers/ActivityLogger.php';
+require_once __DIR__ . '/../lib/PHPMailer.php';
+require_once __DIR__ . '/../lib/SMTP.php';
 
 header('Content-Type: application/json');
 
@@ -100,9 +102,34 @@ try {
     
     $conn->commit();
     
-    // TODO: Send email notification to customer
-    // TODO: Process actual payment gateway refund if approved
-    
+    // Send email notification to customer
+    // Print recipient email for debugging
+    error_log('Refund notification recipient: ' . $order['email']);
+    $mail = new PHPMailer();
+    $mail->isSMTP();
+    $mail->Host = 'smtp.gmail.com';
+    $mail->SMTPAuth = true;
+    $mail->Username = '6403360weihao@gmail.com';
+    $mail->Password = 'kkch bjlp clpk kfyw';
+    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+    $mail->Port = 587;
+    $mail->CharSet = 'UTF-8';
+    $mail->setFrom('6403360weihao@gmail.com', 'NGear Admin');
+    $mail->addAddress($order['email']);
+    $mail->isHTML(true);
+    if ($action === 'approve') {
+        $mail->Subject = 'Your refund request has been approved';
+        $mail->Body = '<p>Dear ' . htmlspecialchars($order['username']) . ',</p>'
+            . '<p>Your refund request for order #' . $orderId . ' has been <b>approved</b>. The refund will be processed to your payment method soon.</p>'
+            . '<p>If you have any questions, please contact support.</p>';
+    } else if ($action === 'reject') {
+        $mail->Subject = 'Your refund request has been rejected';
+        $mail->Body = '<p>Dear ' . htmlspecialchars($order['username']) . ',</p>'
+            . '<p>Your refund request for order #' . $orderId . ' has been <b>rejected</b>. If you have questions, please contact support.</p>';
+    }
+    $mail->AltBody = strip_tags($mail->Body);
+    $mail->send();
+
     echo json_encode([
         'success' => true,
         'message' => $successMessage,
