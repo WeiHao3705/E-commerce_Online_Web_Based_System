@@ -52,6 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				'cost' => $_POST['cost'] ?? null,
 				'original_price' => $_POST['original_price'] ?? null,
 				'selling_price' => $_POST['selling_price'] ?? null,
+				'has_size' => isset($_POST['has_size']) && $_POST['has_size'] === '1' ? 1 : 0,
 			];
 
 			$hasVariants = isset($_POST['has_variants']) && $_POST['has_variants'] === '1';
@@ -67,10 +68,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				if (!empty($initialVariantColor)) {
 					$baseNameForImages = $productData['name'] . '_' . $initialVariantColor;
 				}
+				$excludeRaw = isset($_POST['product_images_exclude']) ? $_POST['product_images_exclude'] : '';
+				$exclude = array_filter(array_map(function($x){ return is_numeric($x) ? (int)$x : null; }, explode(',', $excludeRaw)), function($v){ return $v !== null; });
 				$imagePaths = $productService->handleMultipleProductImageUpload(
 					$_FILES['product_images'],
 					$baseNameForImages,
-					$uploadDir
+					$uploadDir,
+					$exclude
 				);
 				// Main image index from form (optional)
 				if (isset($_POST['main_image_index'])) {
@@ -115,10 +119,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				$productName = $productService->getProductNameById($variantData['product_id']);
 				$colorName = $variantData['color'] ?: 'variant';
 				$baseNameForImages = ($productName ? $productName : 'product') . '_' . $colorName;
+				$excludeRaw = isset($_POST['variant_images_exclude']) ? $_POST['variant_images_exclude'] : '';
+				$exclude = array_filter(array_map(function($x){ return is_numeric($x) ? (int)$x : null; }, explode(',', $excludeRaw)), function($v){ return $v !== null; });
 				$imagePaths = $productService->handleMultipleProductImageUpload(
 					$_FILES['variant_images'],
 					$baseNameForImages,
-					$uploadDir
+					$uploadDir,
+					$exclude
 				);
 				if (isset($_POST['variant_main_image_index'])) {
 					$mainIndex = (int)($_POST['variant_main_image_index']);
@@ -204,6 +211,18 @@ $pageTitle = 'Add Product';
 						<input type="text" id="product_name" name="product_name" required placeholder="e.g., Nike Air Max 270">
 					</div>
 
+				<div class="form-group">
+					<label for="has_size">
+						<span class="material-symbols-outlined">straighten</span>
+						Product has sizes?
+					</label>
+					<label style="display:inline-flex;align-items:center;gap:8px;">
+						<input type="checkbox" id="has_size" name="has_size" value="1">
+						Enable size selection
+					</label>
+					<small>If enabled, shoppers will pick a size and inventory will be tracked per size.</small>
+				</div>
+
 					<div class="form-group">
 						<label for="category">
 							<span class="material-symbols-outlined">category</span>
@@ -249,13 +268,20 @@ $pageTitle = 'Add Product';
 					</div>
 
 					<div class="form-group">
-						<label for="product_images">
+						<label>
 							<span class="material-symbols-outlined">image</span>
 							Product Images
 						</label>
-						<input type="file" id="product_images" name="product_images[]" multiple accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
-						<small>Optional - Select multiple images. Choose one as Main (max 5MB each)</small>
+						<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+							<button type="button" class="btn btn-secondary" id="addProductImageBtn">
+								<span class="material-symbols-outlined">add_photo_alternate</span>
+								Add Image
+							</button>
+							<small>Click "Add Image" multiple times to add photos. Choose one as Main (max 5MB each)</small>
+						</div>
+						<div id="productImagesInputs" style="display:none;"></div>
 						<input type="hidden" name="main_image_index" id="main_image_index" value="0">
+						<input type="hidden" name="product_images_exclude" id="product_images_exclude" value="">
 						<div id="imagesPreview" class="images-preview" style="display:none;margin-top:10px;"></div>
 					</div>
 				</div>
@@ -336,13 +362,20 @@ $pageTitle = 'Add Product';
 					</div>
 
 					<div class="form-group">
-						<label for="variant_images">
+						<label>
 							<span class="material-symbols-outlined">image</span>
 							Variant Images
 						</label>
-						<input type="file" id="variant_images" name="variant_images[]" multiple accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
-						<small>Optional - Select multiple images. Choose one as Main (max 5MB each)</small>
+						<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+							<button type="button" class="btn btn-secondary" id="addVariantImageBtn">
+								<span class="material-symbols-outlined">add_photo_alternate</span>
+								Add Image
+							</button>
+							<small>Click "Add Image" multiple times to add photos. Choose one as Main (max 5MB each)</small>
+						</div>
+						<div id="variantImagesInputs" style="display:none;"></div>
 						<input type="hidden" name="variant_main_image_index" id="variant_main_image_index" value="0">
+						<input type="hidden" name="variant_images_exclude" id="variant_images_exclude" value="">
 						<div id="variantImagesPreview" class="images-preview" style="display:none;margin-top:10px;"></div>
 					</div>
 				</div>

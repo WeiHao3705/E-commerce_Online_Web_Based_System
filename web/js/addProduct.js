@@ -3,21 +3,29 @@ document.addEventListener('DOMContentLoaded', function() {
 	const costInput = document.getElementById('cost');
 	const originalPriceInput = document.getElementById('original_price');
 	const sellingPriceInput = document.getElementById('selling_price');
-	const imageInput = document.getElementById('product_images');
 	const imagesPreview = document.getElementById('imagesPreview');
 	const mainIndexInput = document.getElementById('main_image_index');
-	const variantImageInput = document.getElementById('variant_images');
 	const variantImagesPreview = document.getElementById('variantImagesPreview');
 	const variantMainIndexInput = document.getElementById('variant_main_image_index');
 	const productForm = document.getElementById('productForm');
-		const hasVariantsCheckbox = document.getElementById('has_variants');
-		const initialVariantColorInput = document.getElementById('initial_variant_color');
-		const initialVariantColorGroup = document.getElementById('initial_variant_color_group');
-		// Toggle initial variant color on checkbox
-		function toggleVariantInputs() {
-			if (!hasVariantsCheckbox || !initialVariantColorGroup) return;
-			const enabled = !!hasVariantsCheckbox.checked;
-			initialVariantColorGroup.style.display = enabled ? 'block' : 'none';
+	const hasVariantsCheckbox = document.getElementById('has_variants');
+	const initialVariantColorInput = document.getElementById('initial_variant_color');
+	const initialVariantColorGroup = document.getElementById('initial_variant_color_group');
+
+	const addProductImageBtn = document.getElementById('addProductImageBtn');
+	const productImagesInputs = document.getElementById('productImagesInputs');
+	const productImagesExcludeInput = document.getElementById('product_images_exclude');
+	const addVariantImageBtn = document.getElementById('addVariantImageBtn');
+	const variantImagesInputs = document.getElementById('variantImagesInputs');
+	const variantImagesExcludeInput = document.getElementById('variant_images_exclude');
+
+	const productExcluded = new Set();
+	const variantExcluded = new Set();
+
+	function toggleVariantInputs() {
+		if (!hasVariantsCheckbox || !initialVariantColorGroup) return;
+		const enabled = !!hasVariantsCheckbox.checked;
+		initialVariantColorGroup.style.display = enabled ? 'block' : 'none';
 			if (initialVariantColorInput) {
 				initialVariantColorInput.required = enabled;
 			}
@@ -45,29 +53,53 @@ document.addEventListener('DOMContentLoaded', function() {
 	costInput.addEventListener('input', suggestSellingPrice);
 	originalPriceInput.addEventListener('input', suggestSellingPrice);
 
-	// Shared preview renderer
-	function renderPreview(fileInput, previewContainer, mainInput, radioName) {
-		const files = Array.from(fileInput.files || []);
+	function renderAggregatePreview(inputsContainer, previewContainer, mainInput, radioName, inputNameAttr, excludedSet, excludeHiddenInput) {
 		const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+		const inputs = Array.from(inputsContainer.querySelectorAll('input[name="' + inputNameAttr + '"]'));
+		const meta = [];
+		let globalIndex = 0;
+		inputs.forEach((inp) => {
+			const list = Array.from(inp.files || []);
+			list.forEach((f) => {
+				if (!f) { globalIndex++; return; }
+				if (f.size > 5 * 1024 * 1024) { globalIndex++; return; }
+				if (!validTypes.includes(f.type)) { globalIndex++; return; }
+				meta.push({ file: f, globalIndex });
+				globalIndex++;
+			});
+		});
+
+		// Persist exclude hidden input value
+		if (excludeHiddenInput) {
+			const values = Array.from(excludedSet.values()).sort((a,b)=>a-b);
+			excludeHiddenInput.value = values.join(',');
+		}
 
 		previewContainer.innerHTML = '';
-		if (!files.length) {
+		// Build included list indices mapping
+		const includedMeta = meta.filter(m => !excludedSet.has(m.globalIndex));
+		if (!includedMeta.length) {
 			previewContainer.style.display = 'none';
+			mainInput.value = '';
 			return;
 		}
 
-		let firstValidIndex = -1;
+		let selectedIndex = -1;
+		const currentMain = parseInt(mainInput.value);
+		if (!isNaN(currentMain) && currentMain >= 0 && currentMain < includedMeta.length) {
+			selectedIndex = currentMain;
+		} else {
+			selectedIndex = 0;
+			mainInput.value = '0';
+		}
 
-		files.forEach((file, idx) => {
-			if (file.size > 5 * 1024 * 1024 || !validTypes.includes(file.type)) {
-				return;
-			}
-			if (firstValidIndex === -1) firstValidIndex = idx;
-
+		includedMeta.forEach((m, idx) => {
 			const reader = new FileReader();
 			reader.onload = function(ev) {
 				const item = document.createElement('div');
 				item.className = 'image-item';
+				item.dataset.globalIndex = String(m.globalIndex);
+				item.style.position = 'relative';
 
 				const img = document.createElement('img');
 				img.src = ev.target.result;
@@ -90,33 +122,94 @@ document.addEventListener('DOMContentLoaded', function() {
 					mainInput.value = String(idx);
 				});
 
+				const removeBtn = document.createElement('button');
+				removeBtn.type = 'button';
+				removeBtn.className = 'remove-image';
+				removeBtn.textContent = '\u00D7';
+				removeBtn.title = 'Remove image';
+				removeBtn.setAttribute('aria-label', 'Remove image');
+				removeBtn.style.position = 'absolute';
+				removeBtn.style.top = '4px';
+				removeBtn.style.right = '4px';
+				removeBtn.style.background = 'rgba(0,0,0,0.6)';
+				removeBtn.style.color = '#fff';
+				removeBtn.style.border = 'none';
+				removeBtn.style.borderRadius = '50%';
+				removeBtn.style.width = '24px';
+				removeBtn.style.height = '24px';
+				removeBtn.style.lineHeight = '20px';
+				removeBtn.style.padding = '0';
+				removeBtn.style.textAlign = 'center';
+				removeBtn.style.cursor = 'pointer';
+				removeBtn.addEventListener('click', function() {
+					// Mark this global index as excluded and re-render
+					excludedSet.add(m.globalIndex);
+					// Reset main index if it points beyond new length
+					const newIncludedCount = meta.filter(x => !excludedSet.has(x.globalIndex)).length;
+					const current = parseInt(mainInput.value);
+					if (isNaN(current) || current >= newIncludedCount) {
+						mainInput.value = newIncludedCount > 0 ? '0' : '';
+					}
+					renderAggregatePreview(inputsContainer, previewContainer, mainInput, radioName, inputNameAttr, excludedSet, excludeHiddenInput);
+				});
+
 				radioWrap.appendChild(radio);
 				radioWrap.appendChild(mark);
 
 				item.appendChild(img);
 				item.appendChild(radioWrap);
+				item.appendChild(removeBtn);
 				previewContainer.appendChild(item);
 
-				if (idx === firstValidIndex) {
+				if (idx === selectedIndex) {
 					radio.checked = true;
-					mainInput.value = String(idx);
 				}
 			};
-			reader.readAsDataURL(file);
+			reader.readAsDataURL(m.file);
 		});
 
 		previewContainer.style.display = 'grid';
 	}
 
-	// Product images
-	imageInput.addEventListener('change', function() {
-		renderPreview(imageInput, imagesPreview, mainIndexInput, 'main_image_choice');
-	});
+	function createHiddenFileInput(inputNameAttr) {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.name = inputNameAttr;
+		input.accept = 'image/*';
+		input.multiple = true;
+		input.style.display = 'none';
+		return input;
+	}
 
-	// Variant images
-	variantImageInput.addEventListener('change', function() {
-		renderPreview(variantImageInput, variantImagesPreview, variantMainIndexInput, 'variant_main_image_choice');
-	});
+	if (addProductImageBtn && productImagesInputs) {
+		addProductImageBtn.addEventListener('click', function() {
+			const inp = createHiddenFileInput('product_images[]');
+			productImagesInputs.appendChild(inp);
+			inp.addEventListener('change', function() {
+				if (!inp.files || inp.files.length === 0) {
+					productImagesInputs.removeChild(inp);
+					return;
+				}
+				renderAggregatePreview(productImagesInputs, imagesPreview, mainIndexInput, 'main_image_choice', 'product_images[]', productExcluded, productImagesExcludeInput);
+			});
+			inp.click();
+		});
+	}
+
+	if (addVariantImageBtn && variantImagesInputs) {
+		addVariantImageBtn.addEventListener('click', function() {
+			const inp = createHiddenFileInput('variant_images[]');
+			variantImagesInputs.appendChild(inp);
+			inp.addEventListener('change', function() {
+				if (!inp.files || inp.files.length === 0) {
+					variantImagesInputs.removeChild(inp);
+					return;
+				}
+				renderAggregatePreview(variantImagesInputs, variantImagesPreview, variantMainIndexInput, 'variant_main_image_choice', 'variant_images[]', variantExcluded, variantImagesExcludeInput);
+			});
+			inp.click();
+		});
+	}
 
 	// Tab switching
 	function switchTab(target) {
@@ -136,23 +229,24 @@ document.addEventListener('DOMContentLoaded', function() {
 	tabProduct.addEventListener('click', () => switchTab('product'));
 	tabVariant.addEventListener('click', () => switchTab('variant'));
 
-	// Validate product form
 	productForm.addEventListener('submit', function(e) {
-				// If variants enabled, ensure color provided
-				if (hasVariantsCheckbox && hasVariantsCheckbox.checked) {
-					const colorVal = (initialVariantColorInput && initialVariantColorInput.value.trim()) || '';
-					if (!colorVal) {
-						e.preventDefault();
-						alert('Please specify an initial variant color.');
-						return;
-					}
-				}
+		if (hasVariantsCheckbox && hasVariantsCheckbox.checked) {
+			const colorVal = (initialVariantColorInput && initialVariantColorInput.value.trim()) || '';
+			if (!colorVal) {
+				e.preventDefault();
+				alert('Please specify an initial variant color.');
+				return;
+			}
+		}
 		const cost = parseFloat(costInput.value) || 0;
 		const original = parseFloat(originalPriceInput.value) || 0;
 		const selling = parseFloat(sellingPriceInput.value) || 0;
 
-		const hasImages = imageInput && imageInput.files && imageInput.files.length > 0;
-		if (hasImages && (mainIndexInput.value === '' || isNaN(parseInt(mainIndexInput.value)))) {
+		const productInputs = productImagesInputs ? Array.from(productImagesInputs.querySelectorAll('input[name="product_images[]"]')) : [];
+		let productFilesCount = 0;
+		productInputs.forEach(inp => { productFilesCount += Array.from(inp.files || []).length; });
+		const effectiveProductCount = productFilesCount - productExcluded.size;
+		if (effectiveProductCount > 0 && (mainIndexInput.value === '' || isNaN(parseInt(mainIndexInput.value)))) {
 			e.preventDefault();
 			alert('Please select one image as the main image.');
 			return;
@@ -168,11 +262,9 @@ document.addEventListener('DOMContentLoaded', function() {
 		}
 	});
 
-	// Validate variant form
 	variantForm.addEventListener('submit', function(e) {
 		const productId = document.getElementById('variant_product_id').value;
 		const color = document.getElementById('variant_color').value.trim();
-		const hasImages = variantImageInput && variantImageInput.files && variantImageInput.files.length > 0;
 
 		if (!productId) {
 			e.preventDefault();
@@ -186,7 +278,11 @@ document.addEventListener('DOMContentLoaded', function() {
 			return;
 		}
 
-		if (hasImages && (variantMainIndexInput.value === '' || isNaN(parseInt(variantMainIndexInput.value)))) {
+		const variantInputs = variantImagesInputs ? Array.from(variantImagesInputs.querySelectorAll('input[name="variant_images[]"]')) : [];
+		let variantFilesCount = 0;
+		variantInputs.forEach(inp => { variantFilesCount += Array.from(inp.files || []).length; });
+		const effectiveVariantCount = variantFilesCount - variantExcluded.size;
+		if (effectiveVariantCount > 0 && (variantMainIndexInput.value === '' || isNaN(parseInt(variantMainIndexInput.value)))) {
 			e.preventDefault();
 			alert('Please select one image as the main image.');
 			return;

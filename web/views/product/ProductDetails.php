@@ -50,7 +50,7 @@ require __DIR__ . '/../../general/_navbar.php';
 <link rel="stylesheet" href="<?= $assetPrefix ?>css/ProductDetails.css?v=<?= filemtime(__DIR__ . '/../../css/ProductDetails.css'); ?>">
 <link rel="stylesheet" href="<?= $assetPrefix ?>css/reviews.css?v=<?= filemtime(__DIR__ . '/../../css/reviews.css'); ?>">
 
-<div class="product-detail-container" id="productDetailRoot" data-variant-sizes='<?= htmlspecialchars(json_encode($variantSizes), ENT_QUOTES, 'UTF-8') ?>' data-variant-stock='<?= htmlspecialchars(json_encode($variant_stock), ENT_QUOTES, 'UTF-8') ?>' data-login-url="<?= htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8') ?>" data-product-id="<?= $product->product_id ?>" data-is-out-of-stock="<?= $is_out_of_stock ? 'true' : 'false' ?>" data-total-stock="<?= $total_stock ?>">
+<div class="product-detail-container" id="productDetailRoot" data-variant-sizes='<?= htmlspecialchars(json_encode($variantSizes), ENT_QUOTES, 'UTF-8') ?>' data-variant-stock='<?= htmlspecialchars(json_encode($variant_stock), ENT_QUOTES, 'UTF-8') ?>' data-login-url="<?= htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8') ?>" data-product-id="<?= $product->product_id ?>" data-is-out-of-stock="<?= $is_out_of_stock ? 'true' : 'false' ?>" data-total-stock="<?= $total_stock ?>" data-has-size="<?= isset($product->has_size) ? (int)$product->has_size : 0 ?>">
 	<a class="back-link" href="ProductPage.php">&#8592; Back</a>
 	<h1 class="product-detail-title">
 		<?= htmlspecialchars($product->product_name) ?>

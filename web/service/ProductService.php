@@ -244,7 +244,7 @@ class ProductService {
      * @return array List of relative paths to saved files
      * @throws Exception If none of the files are valid/uploads fail
      */
-    public function handleMultipleProductImageUpload($files, $productName, $uploadDir) {
+    public function handleMultipleProductImageUpload($files, $productName, $uploadDir, $excludeIndices = []) {
         $paths = [];
         if (!isset($files['name']) || !is_array($files['name'])) {
             return $paths;
@@ -252,6 +252,9 @@ class ProductService {
 
         $count = count($files['name']);
         for ($i = 0; $i < $count; $i++) {
+            if (is_array($excludeIndices) && in_array($i, $excludeIndices, true)) {
+                continue;
+            }
             $file = [
                 'name' => $files['name'][$i],
                 'type' => $files['type'][$i],
@@ -296,11 +299,12 @@ class ProductService {
             $conn->beginTransaction();
 
             // Insert product
-            $stmt = $conn->prepare('INSERT INTO product (product_name, category, description) VALUES (:name, :category, :description)');
+            $stmt = $conn->prepare('INSERT INTO product (product_name, category, description, has_size) VALUES (:name, :category, :description, :has_size)');
             $stmt->execute([
                 ':name' => $productData['name'],
                 ':category' => $productData['category'],
                 ':description' => $productData['description'] ?? '',
+                ':has_size' => isset($productData['has_size']) ? (int)$productData['has_size'] : 0,
             ]);
 
             $productId = (int)$conn->lastInsertId();

@@ -6,6 +6,7 @@
     const variantStock = JSON.parse(root.dataset.variantStock || '{}');
     const loginUrl = root.dataset.loginUrl || '../../account.php';
     const userId = (document.body.dataset.userId || '').trim();
+    const hasSizeFlag = (root.dataset.hasSize || '0') === '1';
     const mainImage = document.getElementById('mainImage');
     const selectedVariantInput = document.getElementById('selectedVariantId');
     const sizeSelect = document.getElementById('sizeSelect');
@@ -29,13 +30,14 @@
 
     function toggleSizeVisibility() {
         if (!sizeFormGroup) return;
-        const optionCount = sizeSelect ? sizeSelect.options.length : 0;
-        // Hide when only the placeholder exists or select missing
-        if (!sizeSelect || optionCount <= 1) {
+        // If product does not have sizes, always hide the size input
+        if (!hasSizeFlag) {
             sizeFormGroup.style.display = 'none';
-        } else {
-            sizeFormGroup.style.display = '';
+            return;
         }
+
+        // Product has sizes: keep the field visible (even if no options) so user sees status
+        sizeFormGroup.style.display = '';
     }
 
     function updateSizeOptions() {
@@ -43,6 +45,21 @@
 
         const selectedVid = parseInt(selectedVariantInput.value, 10);
         sizeSelect.innerHTML = '<option value="">-- Select Size --</option>';
+
+        // If product is marked as no-size, hide the control and proceed without sizes
+        if (!hasSizeFlag) {
+            if (sizeFormGroup) {
+                sizeFormGroup.style.display = 'none';
+            }
+            sizeSelect.disabled = true;
+            // Update stock status based on variant/product without size
+            if (!Number.isNaN(selectedVid) && selectedVid) {
+                updateStockStatus(selectedVid, null);
+            } else {
+                updateStockStatus(null, null);
+            }
+            return;
+        }
 
         // Handle products without variants - still need to set up size change handler
         if (Number.isNaN(selectedVid) || !selectedVid) {
@@ -64,6 +81,15 @@
 
         const sizes = variantSizes[selectedVid] || [];
         
+        // If product requires sizes but no inventory rows for this variant, mark as out of stock
+        if (sizes.length === 0) {
+            sizeSelect.innerHTML = '<option value="">-- No sizes available --</option>';
+            sizeSelect.disabled = true;
+            toggleSizeVisibility();
+            updateUIForStock(true, 0, selectedVariantInput ? selectedVariantInput.value : null, null);
+            return;
+        }
+
         // Populate all sizes - always enable the dropdown
         sizes.forEach((size) => {
             const opt = document.createElement('option');
