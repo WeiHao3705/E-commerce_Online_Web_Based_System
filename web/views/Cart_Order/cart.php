@@ -249,16 +249,15 @@ $grandTotal = $subtotal + $shippingFee + $tax;
                     <span><strong>RM <?= number_format($grandTotal, 2) ?></strong></span>
                 </div>
                 
-                <div class="promo-section">
-                    <h4>Promo Code / Voucher</h4>
+                <div class="promo-section">  
+
+
+                
+                    <h4>Apply Voucher</h4>
                     <!--Select the voucher-->
                     <button type="button" class="select-voucher-btn" id="selectVoucherBtn">
                         <i class="fas fa-ticket-alt"></i> Select Available Voucher
                     </button>
-                    <div class="promo-input">
-                        <input type="text" id="promo-code" placeholder="Or enter promo code manually" class="form-input" readonly>
-                        <button class="apply-btn" id="applyBtn">Apply</button>
-                    </div>
                     
                     <!-- Applied Voucher Display -->
                     <div id="appliedVoucher" class="applied-voucher" style="display: none;">

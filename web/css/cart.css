@@ -209,39 +209,9 @@
     margin-top: 15px;
 }
 
-.promo-section {
-    margin: 25px 0;
-}
-
 .promo-section h4 {
     margin: 0 0 10px 0;
     color: #333;
-}
-
-.promo-input {
-    display: flex;
-    gap: 10px;
-}
-
-.form-input {
-    flex: 1;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-.apply-btn {
-    background: #667eea;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 500;
-}
-
-.apply-btn:hover {
-    background: #aaa7ff;
 }
 
 .checkout-btn {
@@ -254,7 +224,6 @@
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    margin-top: 20px;
 }
 
 .checkout-btn:hover {
