@@ -65,12 +65,12 @@ try {
         $paymentStmt->execute([':payment_status' => $paymentStatus, ':order_id' => $orderId]);
         
     } else {
-        // Reject refund - return to delivered status
-        $newStatus = 'delivered';
+        // Reject refund - return to paid status
+        $newStatus = 'paid';
         $noteText = "Refund rejected by admin.";
         $successMessage = 'Refund rejected';
         
-        // Update order status back to delivered
+        // Update order status back to paid
         $updateQuery = "UPDATE orders SET order_status = :status, updated_at = CURRENT_TIMESTAMP WHERE order_id = :order_id";
         $updateStmt = $conn->prepare($updateQuery);
         $updateStmt->execute([':status' => $newStatus, ':order_id' => $orderId]);

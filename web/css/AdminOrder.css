@@ -504,6 +504,7 @@ body {
 .btn-primary {
     background: var(--primary);
     color: white;
+    border-radius: 0.5rem;
 }
 
 .btn-primary:hover {
@@ -1057,4 +1058,73 @@ body {
     .details-grid {
         grid-template-columns: 1fr;
     }
+}
+
+.modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 1000;
+    background: rgba(0,0,0,0.25);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+.modal-content {
+    background: #fff;
+    border-radius: 10px;
+    max-width: 420px;
+    width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    margin: auto;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+.modal-header, .modal-body, .modal-actions {
+    padding: 1.2rem 1.5rem;
+}
+.modal-header {
+    border-bottom: 1px solid #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.modal-actions {
+    border-top: 1px solid #f3f4f6;
+}
+/* Confirmation Modal Buttons */
+#confirmModal .modal-actions {
+display: flex;
+justify-content: flex-end;
+gap: 0.5rem;
+margin: auto;
+}
+#confirmModal .btn-primary, #confirmModal .btn-secondary {
+min-width: 90px;
+padding: 0.5rem 1.2rem;
+font-size: 1rem;
+border-radius: 6px;
+border: none;
+font-weight: 500;
+cursor: pointer;
+transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+#confirmModal .btn-primary {
+background: #eb2525ff;
+color: #fff;
+}
+#confirmModal .btn-primary:hover {
+background: #eb4545ff;
+transform: translateY(-2px) scale(1.04);
+}
+#confirmModal .btn-secondary {
+background: #f3f4f6;
+color: #374151;
+}
+#confirmModal .btn-secondary:hover {
+background: #e5e7eb;
+transform: translateY(-2px) scale(1.04);
 }
