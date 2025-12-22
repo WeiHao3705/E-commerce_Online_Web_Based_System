@@ -81,10 +81,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				if ($initialVariantColor === '') {
 					throw new Exception('Please specify an initial variant color.');
 				}
-				$productService->createVariant([
+				$variantId = $productService->createVariant([
 					'product_id' => (int)$productId,
 					'color' => $initialVariantColor,
 				], [], null);
+				
+				// Log variant creation only if current user is admin
+				if (isset($_SESSION['user']) && $_SESSION['user']->role === 'admin') {
+					require_once __DIR__ . '/../../helpers/ActivityLogger.php';
+					ActivityLogger::logVariantCreate($variantId, (int)$productId, $initialVariantColor);
+				}
 			}
 
 			// Success: set message and redirect
@@ -112,6 +118,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			}
 
 			$variantId = $productService->createVariant($variantData, $imagePaths, $mainIndex);
+
+			// Log variant creation only if current user is admin
+			if (isset($_SESSION['user']) && $_SESSION['user']->role === 'admin') {
+				require_once __DIR__ . '/../../helpers/ActivityLogger.php';
+				ActivityLogger::logVariantCreate($variantId, (int)$variantData['product_id'], $variantData['color']);
+			}
 
 			$_SESSION['success_message'] = 'Variant added successfully.';
 			header('Location: AdminProduct.php');

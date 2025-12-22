@@ -184,7 +184,7 @@ $pageTitle = "Manage Orders - Admin";
 
                 <div class="filter-actions">
                     <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
-                    <a href="AdminOrder.php" class="btn btn-secondary"><i class="fas fa-redo"></i> Reset</a>
+                    <a href="" class="btn btn-secondary"><i class="fas fa-redo"></i> Reset</a>
                 </div>
             </form>
         </section>

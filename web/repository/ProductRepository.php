@@ -130,7 +130,17 @@ class ProductRepository {
                 COALESCE((
                     SELECT COUNT(*) FROM product_variant pv 
                     WHERE pv.product_id = p.product_id
-                ), 0) AS variant_count
+                ), 0) AS variant_count,
+                COALESCE((
+                    SELECT AVG(rating) 
+                    FROM product_review 
+                    WHERE product_id = p.product_id
+                ), 0) AS average_rating,
+                COALESCE((
+                    SELECT COUNT(*) 
+                    FROM product_review 
+                    WHERE product_id = p.product_id
+                ), 0) AS review_count
             FROM product p
             LEFT JOIN product_price pr ON p.product_id = pr.product_id
             ORDER BY p.category, p.product_name

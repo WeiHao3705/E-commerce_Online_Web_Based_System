@@ -150,7 +150,8 @@ class ActivityLogController
             }
 
             $searchTerm = isset($_GET['search']) ? trim($_GET['search']) : '';
-            $adminId = isset($_GET['admin_id']) ? (int)$_GET['admin_id'] : null;
+            // Always use current logged-in admin's ID - ignore any admin_id parameter to prevent viewing other admins' logs
+            $adminId = (int)$_SESSION['user']->user_id;
             $actionType = isset($_GET['action_type']) ? trim($_GET['action_type']) : null;
             $entityType = isset($_GET['entity_type']) ? trim($_GET['entity_type']) : null;
             $startDate = isset($_GET['start_date']) ? trim($_GET['start_date']) : null;
@@ -172,17 +173,20 @@ class ActivityLogController
             );
             $logs = $data['logs'];
 
-            // Get admin name if filtering by admin
-            $adminName = 'All Admins';
-            if ($adminId) {
-                require_once __DIR__ . '/../database/connection.php';
-                $database = new Database();
-                $conn = $database->getConnection();
-                $stmt = $conn->prepare("SELECT full_name, username FROM users WHERE user_id = ?");
-                $stmt->execute([$adminId]);
-                $admin = $stmt->fetch(PDO::FETCH_ASSOC);
-                if ($admin) {
-                    $adminName = $admin['full_name'] . ' (' . $admin['username'] . ')';
+            // Get admin name for the current admin
+            $adminName = 'Unknown Admin';
+            require_once __DIR__ . '/../database/connection.php';
+            $database = new Database();
+            $conn = $database->getConnection();
+            $stmt = $conn->prepare("SELECT full_name, username FROM users WHERE user_id = ?");
+            $stmt->execute([$adminId]);
+            $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($admin) {
+                $adminName = $admin['full_name'] . ' (' . $admin['username'] . ')';
+            } else {
+                // Fallback to session data if database query fails
+                if (isset($_SESSION['user'])) {
+                    $adminName = ($_SESSION['user']->full_name ?? 'Unknown') . ' (' . ($_SESSION['user']->username ?? 'Unknown') . ')';
                 }
             }
 

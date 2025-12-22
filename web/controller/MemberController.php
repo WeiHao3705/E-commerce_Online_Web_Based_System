@@ -6,6 +6,7 @@ require_once __DIR__ . '/../database/connection.php';
 require_once __DIR__ . '/../repository/MemberRepository.php';
 require_once __DIR__ . '/../service/MemberService.php';
 require_once __DIR__ . '/../DTO/MemberDTO.php';
+require_once __DIR__ . '/../helpers/ActivityLogger.php';
 
 class MemberController
 {
@@ -497,12 +498,20 @@ class MemberController
                 // Store digits-only
                 $contact_no = $contact_digits;
 
-                // Get current user data to preserve gender
+                // Get current user data to preserve gender and capture old values for logging
                 $currentUser = $this->membershipServices->getMemberById((int)$_POST['user_id']);
                 if (!$currentUser) {
                     throw new Exception("User not found.");
                 }
                 $gender = $currentUser['gender'];
+                
+                // Capture old values for activity logging
+                $oldValues = [
+                    'full_name' => $currentUser['full_name'] ?? '',
+                    'email' => $currentUser['email'] ?? '',
+                    'contact_no' => $currentUser['contact_no'] ?? '',
+                    'gender' => $currentUser['gender'] ?? ''
+                ];
 
                 $memberDTO = new MemberUpdateDTO(
                     (int)$_POST['user_id'],
@@ -530,6 +539,17 @@ class MemberController
                 }
 
                 if ($result) {
+                    // Log the member update only if current user is an admin editing another user
+                    if (isset($_SESSION['user']) && $_SESSION['user']->role === 'admin' && (int)$_POST['user_id'] !== (int)$_SESSION['user']->user_id) {
+                        $newValues = [
+                            'full_name' => $full_name,
+                            'email' => $email,
+                            'contact_no' => $contact_no,
+                            'gender' => $gender
+                        ];
+                        ActivityLogger::logMemberUpdate((int)$_POST['user_id'], $username, $oldValues, $newValues);
+                    }
+                    
                     $_SESSION['success_message'] = "Member updated successfully!";
                     // Allow redirection back to profile when updating from user profile page
                     $returnTo = isset($_POST['return_to']) ? $_POST['return_to'] : (isset($_GET['return_to']) ? $_GET['return_to'] : '');
@@ -1021,9 +1041,19 @@ class MemberController
                     throw new Exception("Invalid status value");
                 }
 
+                // Get old status and member info before update for logging
+                $member = $this->membershipServices->getMemberById($userId);
+                $oldStatus = $member ? ($member['status'] ?? 'active') : 'active';
+                $username = $member ? ($member['username'] ?? 'Unknown') : 'Unknown';
+
                 $result = $this->membershipServices->updateMemberStatus($userId, $status);
 
                 if ($result) {
+                    // Log status change if status actually changed and current user is an admin
+                    if ($oldStatus !== $status && isset($_SESSION['user']) && $_SESSION['user']->role === 'admin') {
+                        ActivityLogger::logMemberStatusChange($userId, $username, $oldStatus, $status);
+                    }
+                    
                     $statusLabels = [
                         'active' => 'activated',
                         'inactive' => 'set to inactive',
@@ -1056,9 +1086,18 @@ class MemberController
 
                 $userId = (int)$_POST['user_id'];
 
+                // Get member info before delete for logging
+                $member = $this->membershipServices->getMemberById($userId);
+                $username = $member ? ($member['username'] ?? 'Unknown') : 'Unknown';
+
                 $result = $this->membershipServices->deleteMember($userId);
 
                 if ($result) {
+                    // Log member deletion only if current user is an admin
+                    if (isset($_SESSION['user']) && $_SESSION['user']->role === 'admin') {
+                        ActivityLogger::logMemberDelete($userId, $username);
+                    }
+                    
                     $_SESSION['success_message'] = "Member deleted successfully!";
                 } else {
                     throw new Exception("Failed to delete member. Member may not exist or may not be a regular member.");
@@ -1089,9 +1128,28 @@ class MemberController
                     $userIds = [$userIds];
                 }
 
+                // Get member info before delete for logging
+                $membersToDelete = [];
+                foreach ($userIds as $userId) {
+                    $member = $this->membershipServices->getMemberById((int)$userId);
+                    if ($member) {
+                        $membersToDelete[] = [
+                            'user_id' => (int)$userId,
+                            'username' => $member['username'] ?? 'Unknown'
+                        ];
+                    }
+                }
+
                 $result = $this->membershipServices->bulkDeleteMembers($userIds);
 
                 if ($result['success']) {
+                    // Log each member deletion only if current user is an admin
+                    if (isset($_SESSION['user']) && $_SESSION['user']->role === 'admin') {
+                        foreach ($membersToDelete as $member) {
+                            ActivityLogger::logMemberDelete($member['user_id'], $member['username']);
+                        }
+                    }
+                    
                     $_SESSION['success_message'] = $result['message'];
                 } else {
                     throw new Exception($result['message']);

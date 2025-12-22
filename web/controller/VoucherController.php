@@ -4,6 +4,7 @@ require_once __DIR__ . '/../database/connection.php';
 require_once __DIR__ . '/../repository/VoucherRepository.php';
 require_once __DIR__ . '/../service/VoucherService.php';
 require_once __DIR__ . '/../DTO/VoucherDTO.php';
+require_once __DIR__ . '/../helpers/ActivityLogger.php';
 
 // Composer autoload for external libraries (e.g., endroid/qr-code)
 require_once __DIR__ . '/../../vendor/autoload.php';
@@ -153,6 +154,18 @@ class VoucherController
                 $result = $this->voucherService->registerVoucher($voucherDTO);
 
                 if ($result) {
+                    // Get voucher ID for logging (query by code to get the ID)
+                    $database = new Database();
+                    $conn = $database->getConnection();
+                    $stmt = $conn->prepare('SELECT voucher_id FROM voucher WHERE code = ? ORDER BY voucher_id DESC LIMIT 1');
+                    $stmt->execute([$_POST['code']]);
+                    $voucherData = $stmt->fetch(PDO::FETCH_ASSOC);
+                    
+                    // Log voucher creation only if current user is admin
+                    if (isset($_SESSION['user']) && $_SESSION['user']->role === 'admin' && $voucherData) {
+                        ActivityLogger::logVoucherCreate((int)$voucherData['voucher_id'], $_POST['code']);
+                    }
+                    
                     $_SESSION['success_message'] = "Voucher registered successfully!";
                     
                     // Check if registration is from admin panel
@@ -209,9 +222,41 @@ class VoucherController
                     $isRedeemable
                 );
 
+                // Get old values before update for logging
+                $database = new Database();
+                $voucherRepository = new VoucherRepository($database);
+                $oldVoucher = $voucherRepository->getVoucherById((int)$_POST['voucher_id']);
+                $oldValues = $oldVoucher ? [
+                    'code' => $oldVoucher['code'] ?? '',
+                    'description' => $oldVoucher['description'] ?? '',
+                    'type' => $oldVoucher['type'] ?? '',
+                    'discount_value' => $oldVoucher['discount_value'] ?? '',
+                    'min_spend' => $oldVoucher['min_spend'] ?? 0,
+                    'max_discount' => $oldVoucher['max_discount'] ?? null,
+                    'start_date' => $oldVoucher['start_date'] ?? '',
+                    'end_date' => $oldVoucher['end_date'] ?? '',
+                    'is_redeemable' => $oldVoucher['is_redeemable'] ?? false
+                ] : null;
+
                 $result = $this->voucherService->updateVoucher($voucherDTO);
 
                 if ($result) {
+                    // Log voucher update only if current user is admin
+                    if (isset($_SESSION['user']) && $_SESSION['user']->role === 'admin' && $oldValues) {
+                        $newValues = [
+                            'code' => $_POST['code'],
+                            'description' => $_POST['description'] ?? '',
+                            'type' => $_POST['type'],
+                            'discount_value' => $_POST['discount_value'],
+                            'min_spend' => $_POST['min_spend'] ?? 0,
+                            'max_discount' => $_POST['max_discount'] ?? null,
+                            'start_date' => $_POST['start_date'],
+                            'end_date' => $_POST['end_date'],
+                            'is_redeemable' => $isRedeemable
+                        ];
+                        ActivityLogger::logVoucherUpdate((int)$_POST['voucher_id'], $_POST['code'], $oldValues, $newValues);
+                    }
+                    
                     $_SESSION['success_message'] = "Voucher updated successfully!";
                     header('Location: ../controller/VoucherController.php?action=showAll');
                     exit;
@@ -249,9 +294,21 @@ class VoucherController
                     throw new Exception("Invalid status value");
                 }
 
+                // Get old status and voucher info before update for logging
+                $database = new Database();
+                $voucherRepository = new VoucherRepository($database);
+                $voucher = $voucherRepository->getVoucherById($voucherId);
+                $oldStatus = $voucher ? ($voucher['status'] ?? 'active') : 'active';
+                $code = $voucher ? ($voucher['code'] ?? 'Unknown') : 'Unknown';
+
                 $result = $this->voucherService->updateVoucherStatus($voucherId, $status);
 
                 if ($result) {
+                    // Log status change only if current user is admin and status actually changed
+                    if (isset($_SESSION['user']) && $_SESSION['user']->role === 'admin' && $oldStatus !== $status) {
+                        ActivityLogger::logVoucherStatusChange($voucherId, $code, $oldStatus, $status);
+                    }
+                    
                     $statusLabels = [
                         'active' => 'activated',
                         'inactive' => 'set to inactive',
@@ -284,9 +341,20 @@ class VoucherController
 
                 $voucherId = (int)$_POST['voucher_id'];
 
+                // Get voucher info before delete for logging
+                $database = new Database();
+                $voucherRepository = new VoucherRepository($database);
+                $voucher = $voucherRepository->getVoucherById($voucherId);
+                $code = $voucher ? ($voucher['code'] ?? 'Unknown') : 'Unknown';
+
                 $result = $this->voucherService->deleteVoucher($voucherId);
 
                 if ($result) {
+                    // Log voucher deletion only if current user is admin
+                    if (isset($_SESSION['user']) && $_SESSION['user']->role === 'admin') {
+                        ActivityLogger::logVoucherDelete($voucherId, $code);
+                    }
+                    
                     $_SESSION['success_message'] = "Voucher deleted successfully!";
                 } else {
                     throw new Exception("Failed to delete voucher. Voucher may not exist.");
@@ -317,9 +385,30 @@ class VoucherController
                     $voucherIds = [$voucherIds];
                 }
 
+                // Get voucher info before delete for logging
+                $database = new Database();
+                $voucherRepository = new VoucherRepository($database);
+                $vouchersToDelete = [];
+                foreach ($voucherIds as $vid) {
+                    $voucher = $voucherRepository->getVoucherById((int)$vid);
+                    if ($voucher) {
+                        $vouchersToDelete[] = [
+                            'voucher_id' => (int)$vid,
+                            'code' => $voucher['code'] ?? 'Unknown'
+                        ];
+                    }
+                }
+
                 $result = $this->voucherService->bulkDeleteVouchers($voucherIds);
 
                 if ($result['success']) {
+                    // Log each voucher deletion only if current user is admin
+                    if (isset($_SESSION['user']) && $_SESSION['user']->role === 'admin') {
+                        foreach ($vouchersToDelete as $voucher) {
+                            ActivityLogger::logVoucherDelete($voucher['voucher_id'], $voucher['code']);
+                        }
+                    }
+                    
                     $_SESSION['success_message'] = $result['message'];
                 } else {
                     throw new Exception($result['message']);
@@ -353,11 +442,22 @@ class VoucherController
                 $assignmentType = $_POST['assignment_type']; // 'all' or 'specific'
                 $assignedBy = isset($_SESSION['user']->user_id) ? (int)$_SESSION['user']->user_id : null;
 
+                // Get voucher code for logging
+                $database = new Database();
+                $voucherRepository = new VoucherRepository($database);
+                $voucher = $voucherRepository->getVoucherById($voucherId);
+                $code = $voucher ? ($voucher['code'] ?? 'Unknown') : 'Unknown';
+
                 if ($assignmentType === 'all') {
                     // Assign to all active members
                     $result = $this->voucherService->assignVoucherToAllMembers($voucherId, $assignedBy);
                     
                     if ($result['success']) {
+                        // Log voucher assignment only if current user is admin
+                        if (isset($_SESSION['user']) && $_SESSION['user']->role === 'admin') {
+                            ActivityLogger::logVoucherAssign($voucherId, $code, 'all');
+                        }
+                        
                         $_SESSION['success_message'] = $result['message'];
                     } else {
                         throw new Exception($result['message']);
@@ -376,6 +476,11 @@ class VoucherController
                     $result = $this->voucherService->assignVoucherToSpecificMembers($voucherId, $memberIds, $assignedBy);
                     
                     if ($result['success']) {
+                        // Log voucher assignment only if current user is admin
+                        if (isset($_SESSION['user']) && $_SESSION['user']->role === 'admin') {
+                            ActivityLogger::logVoucherAssign($voucherId, $code, 'specific', count($memberIds));
+                        }
+                        
                         $_SESSION['success_message'] = $result['message'];
                     } else {
                         throw new Exception($result['message']);
@@ -526,6 +631,13 @@ class VoucherController
                 
                 $vouchers = $_SESSION['bulk_import_vouchers'];
                 $result = $this->voucherService->bulkImportVouchers($vouchers);
+                
+                // Log bulk import only if current user is admin
+                if (isset($_SESSION['user']) && $_SESSION['user']->role === 'admin' && $result['success']) {
+                    $importedCount = $result['imported_count'] ?? 0;
+                    $totalCount = count($vouchers);
+                    ActivityLogger::logVoucherBulkImport($importedCount, $totalCount);
+                }
                 
                 // Clear session data
                 unset($_SESSION['bulk_import_vouchers']);

@@ -1076,7 +1076,6 @@ function getProfilePhotoUrl($photoPath, $imageBasePath)
                 </div>
 
                 <div class="filter-actions">
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
                     <a href="MemberController.php?action=showAll" class="btn btn-secondary"><i class="fas fa-redo"></i> Reset</a>
                 </div>
             </form>

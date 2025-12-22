@@ -23,6 +23,7 @@ $isFramed = isset($_GET['framed']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) 
 
 require_once __DIR__ . '/../../../helpers.php';
 require_once __DIR__ . '/../../database/connection.php';
+require_once __DIR__ . '/../../helpers/ActivityLogger.php';
 
 // Base paths
 $currentFileDir = __DIR__;
@@ -74,6 +75,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				}
 			}
 
+			// Get old values for logging
+			$oldStmt = $conn->prepare('SELECT p.product_name, p.category, p.description, pr.cost, pr.original_price, pr.selling_price 
+				FROM product p 
+				LEFT JOIN product_price pr ON p.product_id = pr.product_id 
+				WHERE p.product_id = :id');
+			$oldStmt->execute([':id' => $productId]);
+			$oldProduct = $oldStmt->fetch(PDO::FETCH_ASSOC);
+			$oldValues = $oldProduct ? [
+				'product_name' => $oldProduct['product_name'] ?? '',
+				'category' => $oldProduct['category'] ?? '',
+				'description' => $oldProduct['description'] ?? '',
+				'cost' => $oldProduct['cost'] ?? '',
+				'original_price' => $oldProduct['original_price'] ?? '',
+				'selling_price' => $oldProduct['selling_price'] ?? ''
+			] : null;
+
 			$conn->beginTransaction();
 
 			// Update product
@@ -95,6 +112,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			]);
 
 			$conn->commit();
+			
+			// Log product update
+			if ($oldValues) {
+				$newValues = [
+					'product_name' => $name,
+					'category' => $category,
+					'description' => $description,
+					'cost' => $cost,
+					'original_price' => $originalPrice,
+					'selling_price' => $sellingPrice
+				];
+				ActivityLogger::logProductUpdate($productId, $name, $oldValues, $newValues);
+			}
+			
 			$_SESSION['success_message'] = 'Product updated successfully.';
 		} catch (Exception $e) {
 			if ($conn->inTransaction()) {
@@ -155,6 +186,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			}
 
 			$conn->commit();
+			
+			// Log product creation
+			ActivityLogger::logProductCreate($productId, $name);
+			
 			$_SESSION['success_message'] = 'Product created successfully.';
 		} catch (Exception $e) {
 			if ($conn->inTransaction()) {
@@ -174,8 +209,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				throw new Exception('Invalid product id.');
 			}
 
+			// Get product name before delete for logging
+			$nameStmt = $conn->prepare('SELECT product_name FROM product WHERE product_id = :id');
+			$nameStmt->execute([':id' => $productId]);
+			$product = $nameStmt->fetch(PDO::FETCH_ASSOC);
+			$productName = $product ? ($product['product_name'] ?? 'Unknown') : 'Unknown';
+
 			$stmt = $conn->prepare('DELETE FROM product WHERE product_id = :id');
 			$stmt->execute([':id' => $productId]);
+
+			// Log product deletion
+			ActivityLogger::logProductDelete($productId, $productName);
 
 			$_SESSION['success_message'] = 'Product deleted.';
 		} catch (Exception $e) {

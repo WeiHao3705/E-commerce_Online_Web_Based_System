@@ -275,18 +275,30 @@ class ChatRepository
     {
         try {
             // First, try to find an existing open chat room for this member
-            $sql = "SELECT chat_room_id FROM chat_room WHERE member_id = ? AND status = 'open' ORDER BY created_at DESC LIMIT 1";
+            $sql = "SELECT chat_room_id, admin_id FROM chat_room WHERE member_id = ? AND status = 'open' ORDER BY created_at DESC LIMIT 1";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$memberId]);
             $existingRoom = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($existingRoom) {
                 $chatRoomId = $existingRoom['chat_room_id'];
-                // If admin ID is provided and chat room is not assigned, assign it
+                // If admin ID is provided, assign the chat room to this admin
+                // Reassign if currently unassigned (NULL) or assigned to system user
                 if ($adminId) {
-                    $updateSql = "UPDATE chat_room SET admin_id = ? WHERE chat_room_id = ? AND admin_id IS NULL";
-                    $updateStmt = $this->db->prepare($updateSql);
-                    $updateStmt->execute([$adminId, $chatRoomId]);
+                    // Get system user ID to check if current admin_id is system
+                    $systemUserSql = "SELECT user_id FROM users WHERE username = 'system' AND role = 'admin' LIMIT 1";
+                    $systemUserStmt = $this->db->prepare($systemUserSql);
+                    $systemUserStmt->execute();
+                    $systemUser = $systemUserStmt->fetch(PDO::FETCH_ASSOC);
+                    $systemUserId = $systemUser ? (int)$systemUser['user_id'] : null;
+                    
+                    // Assign to admin if unassigned or assigned to system
+                    $currentAdminId = $existingRoom['admin_id'];
+                    if ($currentAdminId === null || ($systemUserId && $currentAdminId == $systemUserId)) {
+                        $updateSql = "UPDATE chat_room SET admin_id = ? WHERE chat_room_id = ?";
+                        $updateStmt = $this->db->prepare($updateSql);
+                        $updateStmt->execute([$adminId, $chatRoomId]);
+                    }
                 }
                 return $chatRoomId;
             }

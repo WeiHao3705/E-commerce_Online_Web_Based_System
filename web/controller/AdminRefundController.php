@@ -8,6 +8,7 @@ if (!isset($_SESSION['user']) || $_SESSION['user']->role !== 'admin') {
 }
 
 require_once __DIR__ . '/../database/connection.php';
+require_once __DIR__ . '/../helpers/ActivityLogger.php';
 
 header('Content-Type: application/json');
 
@@ -64,6 +65,9 @@ try {
         $paymentStmt = $conn->prepare($paymentQuery);
         $paymentStmt->execute([':payment_status' => $paymentStatus, ':order_id' => $orderId]);
         
+        // Log refund approval
+        ActivityLogger::logOrderRefundApprove($orderId, $adminNote);
+        
     } else {
         // Reject refund - return to paid status
         $newStatus = 'paid';
@@ -74,6 +78,9 @@ try {
         $updateQuery = "UPDATE orders SET order_status = :status, updated_at = CURRENT_TIMESTAMP WHERE order_id = :order_id";
         $updateStmt = $conn->prepare($updateQuery);
         $updateStmt->execute([':status' => $newStatus, ':order_id' => $orderId]);
+        
+        // Log refund rejection
+        ActivityLogger::logOrderRefundReject($orderId, $adminNote);
     }
     
     // Add admin note if provided

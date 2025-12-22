@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../repository/InventoryRepository.php';
 require_once __DIR__ . '/../database/connection.php';
+require_once __DIR__ . '/../helpers/ActivityLogger.php';
 
 class InventoryService {
     private $repo;
@@ -98,6 +99,17 @@ class InventoryService {
         try {
             $this->repo->upsertInventory($productId, $variantId, $size, (int)$quantity);
             $this->conn->commit();
+            
+            // Get stock after restocking for logging
+            $stockAfter = $this->getProductTotalStock($productId);
+            
+            // Log restock action only if current user is admin
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            if (isset($_SESSION['user']) && $_SESSION['user']->role === 'admin') {
+                ActivityLogger::logInventoryRestock($productId, $variantId, $size, (int)$quantity, $stockBefore, $stockAfter);
+            }
             
             // If product or variant was out of stock before restocking, notify wishlist members
             // Do this AFTER commit to ensure data is saved
