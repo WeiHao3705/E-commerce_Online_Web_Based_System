@@ -17,7 +17,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData(filterForm);
         const params = new URLSearchParams(formData);
         
-        // Add action parameter
+        // Create separate params for URL (without action)
+        const urlParams = new URLSearchParams(formData);
+        
+        // Add action parameter only for AJAX request
         params.append('action', 'getFilteredProducts');
 
         // Show loading state
@@ -34,8 +37,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.success) {
                     // Update products grid
                     updateProductsGrid(data.grouped);
-                    // Update URL without reloading
-                    window.history.pushState({}, '', 'ProductPage.php?' + params.toString());
+                    // Update URL without reloading (without action parameter)
+                    const urlString = urlParams.toString() ? 'ProductPage.php?' + urlParams.toString() : 'ProductPage.php';
+                    window.history.pushState({}, '', urlString);
                 } else {
                     console.error('Filter error:', data.error);
                     alert('Error applying filters: ' + data.error);
