@@ -107,4 +107,128 @@
             }
         });
     });
+
+    // Auto-submit filter form when select values change
+    var filterForm = document.getElementById('filterForm');
+    if (filterForm) {
+        var selects = filterForm.querySelectorAll('select');
+        selects.forEach(function (select) {
+            select.addEventListener('change', function () {
+                filterForm.submit();
+            });
+        });
+
+        // Submit on search input after a brief delay (debounce)
+        var searchInput = document.getElementById('filterSearch');
+        var searchTimeout = null;
+        if (searchInput) {
+            searchInput.addEventListener('keyup', function (event) {
+                // Submit immediately on Enter key
+                if (event.key === 'Enter') {
+                    filterForm.submit();
+                    return;
+                }
+                // Debounce for other keys
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(function () {
+                    filterForm.submit();
+                }, 500);
+            });
+        }
+    }
+
+    // Batch deletion functionality
+    var selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    var productCheckboxes = document.querySelectorAll('.product-checkbox');
+    var bulkActionsSection = document.getElementById('bulkActionsSection');
+    var selectedCountSpan = document.getElementById('selectedCount');
+    var bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+    var clearSelectionBtn = document.getElementById('clearSelectionBtn');
+
+    function updateBulkActionsUI() {
+        var checkedBoxes = document.querySelectorAll('.product-checkbox:checked');
+        var count = checkedBoxes.length;
+        
+        if (selectedCountSpan) {
+            selectedCountSpan.textContent = count;
+        }
+        
+        if (bulkActionsSection) {
+            bulkActionsSection.style.display = count > 0 ? 'flex' : 'none';
+        }
+        
+        // Update select all checkbox state
+        if (selectAllCheckbox && productCheckboxes.length > 0) {
+            selectAllCheckbox.checked = count === productCheckboxes.length;
+            selectAllCheckbox.indeterminate = count > 0 && count < productCheckboxes.length;
+        }
+    }
+
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function () {
+            productCheckboxes.forEach(function (cb) {
+                cb.checked = selectAllCheckbox.checked;
+            });
+            updateBulkActionsUI();
+        });
+    }
+
+    productCheckboxes.forEach(function (cb) {
+        cb.addEventListener('change', updateBulkActionsUI);
+    });
+
+    if (clearSelectionBtn) {
+        clearSelectionBtn.addEventListener('click', function () {
+            productCheckboxes.forEach(function (cb) {
+                cb.checked = false;
+            });
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+            }
+            updateBulkActionsUI();
+        });
+    }
+
+    if (bulkDeleteBtn) {
+        bulkDeleteBtn.addEventListener('click', function () {
+            var checkedBoxes = document.querySelectorAll('.product-checkbox:checked');
+            if (checkedBoxes.length === 0) {
+                alert('Please select at least one product to delete.');
+                return;
+            }
+
+            var productNames = [];
+            checkedBoxes.forEach(function (cb) {
+                productNames.push(cb.getAttribute('data-product-name'));
+            });
+
+            var confirmMsg = 'Are you sure you want to delete ' + checkedBoxes.length + ' product(s)?\n\n' + productNames.join(', ') + '\n\nThis action cannot be undone.';
+            if (!confirm(confirmMsg)) {
+                return;
+            }
+
+            // Create a form and submit for batch deletion
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = 'AdminProduct.php';
+
+            var actionInput = document.createElement('input');
+            actionInput.type = 'hidden';
+            actionInput.name = 'action';
+            actionInput.value = 'batch_delete';
+            form.appendChild(actionInput);
+
+            checkedBoxes.forEach(function (cb) {
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'product_ids[]';
+                input.value = cb.value;
+                form.appendChild(input);
+            });
+
+            document.body.appendChild(form);
+            form.submit();
+        });
+    }
 })();

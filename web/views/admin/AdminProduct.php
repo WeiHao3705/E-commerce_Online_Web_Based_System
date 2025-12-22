@@ -255,6 +255,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		$redirect();
 	}
+
+	if ($action === 'batch_delete') {
+		$productIds = isset($_POST['product_ids']) ? $_POST['product_ids'] : [];
+
+		try {
+			if (empty($productIds)) {
+				throw new Exception('No products selected for deletion.');
+			}
+
+			$conn->beginTransaction();
+
+			$deletedCount = 0;
+			foreach ($productIds as $productId) {
+				$productId = (int)$productId;
+				if ($productId <= 0) continue;
+
+				// Delete related records in correct order (child tables first)
+				$stmt = $conn->prepare('DELETE FROM inventory WHERE variant_id IN (SELECT variant_id FROM product_variant WHERE product_id = :id)');
+				$stmt->execute([':id' => $productId]);
+
+				$stmt = $conn->prepare('DELETE FROM inventory WHERE product_id = :id');
+				$stmt->execute([':id' => $productId]);
+
+				$stmt = $conn->prepare('DELETE FROM product_image WHERE variant_id IN (SELECT variant_id FROM product_variant WHERE product_id = :id)');
+				$stmt->execute([':id' => $productId]);
+
+				$stmt = $conn->prepare('DELETE FROM product_image WHERE product_id = :id');
+				$stmt->execute([':id' => $productId]);
+
+				$stmt = $conn->prepare('DELETE FROM cart_item WHERE product_id = :id');
+				$stmt->execute([':id' => $productId]);
+
+				$stmt = $conn->prepare('DELETE FROM product_variant WHERE product_id = :id');
+				$stmt->execute([':id' => $productId]);
+
+				$stmt = $conn->prepare('DELETE FROM product_price WHERE product_id = :id');
+				$stmt->execute([':id' => $productId]);
+
+				$stmt = $conn->prepare('DELETE FROM product WHERE product_id = :id');
+				$stmt->execute([':id' => $productId]);
+
+				$deletedCount++;
+			}
+
+			$conn->commit();
+			$_SESSION['success_message'] = $deletedCount . ' product(s) deleted successfully.';
+		} catch (Exception $e) {
+			if ($conn->inTransaction()) {
+				$conn->rollBack();
+			}
+			$_SESSION['error_message'] = $e->getMessage();
+		}
+
+		$redirect();
+	}
 }
 
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
@@ -369,9 +424,9 @@ $pageTitle = 'Admin Products';
 <body>
 	<div class="page-container">
 		<div class="page-header">
-			<div>
-				<p style="margin:0;color:#64748b;font-size:13px;font-weight:600;">Backoffice</p>
-				<h1 class="page-title">Products</h1>
+			<div style="display:flex;align-items:center;gap:12px;">
+				<span class="material-symbols-outlined" style="font-size:32px;color:#FF523B;">inventory_2</span>
+				<h1 class="page-title">Product Management</h1>
 			</div>
 			<div style="display:flex;gap:10px;align-items:center;">
 			<a href="AddProduct.php" class="btn btn-primary">
@@ -393,47 +448,67 @@ $pageTitle = 'Admin Products';
 		<?php endif; ?>
 
 		<div class="content-card">
-			<div class="toolbar">
-				<form method="GET" action="AdminProduct.php" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-					<input type="text" name="search" class="search-input" placeholder="Search by name or category" value="<?php echo html_escape($search); ?>">
-					<select name="category" class="select-input">
-						<option value="">All categories</option>
-						<?php foreach ($categories as $cat): ?>
-							<option value="<?php echo html_escape($cat); ?>" <?php echo $filterCategory === $cat ? 'selected' : ''; ?>><?php echo html_escape($cat); ?></option>
-						<?php endforeach; ?>
-					</select>
-					<select name="sortBy" class="select-input">
-						<option value="id" <?php echo $sortBy === 'id' ? 'selected' : ''; ?>>Newest</option>
-						<option value="name" <?php echo $sortBy === 'name' ? 'selected' : ''; ?>>Name</option>
-						<option value="category" <?php echo $sortBy === 'category' ? 'selected' : ''; ?>>Category</option>
-						<option value="price" <?php echo $sortBy === 'price' ? 'selected' : ''; ?>>Price</option>
-						<option value="variants" <?php echo $sortBy === 'variants' ? 'selected' : ''; ?>>Variants</option>
-						<option value="stock" <?php echo $sortBy === 'stock' ? 'selected' : ''; ?>>Stock</option>
-					</select>
-					<select name="sortOrder" class="select-input">
-						<option value="DESC" <?php echo $sortOrder === 'DESC' ? 'selected' : ''; ?>>Desc</option>
-						<option value="ASC" <?php echo $sortOrder === 'ASC' ? 'selected' : ''; ?>>Asc</option>
-					</select>
-					<select name="limit" class="select-input">
-						<?php foreach ([10, 20, 50] as $opt): ?>
-							<option value="<?php echo $opt; ?>" <?php echo $limit === $opt ? 'selected' : ''; ?>><?php echo $opt; ?>/page</option>
-						<?php endforeach; ?>
-					</select>
-					<button type="submit" class="btn btn-secondary">
-						<span class="material-symbols-outlined">search</span>
-						Filter
-					</button>
-					<?php if ($search || $filterCategory): ?>
-						<a class="btn btn-ghost" href="AdminProduct.php">Clear</a>
-					<?php endif; ?>
+			<!-- Filters Section -->
+			<section class="filters-section">
+				<form method="GET" action="AdminProduct.php" class="filters-form" id="filterForm">
+					<div class="filter-group">
+						<label><i class="fas fa-search"></i> Search</label>
+						<input type="text" name="search" id="filterSearch" placeholder="Product name, category..." value="<?php echo html_escape($search); ?>">
+					</div>
+
+					<div class="filter-group">
+						<label><i class="fas fa-filter"></i> Category</label>
+						<select name="category" id="filterCategory">
+							<option value="">All Categories</option>
+							<?php foreach ($categories as $cat): ?>
+								<option value="<?php echo html_escape($cat); ?>" <?php echo $filterCategory === $cat ? 'selected' : ''; ?>><?php echo html_escape($cat); ?></option>
+							<?php endforeach; ?>
+						</select>
+					</div>
+
+					<div class="filter-group">
+						<label><i class="fas fa-sort"></i> Sort By</label>
+						<select name="sortBy" id="filterSortBy">
+							<option value="id" <?php echo $sortBy === 'id' ? 'selected' : ''; ?>>Date Added</option>
+							<option value="name" <?php echo $sortBy === 'name' ? 'selected' : ''; ?>>Name</option>
+							<option value="category" <?php echo $sortBy === 'category' ? 'selected' : ''; ?>>Category</option>
+							<option value="price" <?php echo $sortBy === 'price' ? 'selected' : ''; ?>>Price</option>
+							<option value="variants" <?php echo $sortBy === 'variants' ? 'selected' : ''; ?>>Variants</option>
+							<option value="stock" <?php echo $sortBy === 'stock' ? 'selected' : ''; ?>>Stock</option>
+						</select>
+					</div>
+
+					<div class="filter-group">
+						<label><i class="fas fa-arrow-up"></i> Order</label>
+						<select name="sortOrder" id="filterSortOrder">
+							<option value="DESC" <?php echo $sortOrder === 'DESC' ? 'selected' : ''; ?>>Descending</option>
+							<option value="ASC" <?php echo $sortOrder === 'ASC' ? 'selected' : ''; ?>>Ascending</option>
+						</select>
+					</div>
+
+					<div class="filter-actions">
+						<a href="AdminProduct.php" class="btn btn-secondary"><i class="fas fa-redo"></i> Reset</a>
+					</div>
 				</form>
+			</section>
+
+			<!-- Bulk Actions Section -->
+			<div class="bulk-actions-section" style="display: none;" id="bulkActionsSection">
+				<button type="button" class="btn btn-danger" id="bulkDeleteBtn">
+					<span class="material-symbols-outlined">delete</span>
+					<span>Delete Selected (<span id="selectedCount">0</span>)</span>
+				</button>
+				<button type="button" class="btn btn-ghost" id="clearSelectionBtn">
+					<span class="material-symbols-outlined">close</span>
+					<span>Clear Selection</span>
+				</button>
 			</div>
 
 			<section class="table-container">
 				<table class="orders-table">
 					<thead>
 						<tr>
-							<th>ID</th>
+							<th class="col-checkbox"><input type="checkbox" id="selectAllCheckbox" title="Select all"></th>
 							<th>Product</th>
 							<th>Category</th>
 							<th>Price</th>
@@ -462,7 +537,9 @@ $pageTitle = 'Admin Products';
 									$imageUrl = $product['image_path'] !== '' ? $product['image_path'] : $webBasePath . 'images/products/placeholder.png';
 								?>
 								<tr>
-									<td><?php echo (int)$product['product_id']; ?></td>
+									<td class="col-checkbox">
+										<input type="checkbox" class="product-checkbox" value="<?php echo (int)$product['product_id']; ?>" data-product-name="<?php echo html_escape($product['product_name']); ?>">
+									</td>
 									<td>
 										<div class="product-cell">
 											<!-- <img src="<?php echo html_escape($imageUrl); ?>" alt="Image" class="product-thumb"> -->
