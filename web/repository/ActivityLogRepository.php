@@ -87,9 +87,11 @@ class ActivityLogRepository {
         }
 
         if ($adminId !== null) {
-            $sql .= " AND (al.admin_id = :admin_id OR (al.entity_id = :admin_id_entity AND al.entity_type = 'admin'))";
+            // Filter ONLY by the admin who performed the action.
+            // Previously this also included logs where the admin was the target entity,
+            // which caused other admins' actions to appear in per-admin reports.
+            $sql .= " AND al.admin_id = :admin_id";
             $params[':admin_id'] = (int)$adminId;
-            $params[':admin_id_entity'] = (int)$adminId;
         }
 
         if (!empty($actionType)) {
@@ -146,9 +148,10 @@ class ActivityLogRepository {
         }
 
         if ($adminId !== null) {
-            $sql .= " AND (al.admin_id = :admin_id OR (al.entity_id = :admin_id_entity AND al.entity_type = 'admin'))";
+            // Keep count logic consistent with getActivityLogs: only include
+            // logs where this admin performed the action.
+            $sql .= " AND al.admin_id = :admin_id";
             $params[':admin_id'] = (int)$adminId;
-            $params[':admin_id_entity'] = (int)$adminId;
         }
 
         if (!empty($actionType)) {

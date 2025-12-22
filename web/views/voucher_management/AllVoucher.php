@@ -716,7 +716,7 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
                                         <?php
                                         $isRedeemable = isset($voucher['is_redeemable']) ? (bool)$voucher['is_redeemable'] : true;
                                         $redeemableClass = $isRedeemable ? 'status-badge status-active' : 'status-badge status-pending';
-                                        $redeemableText = $isRedeemable ? '<i class="fas fa-check"></i> Redeemable' : '<i class="fas fa-lock"></i> Admin Only';
+                                        $redeemableText = $isRedeemable ? '<i class="fas fa-check"></i> Redeemable' : '<i class="fas fa-lock"></i> Locked';
                                         ?>
                                         <span class="<?php echo $redeemableClass; ?>" style="display: inline-block; font-size: 0.75rem; padding: 0.15rem 0.5rem;"><?php echo $redeemableText; ?></span>
                                     </td>
@@ -1064,7 +1064,7 @@ function formatDiscountValue($type, $discountValue, $maxDiscount = null)
             const endDate = voucher.end_date ? new Date(voucher.end_date).toISOString().split('T')[0] : '-';
             const minSpend = voucher.min_spend && voucher.min_spend > 0 ? 'RM' + parseFloat(voucher.min_spend).toFixed(2) : 'None';
             const isRedeemable = voucher.is_redeemable !== undefined ? (voucher.is_redeemable ? true : false) : true;
-            const redeemableText = isRedeemable ? '<i class="fas fa-check"></i> Redeemable' : '<i class="fas fa-lock"></i> Admin Only';
+            const redeemableText = isRedeemable ? '<i class="fas fa-check"></i> Redeemable' : '<i class="fas fa-lock"></i> Locked';
             const redeemableClass = isRedeemable ? 'status-active' : 'status-pending';
             const qrUrl = `VoucherController.php?action=showVoucherQr&voucher_id=${voucher.voucher_id}&code=${encodeURIComponent(voucher.code)}`;
             

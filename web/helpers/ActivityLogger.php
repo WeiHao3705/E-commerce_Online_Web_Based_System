@@ -19,6 +19,7 @@ class ActivityLogger {
 
     /**
      * Get current admin ID from session
+     * Only returns ID if the user is actually an admin
      */
     private static function getAdminId(): ?int
     {
@@ -27,7 +28,11 @@ class ActivityLogger {
         }
         
         if (isset($_SESSION['user']) && isset($_SESSION['user']->user_id)) {
-            return (int)$_SESSION['user']->user_id;
+            // Only return ID if user is an admin
+            $role = $_SESSION['user']->role ?? (is_object($_SESSION['user']) ? $_SESSION['user']->role : '');
+            if ($role === 'admin') {
+                return (int)$_SESSION['user']->user_id;
+            }
         }
         
         return null;
@@ -191,6 +196,28 @@ class ActivityLogger {
         );
     }
 
+    public static function logMemberUpdate(int $memberId, string $username, ?array $oldValues, ?array $newValues): bool
+    {
+        return self::logAction(
+            'member_update',
+            'member',
+            "Updated member: $username",
+            $memberId,
+            $oldValues,
+            $newValues
+        );
+    }
+
+    public static function logMemberDelete(int $memberId, string $username): bool
+    {
+        return self::logAction(
+            'member_delete',
+            'member',
+            "Deleted member: $username",
+            $memberId
+        );
+    }
+
     public static function logOrderStatusChange(int $orderId, string $oldStatus, string $newStatus): bool
     {
         return self::logAction(
@@ -200,6 +227,174 @@ class ActivityLogger {
             $orderId,
             ['order_status' => $oldStatus],
             ['order_status' => $newStatus]
+        );
+    }
+
+    // Product management logging methods
+    public static function logProductCreate(int $productId, string $productName): bool
+    {
+        return self::logAction(
+            'product_create',
+            'product',
+            "Created new product: $productName",
+            $productId
+        );
+    }
+
+    public static function logProductUpdate(int $productId, string $productName, ?array $oldValues, ?array $newValues): bool
+    {
+        return self::logAction(
+            'product_update',
+            'product',
+            "Updated product: $productName",
+            $productId,
+            $oldValues,
+            $newValues
+        );
+    }
+
+    public static function logProductDelete(int $productId, string $productName): bool
+    {
+        return self::logAction(
+            'product_delete',
+            'product',
+            "Deleted product: $productName",
+            $productId
+        );
+    }
+
+    // Variant management logging methods
+    public static function logVariantCreate(int $variantId, int $productId, string $color): bool
+    {
+        return self::logAction(
+            'variant_create',
+            'variant',
+            "Created new variant: Color $color for product ID $productId",
+            $variantId,
+            null,
+            ['product_id' => $productId, 'color' => $color]
+        );
+    }
+
+    // Voucher management logging methods
+    public static function logVoucherCreate(int $voucherId, string $code): bool
+    {
+        return self::logAction(
+            'voucher_create',
+            'voucher',
+            "Created new voucher: $code",
+            $voucherId
+        );
+    }
+
+    public static function logVoucherUpdate(int $voucherId, string $code, ?array $oldValues, ?array $newValues): bool
+    {
+        return self::logAction(
+            'voucher_update',
+            'voucher',
+            "Updated voucher: $code",
+            $voucherId,
+            $oldValues,
+            $newValues
+        );
+    }
+
+    public static function logVoucherDelete(int $voucherId, string $code): bool
+    {
+        return self::logAction(
+            'voucher_delete',
+            'voucher',
+            "Deleted voucher: $code",
+            $voucherId
+        );
+    }
+
+    public static function logVoucherStatusChange(int $voucherId, string $code, string $oldStatus, string $newStatus): bool
+    {
+        return self::logAction(
+            'voucher_status_update',
+            'voucher',
+            "Changed voucher status: $code from $oldStatus to $newStatus",
+            $voucherId,
+            ['status' => $oldStatus],
+            ['status' => $newStatus]
+        );
+    }
+
+    public static function logVoucherAssign(int $voucherId, string $code, string $assignmentType, int $memberCount = 0): bool
+    {
+        $description = $assignmentType === 'all' 
+            ? "Assigned voucher $code to all active members"
+            : "Assigned voucher $code to $memberCount member(s)";
+        
+        return self::logAction(
+            'voucher_assign',
+            'voucher',
+            $description,
+            $voucherId,
+            null,
+            ['assignment_type' => $assignmentType, 'member_count' => $memberCount]
+        );
+    }
+
+    public static function logVoucherBulkImport(int $importedCount, int $totalCount): bool
+    {
+        return self::logAction(
+            'voucher_bulk_import',
+            'voucher',
+            "Bulk imported $importedCount out of $totalCount vouchers",
+            null,
+            null,
+            ['imported_count' => $importedCount, 'total_count' => $totalCount]
+        );
+    }
+
+    // Order management logging methods
+    public static function logOrderRefundApprove(int $orderId, string $reason = ''): bool
+    {
+        $description = "Approved refund for Order #$orderId";
+        if ($reason) {
+            $description .= ": $reason";
+        }
+        return self::logAction(
+            'order_refund_approve',
+            'order',
+            $description,
+            $orderId,
+            ['order_status' => 'refund_requested'],
+            ['order_status' => 'refunded', 'payment_status' => 'refunded']
+        );
+    }
+
+    public static function logOrderRefundReject(int $orderId, string $reason = ''): bool
+    {
+        $description = "Rejected refund for Order #$orderId";
+        if ($reason) {
+            $description .= ": $reason";
+        }
+        return self::logAction(
+            'order_refund_reject',
+            'order',
+            $description,
+            $orderId,
+            ['order_status' => 'refund_requested'],
+            ['order_status' => 'paid']
+        );
+    }
+
+    // Inventory management logging methods
+    public static function logInventoryRestock(int $productId, ?int $variantId, string $size, int $quantity, int $stockBefore, int $stockAfter): bool
+    {
+        $variantInfo = $variantId ? " (Variant ID: $variantId)" : "";
+        $description = "Restocked product ID $productId$variantInfo, Size: $size, Quantity: +$quantity (Stock: $stockBefore → $stockAfter)";
+        
+        return self::logAction(
+            'inventory_restock',
+            'inventory',
+            $description,
+            $productId,
+            ['stock_before' => $stockBefore, 'variant_id' => $variantId, 'size' => $size],
+            ['stock_after' => $stockAfter, 'quantity_added' => $quantity, 'variant_id' => $variantId, 'size' => $size]
         );
     }
 }
