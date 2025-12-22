@@ -38,8 +38,9 @@ try {
     }
     
     // Check if order is eligible for refund (only delivered orders)
-    if ($order['order_status'] !== 'delivered') {
-        echo json_encode(['success' => false, 'message' => 'Only delivered orders can be refunded']);
+    $refundableStatus = ['delivered', 'paid'];
+    if (!in_array($order['order_status'], $refundableStatus)) {
+        echo json_encode(['success' => false, 'message' => 'Only delivered or paid orders can be refunded']);
         exit;
     }
     

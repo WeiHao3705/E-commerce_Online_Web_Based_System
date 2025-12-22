@@ -21,7 +21,7 @@ $statsQuery = "
         SUM(CASE WHEN order_status = 'delivered' THEN 1 ELSE 0 END) as delivered_orders,
         SUM(CASE WHEN order_status = 'canceled' THEN 1 ELSE 0 END) as canceled_orders,
         SUM(CASE WHEN order_status = 'refunded' THEN 1 ELSE 0 END) as refunded_orders,
-        SUM(total_amount) as total_revenue
+        SUM(CASE WHEN order_status NOT IN ('refunded', 'canceled') THEN total_amount ELSE 0 END) as total_revenue
     FROM orders
 ";
 $statsStmt = $conn->query($statsQuery);
@@ -30,11 +30,12 @@ $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
 // Get payment method distribution
 $paymentQuery = "
     SELECT 
-        payment_method,
+        p.payment_method,
         COUNT(*) as count,
         ROUND((COUNT(*) * 100.0 / (SELECT COUNT(*) FROM orders)), 1) as percentage
-    FROM orders
-    GROUP BY payment_method
+    FROM orders o
+    LEFT JOIN payment p ON o.order_id = p.order_id
+    GROUP BY p.payment_method
 ";
 $paymentStmt = $conn->query($paymentQuery);
 $paymentMethods = $paymentStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -43,7 +44,7 @@ $paymentMethods = $paymentStmt->fetchAll(PDO::FETCH_ASSOC);
 $revenueQuery = "
     SELECT 
         DATE_FORMAT(create_at, '%b') as month,
-        SUM(total_amount) as revenue
+        SUM(CASE WHEN order_status NOT IN ('refunded', 'canceled') THEN total_amount ELSE 0 END) as revenue
     FROM orders
     WHERE create_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
     GROUP BY YEAR(create_at), MONTH(create_at)
@@ -71,161 +72,7 @@ $pageTitle = "Order Analytics - Admin";
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: transparent;
-            color: #0f172a;
-        }
-        .page-container {
-            max-width: 100%;
-            margin: 0;
-            padding: 20px;
-        }
-        .header-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-        .btn-back {
-            background: #6b7280;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            border: none;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-        }
-        .btn-back:hover {
-            background: #4b5563;
-            transform: translateY(-2px);
-        }
-        
-        /* Statistics Cards */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .stat-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        .stat-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            color: white;
-        }
-        .stat-icon.blue { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
-        .stat-icon.orange { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
-        .stat-icon.green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-        .stat-icon.purple { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
-        .stat-info h3 {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 0.25rem;
-        }
-        .stat-info p {
-            font-size: 0.875rem;
-            color: #64748b;
-        }
-        
-        /* Charts Grid */
-        .charts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .chart-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .chart-card h2 {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: #0f172a;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .chart-card h2 i {
-            color: #FF523B;
-        }
-        .chart-container {
-            position: relative;
-            height: 320px;
-        }
-        
-        /* Insights Section */
-        .insights-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .insight-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
-        }
-        .insight-card h3 {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .insight-card .value {
-            font-size: 2rem;
-            font-weight: 700;
-            margin: 0.5rem 0;
-        }
-        .insight-card .description {
-            font-size: 0.875rem;
-            opacity: 0.9;
-        }
-        
-        @media (max-width: 768px) {
-            .charts-grid {
-                grid-template-columns: 1fr;
-            }
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="<?php echo $cssBasePath; ?>OrderAnalytics.css">
 </head>
 <body>
     <div class="page-container">
@@ -578,11 +425,11 @@ $pageTitle = "Order Analytics - Admin";
             const percentage = parseFloat(item.percentage);
             
             // Categorize payment methods
-            if (method === 'credit_card' || method === 'debit_card' || method === 'card') {
+            if (method === 'credit_card') {
                 aggregated['Card'] += percentage;
-            } else if (method === 'online-banking' || method === 'fpx' || method === 'online_banking') {
+            } else if (method === 'online-banking') {
                 aggregated['Online Banking'] += percentage;
-            } else if (method === 'e_wallet' || method === 'ewallet' || method === 'e-wallet') {
+            } else if (method === 'e-wallet') {
                 aggregated['E-Wallet'] += percentage;
             }
         });

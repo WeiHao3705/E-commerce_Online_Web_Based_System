@@ -22,9 +22,12 @@ $query = "
     SELECT o.*, 
            u.username, 
            u.email,
+           p.payment_method,
+           p.payment_status,
            COUNT(oi.order_item_id) as total_items
     FROM orders o
     LEFT JOIN users u ON o.user_id = u.user_id
+    LEFT JOIN payment p ON o.order_id = p.order_id
     LEFT JOIN order_item oi ON o.order_id = oi.order_id
     WHERE 1=1
 ";
@@ -60,14 +63,15 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // Get statistics
 $statsQuery = "
     SELECT 
-        COUNT(*) as total_orders,
-        SUM(CASE WHEN order_status = 'pending' THEN 1 ELSE 0 END) as pending_orders,
-        SUM(CASE WHEN order_status = 'paid' THEN 1 ELSE 0 END) as paid_orders,
-        SUM(CASE WHEN order_status = 'shipped' THEN 1 ELSE 0 END) as shipped_orders,
-        SUM(CASE WHEN order_status = 'delivered' THEN 1 ELSE 0 END) as delivered_orders,
-        SUM(CASE WHEN order_status = 'canceled' THEN 1 ELSE 0 END) as canceled_orders,
-        SUM(total_amount) as total_revenue
-    FROM orders
+    COUNT(*) as total_orders,
+    SUM(CASE WHEN order_status = 'pending' THEN 1 ELSE 0 END) as pending_orders,
+    SUM(CASE WHEN order_status = 'paid' THEN 1 ELSE 0 END) as paid_orders,
+    SUM(CASE WHEN order_status = 'shipped' THEN 1 ELSE 0 END) as shipped_orders,
+    SUM(CASE WHEN order_status = 'delivered' THEN 1 ELSE 0 END) as delivered_orders,
+    SUM(CASE WHEN order_status = 'canceled' THEN 1 ELSE 0 END) as canceled_orders,
+    SUM(CASE WHEN order_status = 'refunded' THEN 1 ELSE 0 END) as refunded_orders,
+    SUM(CASE WHEN order_status NOT IN ('canceled', 'refunded') THEN total_amount ELSE 0 END) as total_revenue
+FROM orders
 ";
 $statsStmt = $conn->query($statsQuery);
 $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
@@ -122,6 +126,10 @@ $pageTitle = "Manage Orders - Admin";
             <div class="stat-card">
                 <div class="stat-icon orange"><i class="fas fa-clock"></i></div>
                 <div class="stat-info">
+            <style>
+                /* Modal General Fixes */
+                
+            </style>
                     <h3><?= number_format($stats['pending_orders']) ?></h3>
                     <p>Pending Orders</p>
                 </div>
@@ -342,8 +350,53 @@ $pageTitle = "Manage Orders - Admin";
         </div>
     </div>
 
+
+    <!-- Message Modal -->
+    <div id="messageModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-info-circle"></i> Message</h2>
+                <button class="close-btn" onclick="closeMessageModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="messageModalText" style="font-size:1.1rem;"></p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeMessageModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="confirmModalTitle"><i class="fas fa-question-circle"></i> Confirm Action</h2>
+                <button class="close-btn" onclick="closeConfirmModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmModalText" style="font-size:1.1rem;"></p>
+                <div id="confirmModalInputGroup" style="display:none; margin-top:1rem;">
+                    <label for="confirmModalInput" style="font-size:0.95rem;">Reason (optional):</label>
+                    <textarea id="confirmModalInput" rows="2" style="width:100%;"></textarea>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+                <button type="button" class="btn-primary" id="confirmModalOkBtn">OK</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+    function showMessageModal(message) {
+        document.getElementById('messageModalText').textContent = message;
+        document.getElementById('messageModal').style.display = 'block';
+    }
+    function closeMessageModal() {
+        document.getElementById('messageModal').style.display = 'none';
+    }
     function viewRefundReason(orderId) {
         document.getElementById('refundReasonModal').style.display = 'block';
         
@@ -425,60 +478,92 @@ $pageTitle = "Manage Orders - Admin";
 
     // Approve refund function
     function approveRefund(orderId) {
-        if (!confirm('Are you sure you want to APPROVE this refund request? This will refund the payment to the customer.')) {
-            return;
-        }
-        
-        $.ajax({
-            url: '<?php echo $controllerBasePath; ?>AdminRefundController.php',
-            method: 'POST',
-            data: {
-                action: 'approve',
-                order_id: orderId
-            },
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    alert('✓ Refund approved successfully!');
-                    location.reload();
-                } else {
-                    alert('✗ Error: ' + (response.message || 'Failed to approve refund'));
-                }
-            },
-            error: function() {
-                alert('✗ An error occurred while approving the refund');
+        showConfirmModal({
+            title: 'Approve Refund',
+            message: 'Are you sure you want to APPROVE this refund request? This will refund the payment to the customer.',
+            input: false,
+            onOk: function() {
+                $.ajax({
+                    url: '<?php echo $controllerBasePath; ?>AdminRefundController.php',
+                    method: 'POST',
+                    data: {
+                        action: 'approve',
+                        order_id: orderId
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            showMessageModal('✓ Refund approved successfully!');
+                            setTimeout(function(){ location.reload(); }, 1500);
+                        } else {
+                            showMessageModal('✗ Error: ' + (response.message || 'Failed to approve refund'));
+                        }
+                    },
+                    error: function() {
+                        showMessageModal('✗ An error occurred while approving the refund');
+                    }
+                });
             }
         });
     }
 
     // Reject refund function
     function rejectRefund(orderId) {
-        const note = prompt('Please provide a reason for rejecting this refund request (optional):');
-        if (note === null) {
-            return; // User cancelled
-        }
-        
-        $.ajax({
-            url: '<?php echo $controllerBasePath; ?>AdminRefundController.php',
-            method: 'POST',
-            data: {
-                action: 'reject',
-                order_id: orderId,
-                admin_note: note
-            },
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    alert('✓ Refund rejected successfully!');
-                    location.reload();
-                } else {
-                    alert('✗ Error: ' + (response.message || 'Failed to reject refund'));
-                }
-            },
-            error: function() {
-                alert('✗ An error occurred while rejecting the refund');
+        showConfirmModal({
+            title: 'Reject Refund',
+            message: 'Are you sure you want to REJECT this refund request?',
+            input: true,
+            onOk: function(note) {
+                $.ajax({
+                    url: '<?php echo $controllerBasePath; ?>AdminRefundController.php',
+                    method: 'POST',
+                    data: {
+                        action: 'reject',
+                        order_id: orderId,
+                        admin_note: note
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            showMessageModal('✓ Refund rejected successfully!');
+                            setTimeout(function(){ location.reload(); }, 1500);
+                        } else {
+                            showMessageModal('✗ Error: ' + (response.message || 'Failed to reject refund'));
+                        }
+                    },
+                    error: function() {
+                        showMessageModal('✗ An error occurred while rejecting the refund');
+                    }
+                });
             }
         });
+    }
+    // Confirmation Modal Logic
+    function showConfirmModal({title, message, input, onOk}) {
+        document.getElementById('confirmModalTitle').innerHTML = '<i class="fas fa-question-circle"></i> ' + (title || 'Confirm Action');
+        document.getElementById('confirmModalText').textContent = message || '';
+        var inputGroup = document.getElementById('confirmModalInputGroup');
+        var inputBox = document.getElementById('confirmModalInput');
+        if (input) {
+            inputGroup.style.display = '';
+            inputBox.value = '';
+        } else {
+            inputGroup.style.display = 'none';
+            inputBox.value = '';
+        }
+        document.getElementById('confirmModal').style.display = 'block';
+        var okBtn = document.getElementById('confirmModalOkBtn');
+        okBtn.onclick = function() {
+            document.getElementById('confirmModal').style.display = 'none';
+            if (input) {
+                onOk(inputBox.value);
+            } else {
+                onOk();
+            }
+        };
+    }
+    function closeConfirmModal() {
+        document.getElementById('confirmModal').style.display = 'none';
     }
 
     // Close modal when clicking outside
