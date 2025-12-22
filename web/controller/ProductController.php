@@ -16,7 +16,7 @@ class ProductController {
      * Route requests to appropriate action handlers
      */
     public function handleRequest() {
-        $action = isset($_GET['action']) ? $_GET['action'] : 'showDetails';
+        $action = isset($_GET['action']) ? $_GET['action'] : 'showAll';
         
         switch ($action) {
             case 'showDetails':
@@ -25,8 +25,11 @@ class ProductController {
             case 'showAll':
                 $this->showAllProducts();
                 break;
+            case 'getFilteredProducts':
+                $this->getFilteredProductsJSON();
+                break;
             default:
-                $this->showProductDetails();
+                $this->showAllProducts();
         }
     }
     
@@ -61,14 +64,66 @@ class ProductController {
      */
     public function showAllProducts() {
         try {
-            // Get all products from service
-            $data = $this->productService->getAllProducts();
+            // Get filter parameters from request
+            $category = $_GET['category'] ?? null;
+            $minPrice = $_GET['min_price'] ?? null;
+            $maxPrice = $_GET['max_price'] ?? null;
+            $colors = isset($_GET['colors']) && is_array($_GET['colors']) ? $_GET['colors'] : [];
+
+            // Get all available filters for sidebar
+            $allCategories = $this->productService->getAllCategories();
+            $allColors = $this->productService->getAllColors();
+
+            // Get filtered products from service
+            $productsData = $this->productService->getFilteredProducts($category, $minPrice, $maxPrice, $colors);
             
+            // Add filter info to data
+            $data = array_merge($productsData, [
+                'allCategories' => $allCategories,
+                'allColors' => $allColors,
+                'selectedCategory' => $category,
+                'minPrice' => $minPrice,
+                'maxPrice' => $maxPrice,
+                'selectedColors' => $colors
+            ]);
+
             // Render view with data
             $this->renderView('ProductPage', $data);
         } catch (Exception $e) {
             $this->renderError($e->getMessage());
         }
+    }
+
+    /**
+     * Get filtered products as JSON (for AJAX requests)
+     */
+    public function getFilteredProductsJSON() {
+        header('Content-Type: application/json');
+        
+        try {
+            // Get filter parameters from request
+            $category = $_GET['category'] ?? null;
+            $minPrice = $_GET['min_price'] ?? null;
+            $maxPrice = $_GET['max_price'] ?? null;
+            $colors = isset($_GET['colors']) && is_array($_GET['colors']) ? $_GET['colors'] : [];
+
+            // Get filtered products from service
+            $productsData = $this->productService->getFilteredProducts($category, $minPrice, $maxPrice, $colors);
+            
+            // Return JSON response
+            echo json_encode([
+                'success' => true,
+                'grouped' => $productsData['grouped'],
+                'products' => $productsData['products']
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+        exit;
     }
     
     /**

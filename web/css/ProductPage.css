@@ -1,13 +1,13 @@
 /* Product listing page styles */
 .product-page {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 40px auto 60px;
     padding: 0 20px;
 }
 
 .product-header {
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
 }
 
 .product-header h2 {
@@ -20,6 +20,172 @@
     margin: 0;
     color: #5c6470;
     font-size: 14px;
+}
+
+/* Container for sidebar + products grid */
+.product-container {
+    display: flex;
+    gap: 24px;
+}
+
+/* Filters Sidebar */
+.filters-sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+}
+
+.filters-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.filters-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.clear-filters {
+    font-size: 12px;
+    color: #0ea5e9;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 140ms ease;
+}
+
+.clear-filters:hover {
+    color: #0284c7;
+    text-decoration: underline;
+}
+
+/* Filter Form */
+.filters-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.filter-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filter-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.filter-checkbox {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+    color: #4b5563;
+    transition: color 140ms ease;
+}
+
+.filter-checkbox input[type="checkbox"] {
+    margin-right: 8px;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #0ea5e9;
+}
+
+.filter-checkbox:hover {
+    color: #111827;
+}
+
+.filter-checkbox input[type="checkbox"]:checked + span {
+    color: #0ea5e9;
+    font-weight: 600;
+}
+
+/* Price Filter */
+.price-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.price-input {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.price-input label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.price-input input {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #111827;
+    transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.price-input input:focus {
+    outline: none;
+    border-color: #0ea5e9;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+
+/* Apply Filters Button */
+.apply-filters-btn {
+    padding: 12px 16px;
+    background: #0ea5e9;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 140ms ease, transform 100ms ease;
+    margin-top: 8px;
+}
+
+.apply-filters-btn:hover {
+    background: #0284c7;
+    transform: translateY(-2px);
+}
+
+.apply-filters-btn:active {
+    transform: translateY(0);
+}
+
+/* Products Section */
+.products-section {
+    flex: 1;
 }
 
 .category-section {
@@ -51,7 +217,7 @@
 
 .product-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 18px;
 }
 
@@ -115,6 +281,23 @@
     line-height: 1.5;
 }
 
+@media (max-width: 768px) {
+    .product-container {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .filters-sidebar {
+        width: 100%;
+        position: static;
+        border: 1px solid #e5e7eb;
+    }
+
+    .product-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
 @media (max-width: 640px) {
     .product-page {
         padding: 0 14px;
@@ -122,5 +305,30 @@
 
     .product-header h2 {
         font-size: 24px;
+    }
+
+    .filters-sidebar {
+        padding: 16px;
+    }
+
+    .product-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .product-card {
+        padding: 10px;
+    }
+
+    .product-title {
+        font-size: 14px;
+    }
+
+    .product-price {
+        font-size: 13px;
+    }
+
+    .product-meta {
+        font-size: 12px;
     }
 }

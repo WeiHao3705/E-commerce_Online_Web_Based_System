@@ -496,4 +496,96 @@ class ProductService {
             throw $e;
         }
     }
+
+    /**
+     * Get all available categories
+     * @return array List of all categories
+     */
+    public function getAllCategories() {
+        $sql = "SELECT DISTINCT category FROM product ORDER BY category";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    /**
+     * Get all available colors
+     * @return array List of all colors
+     */
+    public function getAllColors() {
+        $sql = "SELECT DISTINCT color FROM product_variant ORDER BY color";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    /**
+     * Get filtered products based on category, price, and color
+     * @param string|null $category Filter by category
+     * @param float|null $minPrice Filter by minimum price
+     * @param float|null $maxPrice Filter by maximum price
+     * @param array $colors Filter by colors (array of color names)
+     * @return array Filtered products grouped by category
+     */
+    public function getFilteredProducts($category = null, $minPrice = null, $maxPrice = null, $colors = []) {
+        $sql = "
+            SELECT 
+                p.product_id, 
+                p.product_name, 
+                p.category, 
+                p.description,
+                pi.image_path,
+                pr.original_price,
+                GROUP_CONCAT(DISTINCT pv.color SEPARATOR ', ') AS colors
+            FROM product p
+            LEFT JOIN product_image pi ON p.product_id = pi.product_id AND pi.type = 'main'
+            LEFT JOIN product_price pr ON p.product_id = pr.product_id
+            LEFT JOIN product_variant pv ON p.product_id = pv.product_id
+            WHERE 1=1
+        ";
+
+        $params = [];
+
+        // Filter by category
+        if (!empty($category)) {
+            $sql .= " AND p.category = :category";
+            $params[':category'] = $category;
+        }
+
+        // Filter by price range
+        if (!empty($minPrice) && is_numeric($minPrice)) {
+            $sql .= " AND pr.original_price >= :min_price";
+            $params[':min_price'] = (float)$minPrice;
+        }
+        if (!empty($maxPrice) && is_numeric($maxPrice)) {
+            $sql .= " AND pr.original_price <= :max_price";
+            $params[':max_price'] = (float)$maxPrice;
+        }
+
+        // Filter by colors
+        if (!empty($colors) && is_array($colors)) {
+            $colorPlaceholders = [];
+            foreach ($colors as $idx => $color) {
+                $placeholder = ':color_' . $idx;
+                $colorPlaceholders[] = $placeholder;
+                $params[$placeholder] = $color;
+            }
+            $sql .= " AND pv.color IN (" . implode(',', $colorPlaceholders) . ")";
+        }
+
+        $sql .= " GROUP BY p.product_id ORDER BY p.category, p.product_name";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Group by category
+        $grouped = $this->groupProductsByCategory($rows);
+
+        return [
+            'pageTitle' => 'Products',
+            'products' => $rows,
+            'grouped' => $grouped
+        ];
+    }
 }
