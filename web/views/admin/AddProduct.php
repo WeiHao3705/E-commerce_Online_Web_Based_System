@@ -62,9 +62,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$mainIndex = null;
 			if (isset($_FILES['product_images'])) {
 				$uploadDir = $webRootDir . '/images/products/';
+				// If initial variant color is provided, include it in filenames
+				$baseNameForImages = $productData['name'];
+				if (!empty($initialVariantColor)) {
+					$baseNameForImages = $productData['name'] . '_' . $initialVariantColor;
+				}
 				$imagePaths = $productService->handleMultipleProductImageUpload(
 					$_FILES['product_images'],
-					$productData['name'],
+					$baseNameForImages,
 					$uploadDir
 				);
 				// Main image index from form (optional)
@@ -106,9 +111,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$mainIndex = null;
 			if (isset($_FILES['variant_images'])) {
 				$uploadDir = $webRootDir . '/images/products/';
+				// Build filename base as product_name + '_' + color
+				$productName = $productService->getProductNameById($variantData['product_id']);
+				$colorName = $variantData['color'] ?: 'variant';
+				$baseNameForImages = ($productName ? $productName : 'product') . '_' . $colorName;
 				$imagePaths = $productService->handleMultipleProductImageUpload(
 					$_FILES['variant_images'],
-					$variantData['color'] ?: 'variant',
+					$baseNameForImages,
 					$uploadDir
 				);
 				if (isset($_POST['variant_main_image_index'])) {
@@ -136,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Get categories for form
 $categories = $productService->getCategories();
-$productList = $productService->getAllProducts()['products'] ?? [];
+$productList = $productService->getProductsWithVariants();
 
 $pageTitle = 'Add Product';
 ?>
@@ -307,9 +316,13 @@ $pageTitle = 'Add Product';
 						</label>
 						<select id="variant_product_id" name="variant_product_id" required>
 							<option value="">-- Choose a product --</option>
-							<?php foreach ($productList as $p): ?>
-								<option value="<?php echo (int)$p['product_id']; ?>"><?php echo html_escape($p['product_name']); ?></option>
-							<?php endforeach; ?>
+							<?php if (!empty($productList)): ?>
+								<?php foreach ($productList as $p): ?>
+									<option value="<?php echo (int)$p['product_id']; ?>"><?php echo html_escape($p['product_name']); ?></option>
+								<?php endforeach; ?>
+							<?php else: ?>
+								<option value="" disabled>No products with variants yet</option>
+							<?php endif; ?>
 						</select>
 					</div>
 

@@ -419,6 +419,17 @@ $pageTitle = 'Admin Products';
 	<link rel="stylesheet" href="<?php echo $cssBasePath; ?>AllTables.css">
 	<link rel="stylesheet" href="<?php echo $cssBasePath; ?>AdminOrder.css">
 	<link rel="stylesheet" href="<?php echo $cssBasePath; ?>AdminProduct.css?v=<?php echo filemtime(__DIR__ . '/../../css/AdminProduct.css'); ?>">
+	<style>
+		/* Lightweight toast styles (scoped to admin page) */
+		.toast-container{position:fixed;top:20px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;z-index:9999}
+		.toast{min-width:260px;max-width:420px;padding:12px 14px;border-radius:10px;color:#0b1220;box-shadow:0 10px 25px rgba(2,6,23,.15);background:#fff;display:flex;align-items:flex-start;gap:10px;border:1px solid #e5e7eb;opacity:0;transform:translateY(-6px);animation:toast-in .18s ease-out forwards}
+		.toast.success{border-color:#86efac;background:#f0fdf4}
+		.toast.error{border-color:#fca5a5;background:#fef2f2}
+		.toast .title{font-weight:700;margin-bottom:2px}
+		.toast .msg{font-size:13px;color:#374151}
+		.toast .close{margin-left:auto;background:transparent;border:none;font-size:16px;cursor:pointer;color:#64748b}
+		@keyframes toast-in{to{opacity:1;transform:translateY(0)}}
+	</style>
 </head>
 
 <body>
@@ -431,7 +442,7 @@ $pageTitle = 'Admin Products';
 			<div style="display:flex;gap:10px;align-items:center;">
 			<a href="AddProduct.php" class="btn btn-primary">
 				<span class="material-symbols-outlined">add</span>
-				Add product
+				Add Product/Variant
 			</a>
 			<a href="Restock.php" class="btn btn-secondary">
 				<span class="material-symbols-outlined">inventory_2</span>
@@ -440,12 +451,7 @@ $pageTitle = 'Admin Products';
 			</div>
 		</div>
 
-		<?php if ($flashSuccess): ?>
-			<div class="message message-success"><?php echo html_escape($flashSuccess); ?></div>
-		<?php endif; ?>
-		<?php if ($flashError): ?>
-			<div class="message message-error"><?php echo html_escape($flashError); ?></div>
-		<?php endif; ?>
+		<?php /* Toasts handle feedback; keeping old divs hidden intentionally */ ?>
 
 		<div class="content-card">
 			<!-- Filters Section -->
@@ -604,6 +610,9 @@ $pageTitle = 'Admin Products';
 		</div>
 	</div>
 
+	<!-- Toast mount point -->
+	<div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
 	<div class="modal-overlay" id="editModal">
 		<div class="modal">
 			<div class="modal-header">
@@ -652,7 +661,32 @@ $pageTitle = 'Admin Products';
 		</div>
 	</div>
 
-    <script src="<?php echo $jsBasePath; ?>adminProduct.js?v=<?php echo filemtime(__DIR__ . '/../../js/adminProduct.js'); ?>"></script>
+	<script>
+	(function(){
+		function showToast(type, title, message){
+			var container = document.getElementById('toastContainer');
+			if(!container){return}
+			var el = document.createElement('div');
+			el.className = 'toast ' + (type||'success');
+			el.innerHTML = '<div><div class="title">'+(title||'Notice')+'</div><div class="msg">'+(message||'')+'</div></div>'+
+				'<button class="close" aria-label="Close">×</button>';
+			container.appendChild(el);
+			var timer = setTimeout(function(){dismiss()}, 3500);
+			function dismiss(){ if(!el) return; el.style.opacity='0'; el.style.transform='translateY(-6px)'; setTimeout(function(){ if(el&&el.parentNode){el.parentNode.removeChild(el)} }, 180); }
+			el.querySelector('.close').addEventListener('click', function(){ clearTimeout(timer); dismiss(); });
+		}
+		// Expose for other scripts if needed
+		window.__adminShowToast = showToast;
+		// Server-provided flash messages
+		<?php if (!empty($flashSuccess)): ?>
+		showToast('success','Success', <?php echo json_encode($flashSuccess, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT); ?>);
+		<?php endif; ?>
+		<?php if (!empty($flashError)): ?>
+		showToast('error','Error', <?php echo json_encode($flashError, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT); ?>);
+		<?php endif; ?>
+	})();
+	</script>
+	<script src="<?php echo $jsBasePath; ?>adminProduct.js?v=<?php echo filemtime(__DIR__ . '/../../js/adminProduct.js'); ?>"></script>
 </body>
 
 </html>

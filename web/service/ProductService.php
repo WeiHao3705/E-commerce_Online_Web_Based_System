@@ -520,6 +520,37 @@ class ProductService {
     }
 
     /**
+     * Get a product name by id
+     * @param int $productId
+     * @return string|null Product name or null if not found
+     */
+    public function getProductNameById($productId) {
+        $product = $this->productRepository->getProductById((int)$productId);
+        if (!$product) {
+            return null;
+        }
+        return $product->product_name;
+    }
+
+    /**
+     * Get products that have at least one variant
+     * @return array List of products with variants (product_id, product_name)
+     */
+    public function getProductsWithVariants() {
+        $sql = "
+            SELECT p.product_id, p.product_name, p.category, p.description
+            FROM product p
+            WHERE EXISTS (
+                SELECT 1 FROM product_variant pv WHERE pv.product_id = p.product_id
+            )
+            ORDER BY p.product_name
+        ";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Get filtered products based on category, price, and color
      * @param string|null $category Filter by category
      * @param float|null $minPrice Filter by minimum price
