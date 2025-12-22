@@ -113,8 +113,19 @@
         }
     }
 
-    function openLoginModal() {
+    function openLoginModal(actionType = 'cart') {
         if (!loginModal) return;
+        
+        // Update modal message based on action type
+        const messageEl = document.getElementById('loginModalMessage');
+        if (messageEl) {
+            if (actionType === 'wishlist') {
+                messageEl.textContent = 'You need to log in to add items to your wishlist.';
+            } else {
+                messageEl.textContent = 'You need to log in to add items to your cart.';
+            }
+        }
+        
         loginModal.classList.add('open');
         loginModal.setAttribute('aria-hidden', 'false');
     }
@@ -307,7 +318,18 @@
                 
                 if (!userId) {
                     e.preventDefault();
-                    openLoginModal();
+                    openLoginModal('cart');
+                }
+            });
+        }
+
+        // Add login check to wishlist button
+        const wishlistBtn = document.getElementById('wishlistBtn');
+        if (wishlistBtn) {
+            wishlistBtn.addEventListener('click', (e) => {
+                if (!userId) {
+                    e.preventDefault();
+                    openLoginModal('wishlist');
                 }
             });
         }

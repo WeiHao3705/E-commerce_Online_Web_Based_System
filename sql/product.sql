@@ -3,11 +3,8 @@ CREATE TABLE IF NOT EXISTS product (
     product_name VARCHAR(255) NOT NULL,
     category VARCHAR(255) NOT NULL,
     description TEXT,
+    has_size TINYINT(1) NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- test
-
--- INSERT INTO product (product_name, category, description)
--- VALUES ('Apple iPhone 14', 'Electronics', 'Latest model smartphone');
 

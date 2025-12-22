@@ -264,7 +264,7 @@ require __DIR__ . '/../../general/_navbar.php';
 			<h3 class="login-modal__title">Login required</h3>
 		</div>
 		<div class="login-modal__body">
-			<p>You need to log in to add items to your cart.</p>
+			<p id="loginModalMessage">You need to log in to add items to your cart.</p>
 		</div>
 		<div class="login-modal__actions">
 			<button type="button" class="login-modal__btn login-modal__btn--ghost" id="loginModalCancel">Back</button>
@@ -281,43 +281,5 @@ require __DIR__ . '/../../general/_navbar.php';
 <script src="<?= $assetPrefix ?>js/wishlist.js?v=<?= filemtime(__DIR__ . '/../../js/wishlist.js'); ?>"></script>
 <script src="<?= $assetPrefix ?>js/productDetails.js?v=<?= filemtime(__DIR__ . '/../../js/productDetails.js'); ?>"></script>
 <script src="<?= $assetPrefix ?>js/reviews.js?v=<?= filemtime(__DIR__ . '/../../js/reviews.js'); ?>"></script>
-<script>
-$(document).ready(function() {
-    // Wait for wishlist manager to be initialized
-    setTimeout(function() {
-        // Check wishlist status on page load
-        const wishlistBtn = $('#wishlistBtn');
-        if (wishlistBtn.length && window.wishlistManager) {
-            const productId = wishlistBtn.data('product-id');
-            if (productId) {
-                window.wishlistManager.checkWishlistStatus(productId).then(function(inWishlist) {
-                    if (inWishlist) {
-                        wishlistBtn.addClass('in-wishlist');
-                        wishlistBtn.find('i').removeClass('fa-regular').addClass('fa-solid');
-                        wishlistBtn.find('span').text('Remove from Wishlist');
-                    }
-                }).catch(function(error) {
-                    console.error('Error checking wishlist status:', error);
-                });
-            }
-        }
-        
-        // Update wishlist button variant_id when variant changes
-        const selectedVariantInput = document.getElementById('selectedVariantId');
-        if (selectedVariantInput && wishlistBtn.length) {
-            const updateWishlistVariant = function() {
-                const variantId = selectedVariantInput.value;
-                wishlistBtn.attr('data-variant-id', variantId || '');
-            };
-            
-            // Update on variant change
-            $(selectedVariantInput).on('change', updateWishlistVariant);
-            
-            // Initial update
-            updateWishlistVariant();
-        }
-    }, 100);
-});
-</script>
 
 <?php require __DIR__ . '/../../general/_footer.php'; ?>

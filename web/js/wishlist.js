@@ -9,6 +9,53 @@ class Wishlist {
     init() {
         this.updateWishlistCount();
         this.attachEventListeners();
+        this.initProductDetailsPage();
+    }
+
+    // Initialize wishlist status on product details page
+    initProductDetailsPage() {
+        const wishlistBtn = document.getElementById('wishlistBtn');
+        if (!wishlistBtn) return; // Not on product details page
+
+        // Wait for wishlist manager to be fully initialized
+        setTimeout(() => {
+            const productId = wishlistBtn.getAttribute('data-product-id');
+            if (productId) {
+                this.checkWishlistStatus(productId)
+                    .then((inWishlist) => {
+                        if (inWishlist) {
+                            wishlistBtn.classList.add('in-wishlist');
+                            const icon = wishlistBtn.querySelector('i');
+                            const span = wishlistBtn.querySelector('span');
+                            if (icon) {
+                                icon.classList.remove('fa-regular');
+                                icon.classList.add('fa-solid');
+                            }
+                            if (span) {
+                                span.textContent = 'Remove from Wishlist';
+                            }
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Error checking wishlist status:', error);
+                    });
+            }
+            
+            // Update wishlist button variant_id when variant changes
+            const selectedVariantInput = document.getElementById('selectedVariantId');
+            if (selectedVariantInput && wishlistBtn) {
+                const updateWishlistVariant = () => {
+                    const variantId = selectedVariantInput.value;
+                    wishlistBtn.setAttribute('data-variant-id', variantId || '');
+                };
+                
+                // Update on variant change
+                selectedVariantInput.addEventListener('change', updateWishlistVariant);
+                
+                // Initial update
+                updateWishlistVariant();
+            }
+        }, 100);
     }
 
     attachEventListeners() {
@@ -78,23 +125,11 @@ class Wishlist {
                 // Show notification
                 this.showNotification(response.message, 'success');
             } else {
-                if (response.message === 'Please login to manage wishlist') {
-                    if (confirm('Please login to add items to wishlist. Go to login page?')) {
-                        window.location.href = 'views/security/login.php';
-                    }
-                } else {
-                    this.showNotification(response.message, 'error');
-                }
+                this.showNotification(response.message, 'error');
             }
         } catch (error) {
             console.error('Wishlist error:', error);
-            if (error.status === 401) {
-                if (confirm('Please login to add items to wishlist. Go to login page?')) {
-                    window.location.href = 'views/security/login.php';
-                }
-            } else {
-                this.showNotification('Error updating wishlist', 'error');
-            }
+            this.showNotification('Error updating wishlist', 'error');
         }
     }
 

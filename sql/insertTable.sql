@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS product (
     product_name VARCHAR(255) NOT NULL,
     category VARCHAR(255) NOT NULL,
     description TEXT,
+    has_size TINYINT(1) NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -188,25 +189,37 @@ CREATE TABLE IF NOT EXISTS cart_item (
 CREATE TABLE IF NOT EXISTS inventory (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
-    -- Allow stock for products WITHOUT variants
+    -- Product-level stock (for products without variants)
     product_id INT NULL,
 
-    -- Allow stock for products WITH variants (color)
+    -- Variant-level stock (for products with color variants)
     variant_id INT NULL,
 
-    size VARCHAR(20) NOT NULL,
+    -- Size-based stock (NULL = free size / no size)
+    size VARCHAR(20) NULL,
 
+    -- Current available stock
     stock_quantity INT NOT NULL DEFAULT 0,
 
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
+    -- Last updated timestamp
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                  ON UPDATE CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (product_id) REFERENCES product(product_id)
+    -- Foreign key constraints
+    CONSTRAINT fk_inventory_product
+        FOREIGN KEY (product_id)
+        REFERENCES product(product_id)
         ON DELETE CASCADE,
 
-    FOREIGN KEY (variant_id) REFERENCES product_variant(variant_id)
-        ON DELETE CASCADE
+    CONSTRAINT fk_inventory_variant
+        FOREIGN KEY (variant_id)
+        REFERENCES product_variant(variant_id)
+        ON DELETE CASCADE,
+
+    -- Prevent duplicate stock rows
+    UNIQUE KEY uniq_inventory (product_id, variant_id, size)
 );
+
 -- Order item table (depends on orders and product)
 CREATE TABLE IF NOT EXISTS order_item (
     order_item_id INT(20) AUTO_INCREMENT PRIMARY KEY,
