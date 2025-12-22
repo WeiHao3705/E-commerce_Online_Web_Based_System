@@ -20,6 +20,7 @@ $assetPrefix = '../../';
 ?>
 
 <link rel="stylesheet" href="<?= $assetPrefix ?>css/ProductPage.css?v=<?= filemtime(__DIR__ . '/../../css/ProductPage.css'); ?>">
+<link rel="stylesheet" href="<?= $assetPrefix ?>css/reviews.css?v=<?= filemtime(__DIR__ . '/../../css/reviews.css'); ?>">
 
 <div class="product-page">
     <div class="product-header">
@@ -111,6 +112,20 @@ $assetPrefix = '../../';
                                         <div class="product-price">
                                             <?= $row['original_price'] ? "RM " . number_format($row['original_price'], 2) : "Price unavailable" ?>
                                         </div>
+                                        <?php 
+                                            $avgRating = isset($row['average_rating']) ? (float)$row['average_rating'] : 0;
+                                            $reviewCount = isset($row['review_count']) ? (int)$row['review_count'] : 0;
+                                        ?>
+                                        <div class="product-rating">
+                                            <div class="star-rating" data-rating="<?= $avgRating ?>"></div>
+                                            <span class="rating-text">
+                                                <?php if ($reviewCount > 0): ?>
+                                                    <?= number_format($avgRating, 1) ?> (<?= $reviewCount ?> review<?= $reviewCount !== 1 ? 's' : '' ?>)
+                                                <?php else: ?>
+                                                    No reviews yet
+                                                <?php endif; ?>
+                                            </span>
+                                        </div>
                                         <div class="product-meta">
                                             <strong>Colors:</strong> <?= $row['colors'] ? htmlspecialchars($row['colors']) : "No variants" ?>
                                         </div>
@@ -126,3 +141,4 @@ $assetPrefix = '../../';
 </div>
 
 <script src="<?= $assetPrefix ?>js/productPage.js"></script>
+<script src="<?= $assetPrefix ?>js/reviews.js"></script>

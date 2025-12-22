@@ -1388,7 +1388,6 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                 </div>
 
                 <div class="filter-actions">
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
                     <a href="AdminController.php?action=showAll" class="btn btn-secondary"><i class="fas fa-redo"></i> Reset</a>
                 </div>
             </form>
@@ -1638,6 +1637,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
         $(document).ready(function() {
             $('body').attr('data-image-base-path', '<?php echo $imageBasePath; ?>');
             $('body').attr('data-controller-url', 'AdminController.php');
+            $('body').attr('data-controller-base-path', '<?php echo $controllerBasePath; ?>');
         });
     </script>
     <script src="<?php echo $imageBasePath; ?>js/allAdmins.js?v=<?php echo filemtime(__DIR__ . '/../../js/allAdmins.js'); ?>"></script>

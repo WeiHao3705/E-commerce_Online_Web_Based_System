@@ -1,6 +1,7 @@
 $(document).ready(function() {
     // Get image base path from data attribute or use default
     const imageBasePath = $('body').data('image-base-path') || '';
+    const controllerBasePath = $('body').data('controller-base-path') || '';
     let searchTimeout;
 
     // AJAX Search with real-time filtering
@@ -19,6 +20,9 @@ $(document).ready(function() {
 
     // AJAX Filter on dropdown change
     $('#filterStatus, #filterSortBySelect, #filterSortOrderSelect').on('change', function() {
+        // Update hidden fields when dropdowns change (for form submission fallback)
+        $('#filterSortBy').val($('#filterSortBySelect').val());
+        $('#filterSortOrder').val($('#filterSortOrderSelect').val());
         performAjaxFilter();
     });
 
@@ -28,7 +32,7 @@ $(document).ready(function() {
         const sortBy = $('#filterSortBySelect').val() || 'created_at';
         const sortOrder = $('#filterSortOrderSelect').val() || 'DESC';
 
-        const tableWrapper = $('#members-table-wrapper');
+        const tableWrapper = $('#admins-table-wrapper');
         tableWrapper.css('opacity', '0.6');
 
         const requestData = {
@@ -41,7 +45,7 @@ $(document).ready(function() {
             page: 1
         };
 
-        const controllerUrl = $('body').data('controller-url') || 'MemberController.php';
+        const controllerUrl = $('body').data('controller-url') || 'AdminController.php';
 
         $.ajax({
             url: controllerUrl,
@@ -67,24 +71,21 @@ $(document).ready(function() {
     }
 
     function updateTable(response) {
-        const tbody = $('#members-table tbody');
+        const tbody = $('#admins-table tbody');
         tbody.empty();
-        selectedMembers.clear();
-        $('#selectAllCheckbox').prop('checked', false);
-        updateBulkActions();
 
-        if (response.members && response.members.length > 0) {
-            response.members.forEach(function(member) {
-                const row = buildMemberRow(member);
+        if (response.admins && response.admins.length > 0) {
+            response.admins.forEach(function(admin) {
+                const row = buildAdminRow(admin);
                 tbody.append(row);
             });
         } else {
             tbody.append(`
                 <tr>
-                    <td colspan="9" class="text-center">
+                    <td colspan="7" class="text-center">
                         <div class="empty-state">
                             <i class="fas fa-inbox"></i>
-                            <p>No members found. Try a different search term.</p>
+                            <p>No admins found. Try a different search term.</p>
                         </div>
                     </td>
                 </tr>
@@ -92,10 +93,10 @@ $(document).ready(function() {
         }
     }
 
-    function buildMemberRow(member) {
+    function buildAdminRow(admin) {
         let photoUrl = '';
-        if (member.profile_photo && member.profile_photo.trim() !== '') {
-            let photoPath = member.profile_photo;
+        if (admin.profile_photo && admin.profile_photo.trim() !== '') {
+            let photoPath = admin.profile_photo;
             if (photoPath.indexOf('web/') === 0) {
                 photoPath = photoPath.substring(4);
             }
@@ -106,23 +107,16 @@ $(document).ready(function() {
         }
         const defaultPhotoUrl = imageBasePath + 'images/defaultUserImage.jpg';
 
-        let dobDisplay = '-';
-        if (member.DateOfBirth) {
-            const dob = new Date(member.DateOfBirth);
-            if (!isNaN(dob.getTime())) {
-                dobDisplay = dob.toISOString().split('T')[0];
-            }
-        }
-
         let createdDateDisplay = '-';
-        if (member.created_at) {
-            const createdDate = new Date(member.created_at);
+        if (admin.created_at) {
+            const createdDate = new Date(admin.created_at);
             if (!isNaN(createdDate.getTime())) {
-                createdDateDisplay = createdDate.toISOString().split('T')[0];
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                createdDateDisplay = months[createdDate.getMonth()] + ' ' + createdDate.getDate() + ', ' + createdDate.getFullYear();
             }
         }
 
-        const status = member.status || 'active';
+        const status = admin.status || 'active';
         const statusLabels = {
             'active': { class: 'status-active', text: 'Active' },
             'inactive': { class: 'status-inactive', text: 'Inactive' },
@@ -133,51 +127,50 @@ $(document).ready(function() {
 
         let statusButtons = '';
         if (status !== 'banned') {
-            statusButtons += '<button class="action-btn ban-btn" data-action="status" data-user-id="' + member.user_id + '" data-user-name="' + escapeHtml(member.full_name) + '" data-status="banned" title="Ban member"><i class="fas fa-ban"></i></button>';
+            statusButtons += '<button class="action-btn ban-btn" data-action="status" data-user-id="' + admin.user_id + '" data-admin-name="' + escapeHtml(admin.full_name) + '" data-status="banned" title="Ban admin"><i class="fas fa-ban"></i></button>';
         }
         if (status !== 'inactive') {
-            statusButtons += '<button class="action-btn inactive-btn" data-action="status" data-user-id="' + member.user_id + '" data-user-name="' + escapeHtml(member.full_name) + '" data-status="inactive" title="Set to inactive"><i class="fas fa-pause-circle"></i></button>';
+            statusButtons += '<button class="action-btn inactive-btn" data-action="status" data-user-id="' + admin.user_id + '" data-admin-name="' + escapeHtml(admin.full_name) + '" data-status="inactive" title="Set to inactive"><i class="fas fa-pause-circle"></i></button>';
         }
         if (status !== 'active') {
-            statusButtons += '<button class="action-btn activate-btn" data-action="status" data-user-id="' + member.user_id + '" data-user-name="' + escapeHtml(member.full_name) + '" data-status="active" title="Activate member"><i class="fas fa-check-circle"></i></button>';
+            statusButtons += '<button class="action-btn activate-btn" data-action="status" data-user-id="' + admin.user_id + '" data-admin-name="' + escapeHtml(admin.full_name) + '" data-status="active" title="Activate admin"><i class="fas fa-check-circle"></i></button>';
         }
 
         const row = `
             <tr>
-                <td class="col-checkbox">
-                    <input type="checkbox" class="member-checkbox" name="member_ids[]" value="${member.user_id}" data-member-name="${escapeHtml(member.full_name)}">
-                </td>
                 <td>
                     <img src="${escapeHtml(photoUrl)}"
                          alt="Profile photo"
                          class="member-profile-photo clickable-image"
                          data-image-url="${escapeHtml(photoUrl)}"
-                         data-member-name="${escapeHtml(member.full_name)}"
+                         data-admin-name="${escapeHtml(admin.full_name)}"
                          onerror="this.onerror=null; this.src='${escapeHtml(defaultPhotoUrl)}';"
                          style="cursor: pointer;"
                          title="Click to view full size">
                 </td>
                 <td>
                     <div>
-                        <strong>${escapeHtml(member.username)}</strong>
-                        <br><small style="color: #6b7280;">${escapeHtml(member.full_name)}</small>
-                        <br><small style="color: #9ca3af;">${escapeHtml(member.email)}</small>
+                        <strong>${escapeHtml(admin.username)}</strong>
+                        <br><small style="color: #6b7280;">${escapeHtml(admin.full_name)}</small>
+                        <br><small style="color: #9ca3af;">${escapeHtml(admin.email)}</small>
                     </div>
                 </td>
-                <td>${escapeHtml(member.contact_no)}</td>
-                <td>${escapeHtml(member.gender)}</td>
-                <td>${dobDisplay}</td>
+                <td>${escapeHtml(admin.contact_no || '-')}</td>
+                <td>${escapeHtml(admin.gender || '-')}</td>
                 <td>${createdDateDisplay}</td>
                 <td>
                     <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
                 </td>
                 <td class="col-actions">
                     <div class="action-buttons">
-                        <button class="action-btn edit-btn" data-user-id="${member.user_id}" data-username="${escapeHtml(member.username)}" data-full-name="${escapeHtml(member.full_name)}" data-email="${escapeHtml(member.email)}" data-contact-no="${escapeHtml(member.contact_no)}" data-gender="${escapeHtml(member.gender)}" data-date-of-birth="${escapeHtml(member.DateOfBirth || '')}" title="Edit member">
+                        <a href="${controllerBasePath}ActivityLogController.php?action=showAll&admin_id=${admin.user_id}" class="action-btn" title="Download Activity Logs PDF" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-file-pdf"></i>
+                        </a>
+                        <button class="action-btn edit-btn" data-user-id="${admin.user_id}" data-username="${escapeHtml(admin.username)}" data-full-name="${escapeHtml(admin.full_name)}" data-email="${escapeHtml(admin.email)}" data-contact-no="${escapeHtml(admin.contact_no || '')}" data-gender="${escapeHtml(admin.gender || '')}" title="Edit admin">
                             <i class="fas fa-edit"></i>
                         </button>
                         ${statusButtons}
-                        <button class="action-btn delete-btn" data-action="delete" data-user-id="${member.user_id}" data-user-name="${escapeHtml(member.full_name)}" title="Delete member">
+                        <button class="action-btn delete-btn" data-action="delete" data-user-id="${admin.user_id}" data-admin-name="${escapeHtml(admin.full_name)}" title="Delete admin">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -191,9 +184,9 @@ $(document).ready(function() {
         const pagination = response.pagination;
         const paginationNav = $('.pagination');
 
-        if (pagination.total_members > 0) {
+        if (pagination.total_admins > 0) {
             $('.pagination-info').html(`
-                Showing <span class="pagination-number">${pagination.showing_from}-${pagination.showing_to}</span> of <span class="pagination-number">${pagination.total_members}</span>
+                Showing <span class="pagination-number">${pagination.showing_from}-${pagination.showing_to}</span> of <span class="pagination-number">${pagination.total_admins}</span>
             `);
 
             const paginationList = $('.pagination-list');
@@ -202,9 +195,9 @@ $(document).ready(function() {
             const status = $('#filterStatus').val();
             const sortBy = response.sortBy || 'created_at';
             const sortOrder = response.sortOrder || 'DESC';
-            const searchTerm = $('#simple-search').val();
+            const searchTerm = $('#filterSearch').val() || '';
 
-            const controllerUrl = $('body').data('controller-url') || 'MemberController.php';
+            const controllerUrl = $('body').data('controller-url') || 'AdminController.php';
 
             const prevUrl = pagination.current_page > 1 ?
                 `${controllerUrl}?action=showAll&page=${pagination.current_page - 1}&search=${encodeURIComponent(searchTerm)}&status=${status}&sortBy=${sortBy}&sortOrder=${sortOrder}` : '#';
@@ -351,7 +344,7 @@ $(document).ready(function() {
         const action = statusLabels[newStatus] || newStatus;
 
         showConfirmationModal(
-            'Are you sure you want to ' + action + ' member: ' + userName + '?',
+            'Are you sure you want to ' + action + ' admin: ' + userName + '?',
             'warning',
             function() {
                 $('#statusUserId').val(userId);
@@ -363,7 +356,7 @@ $(document).ready(function() {
 
     function confirmDelete(userId, userName) {
         showConfirmationModal(
-            'Are you sure you want to delete member: ' + userName + '?<br><br>This action cannot be undone.',
+            'Are you sure you want to delete admin: ' + userName + '?<br><br>This action cannot be undone.',
             'danger',
             function() {
                 $('#deleteUserId').val(userId);
@@ -397,9 +390,9 @@ $(document).ready(function() {
         $('body').css('overflow', 'auto');
     }
 
-    function viewMemberImage(imageUrl, memberName) {
+    function viewAdminImage(imageUrl, adminName) {
         $('#viewImageSrc').attr('src', imageUrl);
-        $('#viewImageTitle').text(memberName + ' - Profile Photo');
+        $('#viewImageTitle').text(adminName + ' - Profile Photo');
         $('#viewImageModal').removeClass('hidden');
         $('body').css('overflow', 'hidden');
     }
@@ -446,7 +439,7 @@ $(document).ready(function() {
         const $btn = $(this);
         confirmStatusChange(
             $btn.data('user-id'),
-            $btn.data('user-name'),
+            $btn.data('admin-name') || $btn.data('user-name'),
             $btn.data('status')
         );
     });
@@ -455,15 +448,15 @@ $(document).ready(function() {
         const $btn = $(this);
         confirmDelete(
             $btn.data('user-id'),
-            $btn.data('user-name')
+            $btn.data('admin-name') || $btn.data('user-name')
         );
     });
 
     $(document).on('click', '.clickable-image', function() {
         const $img = $(this);
-        viewMemberImage(
+        viewAdminImage(
             $img.data('image-url'),
-            $img.data('member-name')
+            $img.data('admin-name') || $img.data('member-name')
         );
     });
 

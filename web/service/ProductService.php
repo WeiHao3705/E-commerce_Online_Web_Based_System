@@ -536,7 +536,17 @@ class ProductService {
                 p.description,
                 pi.image_path,
                 pr.original_price,
-                GROUP_CONCAT(DISTINCT pv.color SEPARATOR ', ') AS colors
+                GROUP_CONCAT(DISTINCT pv.color SEPARATOR ', ') AS colors,
+                COALESCE((
+                    SELECT AVG(rating) 
+                    FROM product_review 
+                    WHERE product_id = p.product_id
+                ), 0) AS average_rating,
+                COALESCE((
+                    SELECT COUNT(*) 
+                    FROM product_review 
+                    WHERE product_id = p.product_id
+                ), 0) AS review_count
             FROM product p
             LEFT JOIN product_image pi ON p.product_id = pi.product_id AND pi.type = 'main'
             LEFT JOIN product_price pr ON p.product_id = pr.product_id
