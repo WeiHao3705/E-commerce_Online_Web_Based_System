@@ -236,11 +236,10 @@ $pageTitle = 'Admin Profile';
                                 <?php
                                     $rawPhone = (string)($user['contact_no'] ?? '');
                                     $digits = preg_replace('/\D+/', '', $rawPhone);
-                                    if (strlen($digits) === 11 && $digits[0] === '1') {
-                                        // US format with country code: +1 xxx-xxx-xxxx
-                                        $formattedPhone = '+1 ' . substr($digits,1,3) . '-' . substr($digits,4,3) . '-' . substr($digits,7,4);
+                                    // Format Malaysian phone number (10-11 digits)
+                                    if (strlen($digits) === 11) {
+                                        $formattedPhone = substr($digits,0,3) . '-' . substr($digits,3,4) . ' ' . substr($digits,7,4);
                                     } elseif (strlen($digits) === 10) {
-                                        // Default 10-digit local format: xxx-xxx xxxx
                                         $formattedPhone = substr($digits,0,3) . '-' . substr($digits,3,3) . ' ' . substr($digits,6,4);
                                     } else {
                                         $formattedPhone = $rawPhone;
@@ -304,26 +303,25 @@ $pageTitle = 'Admin Profile';
                             <?php
                                 $rawContactNo = (string)($user['contact_no'] ?? '');
                                 $contactDigits = preg_replace('/\D+/', '', $rawContactNo);
-                                if (strlen($contactDigits) === 11 && $contactDigits[0] === '1') {
-                                    // US format with country code: +1 xxx-xxx-xxxx
-                                    $formattedContactNo = '+1 ' . substr($contactDigits,1,3) . '-' . substr($contactDigits,4,3) . '-' . substr($contactDigits,7,4);
+                                // Format Malaysian phone number (10-11 digits)
+                                if (strlen($contactDigits) === 11) {
+                                    $formattedContactNo = substr($contactDigits,0,3) . '-' . substr($contactDigits,3,4) . ' ' . substr($contactDigits,7,4);
                                 } elseif (strlen($contactDigits) === 10) {
-                                    // Default 10-digit local format: xxx-xxx xxxx
                                     $formattedContactNo = substr($contactDigits,0,3) . '-' . substr($contactDigits,3,3) . ' ' . substr($contactDigits,6,4);
                                 } else {
                                     $formattedContactNo = $rawContactNo;
                                 }
                             ?>
                             <input
-                                type="text"
+                                type="tel"
                                 id="contact_no"
                                 name="contact_no"
                                 value="<?php echo html_escape($formattedContactNo); ?>"
-                                pattern="^[0-9+\s\-\(\)]{10,20}$"
-                                placeholder="+1 123-456-7890"
+                                pattern="^[0-9\s\-]{10,12}$"
+                                placeholder="011-5550 5761"
                                 required
                             />
-                            <div class="form-error" id="err_contact_no" style="display:none;">Enter valid phone number (10–11 digits, e.g. +1 123-456-7890).</div>
+                            <div class="form-error" id="err_contact_no" style="display:none;">Enter valid Malaysian phone number (10-11 digits, e.g. 011-5550 5761).</div>
                         </div>
                         <div class="form-row">
                             <label for="gender">Gender</label>

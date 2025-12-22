@@ -179,27 +179,13 @@ $isAdmin = isset($_SESSION['user']) && isset($_SESSION['user']->role) && $_SESSI
                     <div class="form-group">
                         <label for="contact-number">Contact Number</label>
                         <div class="phone-input-group">
-                            <div class="country-code-wrapper">
-                                <select id="country-code" name="country_code" class="country-code-select" required>
-                                    <option value="+60" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+60') ? 'selected' : ''; ?>>🇲🇾 +60 (MY)</option>
-                                    <option value="+1" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+1') ? 'selected' : ''; ?>>🇺🇸 +1 (US)</option>
-                                    <option value="+44" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+44') ? 'selected' : ''; ?>>🇬🇧 +44 (UK)</option>
-                                    <option value="+65" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+65') ? 'selected' : ''; ?>>🇸🇬 +65 (SG)</option>
-                                    <option value="+86" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+86') ? 'selected' : ''; ?>>🇨🇳 +86 (CN)</option>
-                                    <option value="+81" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+81') ? 'selected' : ''; ?>>🇯🇵 +81 (JP)</option>
-                                    <option value="+61" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+61') ? 'selected' : ''; ?>>🇦🇺 +61 (AU)</option>
-                                    <option value="+33" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+33') ? 'selected' : ''; ?>>🇫🇷 +33 (FR)</option>
-                                    <option value="+49" <?php echo (isset($formData['country_code']) && $formData['country_code'] == '+49') ? 'selected' : ''; ?>>🇩🇪 +49 (DE)</option>
-                                </select>
-                            </div>
                             <div class="phone-number-wrapper">
                                 <i class="fas fa-phone input-icon"></i>
-                                <input type="tel" id="contact-number" name="phone_number" class="form-control phone-number-input" placeholder="e.g., 11-5550 5761" value="<?php echo isset($formData['phone_number']) ? htmlspecialchars($formData['phone_number']) : ''; ?>" required>
+                                <input type="tel" id="contact-number" name="contact_no" class="form-control phone-number-input" placeholder="e.g., 011-5550 5761" value="<?php echo isset($formData['contact_no']) ? htmlspecialchars($formData['contact_no']) : ''; ?>" required>
                             </div>
                         </div>
-                        <input type="hidden" id="contact_no" name="contact_no" value="<?php echo isset($formData['contact_no']) ? htmlspecialchars($formData['contact_no']) : ''; ?>">
                         <div id="phoneValidationError" class="phone-validation-error"></div>
-                        <small class="input-hint" id="phoneFormatHint">Enter phone number without country code</small>
+                        <small class="input-hint" id="phoneFormatHint">Enter Malaysian phone number (10-11 digits, e.g., 011-5550 5761)</small>
                     </div>
 
                     <div class="form-group full-width">
@@ -217,10 +203,10 @@ $isAdmin = isset($_SESSION['user']) && isset($_SESSION['user']->role) && $_SESSI
 
                     <div class="form-group full-width">
                         <label for="date-of-birth">Date of Birth</label>
-                        <div class="input-wrapper">
+                        <div class="input-wrapper date-input-wrapper">
                             <i class="fas fa-calendar input-icon"></i>
                             <input type="text" id="date-of-birth" name="DateOfBirthText" class="form-control" placeholder="DD/MM/YYYY (e.g., 15/05/1990)" value="<?php echo isset($formData['DateOfBirth']) ? htmlspecialchars($formData['DateOfBirth']) : ''; ?>" pattern="\d{2}/\d{2}/\d{4}" maxlength="10" required>
-                            <input type="date" id="date-of-birth-hidden" style="display: none;" name="DateOfBirth" value="<?php echo isset($formData['DateOfBirth']) ? htmlspecialchars($formData['DateOfBirth']) : ''; ?>">
+                            <input type="date" id="date-of-birth-hidden" class="date-picker-hidden" name="DateOfBirth" value="<?php echo isset($formData['DateOfBirth']) ? htmlspecialchars($formData['DateOfBirth']) : ''; ?>">
                         </div>
                         <small class="input-hint">Enter your date of birth (DD/MM/YYYY) or click the calendar icon to select</small>
                     </div>
@@ -842,127 +828,48 @@ $isAdmin = isset($_SESSION['user']) && isset($_SESSION['user']->role) && $_SESSI
 
             $(window).on('beforeunload', handleBeforeUnload);
 
-            // Phone number validation
-            const $countryCode = $('#country-code');
+            // Phone number validation - Malaysia only
             const $phoneNumber = $('#contact-number');
-            const $contactNoHidden = $('#contact_no');
             const $phoneValidationError = $('#phoneValidationError');
             const $phoneFormatHint = $('#phoneFormatHint');
 
-            // Phone validation patterns by country code
-            const phonePatterns = {
-                '+60': { // Malaysia
-                    pattern: /^[0-9]{2,3}[- ]?[0-9]{3,4}[- ]?[0-9]{4}$/,
-                    example: '11-5550 5761',
-                    minLength: 9,
-                    maxLength: 12
-                },
-                '+1': { // US/Canada
-                    pattern: /^[0-9]{3}[- ]?[0-9]{3}[- ]?[0-9]{4}$/,
-                    example: '555-123-4567',
-                    minLength: 10,
-                    maxLength: 12
-                },
-                '+44': { // UK
-                    pattern: /^[0-9]{2,4}[- ]?[0-9]{3,4}[- ]?[0-9]{3,4}$/,
-                    example: '20 7946 0958',
-                    minLength: 10,
-                    maxLength: 13
-                },
-                '+65': { // Singapore
-                    pattern: /^[689][0-9]{7}$/,
-                    example: '81234567',
-                    minLength: 8,
-                    maxLength: 8
-                },
-                '+86': { // China
-                    pattern: /^1[3-9][0-9]{9}$/,
-                    example: '13800138000',
-                    minLength: 11,
-                    maxLength: 11
-                },
-                '+81': { // Japan
-                    pattern: /^[0-9]{2,4}[- ]?[0-9]{2,4}[- ]?[0-9]{4}$/,
-                    example: '90-1234-5678',
-                    minLength: 10,
-                    maxLength: 13
-                },
-                '+61': { // Australia
-                    pattern: /^[0-9]{2}[- ]?[0-9]{4}[- ]?[0-9]{4}$/,
-                    example: '04 1234 5678',
-                    minLength: 10,
-                    maxLength: 12
-                },
-                '+33': { // France
-                    pattern: /^[0-9]{2}[- ]?[0-9]{2}[- ]?[0-9]{2}[- ]?[0-9]{2}[- ]?[0-9]{2}$/,
-                    example: '06 12 34 56 78',
-                    minLength: 10,
-                    maxLength: 14
-                },
-                '+49': { // Germany
-                    pattern: /^[0-9]{3,4}[- ]?[0-9]{3,8}$/,
-                    example: '151 23456789',
-                    minLength: 10,
-                    maxLength: 13
-                }
-            };
+            // Malaysian phone number pattern (10-11 digits, formats: 011-5550 5761, 1155505761, etc.)
+            const malaysiaPattern = /^0?[0-9]{2,3}[- ]?[0-9]{3,4}[- ]?[0-9]{4}$/;
+            const example = '011-5550 5761';
 
             function validatePhoneNumber() {
-                const countryCode = $countryCode.val();
                 const phoneNumber = $phoneNumber.val().replace(/\s+/g, ' ').trim();
-                const config = phonePatterns[countryCode];
 
                 if (!phoneNumber) {
                     $phoneNumber.removeClass('input-error input-success');
                     $phoneValidationError.text('').hide();
-                    $contactNoHidden.val('');
                     return false;
                 }
 
                 // Remove spaces and dashes for validation
                 const cleanPhone = phoneNumber.replace(/[- ]/g, '');
                 
-                // Check length
-                if (cleanPhone.length < config.minLength || cleanPhone.length > config.maxLength) {
+                // Check length (10-11 digits for Malaysia)
+                if (cleanPhone.length < 10 || cleanPhone.length > 11) {
                     $phoneNumber.addClass('input-error').removeClass('input-success');
-                    $phoneValidationError.text(`Phone number must be ${config.minLength}-${config.maxLength} digits. Example: ${config.example}`).show();
-                    $contactNoHidden.val('');
+                    $phoneValidationError.text('Malaysian phone number must be 10-11 digits. Example: ' + example).show();
                     return false;
                 }
 
                 // Check pattern
-                if (!config.pattern.test(phoneNumber)) {
+                if (!malaysiaPattern.test(phoneNumber)) {
                     $phoneNumber.addClass('input-error').removeClass('input-success');
-                    $phoneValidationError.text(`Invalid phone format. Example: ${config.example}`).show();
-                    $contactNoHidden.val('');
+                    $phoneValidationError.text('Invalid Malaysian phone format. Example: ' + example).show();
                     return false;
                 }
 
-                // Valid phone number
+                // Valid phone number - store digits only
                 $phoneNumber.removeClass('input-error').addClass('input-success');
                 $phoneValidationError.text('').hide();
-                
-                // Combine country code and phone number
-                const fullPhoneNumber = countryCode + ' ' + phoneNumber;
-                $contactNoHidden.val(fullPhoneNumber);
+                $phoneNumber.val(phoneNumber); // Keep formatted display
                 
                 return true;
             }
-
-            function updatePhoneFormatHint() {
-                const countryCode = $countryCode.val();
-                const config = phonePatterns[countryCode];
-                if (config) {
-                    $phoneFormatHint.text(`Format: ${config.example} (${config.minLength}-${config.maxLength} digits)`);
-                    $phoneNumber.attr('placeholder', `e.g., ${config.example}`);
-                }
-            }
-
-            // Update hint when country code changes
-            $countryCode.on('change', function() {
-                updatePhoneFormatHint();
-                validatePhoneNumber();
-            });
 
             // Validate on input
             $phoneNumber.on('input', function() {
@@ -1044,7 +951,7 @@ $isAdmin = isset($_SESSION['user']) && isset($_SESSION['user']->role) && $_SESSI
                 // Validate phone number
                 if (!validatePhoneNumber()) {
                     e.preventDefault();
-                    alert('Please enter a valid phone number.');
+                    alert('Please enter a valid Malaysian phone number (10-11 digits).');
                     $phoneNumber.focus();
                     return false;
                 }

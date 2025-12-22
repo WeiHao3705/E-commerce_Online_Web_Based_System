@@ -351,8 +351,35 @@ class ChatRepository
             // If no chat room exists at all, create a new one assigned to system user
             $sql = "INSERT INTO chat_room (member_id, admin_id, status) VALUES (?, ?, 'open')";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$memberId, $systemUserId]);
+            $success = $stmt->execute([$memberId, $systemUserId]);
+            
+            if (!$success) {
+                error_log("ChatRepository: Failed to execute INSERT for chatroom creation for member {$memberId}");
+                throw new Exception('Failed to create chat room: INSERT statement failed');
+            }
+            
             $newChatRoomId = $this->db->lastInsertId();
+            
+            // Verify that we got a valid ID
+            if (!$newChatRoomId || $newChatRoomId == 0 || $newChatRoomId === '0') {
+                error_log("ChatRepository: lastInsertId() returned invalid value: " . var_export($newChatRoomId, true) . " for member {$memberId}");
+                throw new Exception('Failed to create chat room: Invalid chat room ID returned');
+            }
+            
+            // Convert to integer to ensure consistent type
+            $newChatRoomId = (int)$newChatRoomId;
+            
+            // Verify the chatroom was actually created by querying it back
+            $verifySql = "SELECT chat_room_id FROM chat_room WHERE chat_room_id = ? LIMIT 1";
+            $verifyStmt = $this->db->prepare($verifySql);
+            $verifyStmt->execute([$newChatRoomId]);
+            $verifiedRoom = $verifyStmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$verifiedRoom) {
+                error_log("ChatRepository: Created chatroom {$newChatRoomId} but could not verify its existence for member {$memberId}");
+                throw new Exception('Failed to create chat room: Chat room was not found after creation');
+            }
+            
             error_log("ChatRepository: Created new chatroom {$newChatRoomId} assigned to system user {$systemUserId} for member {$memberId}");
             return $newChatRoomId;
         } catch (PDOException $e) {

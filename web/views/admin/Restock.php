@@ -39,9 +39,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $notif = $_SESSION['restock_notification'];
             unset($_SESSION['restock_notification']);
             
-            // Only show notification messages if product or variant was out of stock
-            if (isset($notif['was_out_of_stock']) && ($notif['was_out_of_stock'] || (isset($notif['variant_was_out_of_stock']) && $notif['variant_was_out_of_stock']))) {
-                if ($notif['total'] > 0) {
+            // Show notification status if there are wishlist members
+            if (isset($notif['total']) && $notif['total'] > 0) {
+                // Check if product, variant, or specific size was out of stock
+                $wasOutOfStock = isset($notif['was_out_of_stock']) && (
+                    $notif['was_out_of_stock'] || 
+                    (isset($notif['variant_was_out_of_stock']) && $notif['variant_was_out_of_stock']) ||
+                    (isset($notif['size_was_out_of_stock']) && $notif['size_was_out_of_stock'])
+                );
+                
+                if ($wasOutOfStock) {
+                    // Product was out of stock - show notification results
                     if ($notif['success'] && $notif['notified'] > 0) {
                         $success .= " Notified {$notif['notified']} out of {$notif['total']} wishlist member(s).";
                     } else if ($notif['notified'] == 0) {
@@ -53,6 +61,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $error = ($error ? $error . ' ' : '') . "Some notifications failed: " . $notif['error'];
                         }
                     }
+                } else {
+                    // Product was not out of stock - inform admin why notifications weren't sent
+                    $stockInfo = "Total stock: " . ($notif['stock_before'] ?? 'N/A');
+                    if (isset($notif['variant_stock_before'])) {
+                        $stockInfo .= ", Variant stock: " . $notif['variant_stock_before'];
+                    }
+                    if (isset($notif['size_stock_before'])) {
+                        $stockInfo .= ", Size stock: " . $notif['size_stock_before'];
+                    }
+                    $error = ($error ? $error . ' ' : '') . "Product was not out of stock ({$stockInfo}), so notifications were not sent to {$notif['total']} wishlist member(s). Notifications are only sent when restocking brings a product, variant, or specific size back in stock.";
                 }
             }
         }

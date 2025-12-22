@@ -1705,27 +1705,13 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                                     <span>Contact Number</span>
                                 </label>
                                 <div class="phone-input-group">
-                                    <div class="country-code-wrapper">
-                                        <select id="addAdminCountryCode" name="country_code" class="country-code-select" required>
-                                            <option value="+60">🇲🇾 +60 (MY)</option>
-                                            <option value="+1">🇺🇸 +1 (US)</option>
-                                            <option value="+44">🇬🇧 +44 (UK)</option>
-                                            <option value="+65">🇸🇬 +65 (SG)</option>
-                                            <option value="+86">🇨🇳 +86 (CN)</option>
-                                            <option value="+81">🇯🇵 +81 (JP)</option>
-                                            <option value="+61">🇦🇺 +61 (AU)</option>
-                                            <option value="+33">🇫🇷 +33 (FR)</option>
-                                            <option value="+49">🇩🇪 +49 (DE)</option>
-                                        </select>
-                                    </div>
                                     <div class="phone-number-wrapper">
                                         <i class="fas fa-phone input-icon"></i>
-                                        <input type="tel" id="addAdminPhoneNumber" name="phone_number" class="form-input phone-number-input" placeholder="e.g., 11-5550 5761" required>
+                                        <input type="tel" id="addAdminPhoneNumber" name="contact_no" class="form-input phone-number-input" placeholder="e.g., 011-5550 5761" required>
                                     </div>
                                 </div>
-                                <input type="hidden" name="contact_no" id="addAdminContactNo"/>
                                 <div id="addAdminPhoneValidationError" class="phone-validation-error"></div>
-                                <small class="input-hint" id="addAdminPhoneFormatHint">Enter phone number without country code</small>
+                                <small class="input-hint" id="addAdminPhoneFormatHint">Enter Malaysian phone number (10-11 digits, e.g., 011-5550 5761)</small>
                             </div>
 
                             <div class="form-group form-group-enhanced">
@@ -1874,27 +1860,13 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
                         <div class="form-group form-group-full">
                         <label class="form-label">Contact Number</label>
                         <div class="phone-input-group">
-                            <div class="country-code-wrapper">
-                                <select id="editCountryCode" name="country_code" class="country-code-select" required>
-                                    <option value="+60">🇲🇾 +60 (MY)</option>
-                                    <option value="+1">🇺🇸 +1 (US)</option>
-                                    <option value="+44">🇬🇧 +44 (UK)</option>
-                                    <option value="+65">🇸🇬 +65 (SG)</option>
-                                    <option value="+86">🇨🇳 +86 (CN)</option>
-                                    <option value="+81">🇯🇵 +81 (JP)</option>
-                                    <option value="+61">🇦🇺 +61 (AU)</option>
-                                    <option value="+33">🇫🇷 +33 (FR)</option>
-                                    <option value="+49">🇩🇪 +49 (DE)</option>
-                                </select>
-                            </div>
                             <div class="phone-number-wrapper">
                                 <i class="fas fa-phone input-icon"></i>
-                                <input type="tel" id="editPhoneNumber" name="phone_number" class="form-input phone-number-input" placeholder="e.g., 11-5550 5761" required>
+                                <input type="tel" id="editPhoneNumber" name="contact_no" class="form-input phone-number-input" placeholder="e.g., 011-5550 5761" required>
                             </div>
                         </div>
-                        <input type="hidden" name="contact_no" id="editContactNo"/>
                         <div id="editPhoneValidationError" class="phone-validation-error"></div>
-                        <small class="input-hint" id="editPhoneFormatHint">Enter phone number without country code</small>
+                        <small class="input-hint" id="editPhoneFormatHint">Enter Malaysian phone number (10-11 digits, e.g., 011-5550 5761)</small>
                     </div>
                     </div>
 

@@ -158,6 +158,27 @@ body {
     color: #FF523B;
 }
 
+/* Position hidden date input below the visible input so calendar appears correctly below the form field */
+.date-input-wrapper {
+    position: relative;
+}
+
+.date-picker-hidden {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    height: 48px;
+    opacity: 0;
+    pointer-events: auto;
+    z-index: 10;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    margin: 0;
+    margin-top: 2px;
+}
+
 .form-control {
     width: 100%;
     padding: 14px 15px 14px 55px;

@@ -548,8 +548,9 @@
     // Email format
     var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim());
     if(!emailOk){ document.getElementById('err_email').style.display='block'; ok=false; }
-    // Phone format
-    var phoneOk = /^\d{3}-\d{3} \d{4}$/.test(contact.value.trim());
+    // Malaysian phone number validation (10-11 digits)
+    var phoneDigits = contact.value.replace(/\D/g, '');
+    var phoneOk = phoneDigits.length >= 10 && phoneDigits.length <= 11;
     if(!phoneOk){ document.getElementById('err_contact').style.display='block'; ok=false; }
     return ok;
   }

@@ -211,7 +211,10 @@ include __DIR__ . '/../../general/_navbar.php';
               <?php
                 $rawPhone = (string)($user['contact_no'] ?? '');
                 $digits = preg_replace('/\D+/', '', $rawPhone);
-                if (strlen($digits) === 10) {
+                // Format Malaysian phone number (10-11 digits)
+                if (strlen($digits) === 11) {
+                    $formattedPhone = substr($digits,0,3) . '-' . substr($digits,3,4) . ' ' . substr($digits,7,4);
+                } elseif (strlen($digits) === 10) {
                     $formattedPhone = substr($digits,0,3) . '-' . substr($digits,3,3) . ' ' . substr($digits,6,4);
                 } else {
                     $formattedPhone = $rawPhone;
@@ -309,11 +312,10 @@ include __DIR__ . '/../../general/_navbar.php';
             <?php
               $rawPhone2 = (string)($user['contact_no'] ?? '');
               $digits2 = preg_replace('/\D+/', '', $rawPhone2);
-              if (strlen($digits2) === 11 && $digits2[0] === '1') {
-                // US format with country code: +1 xxx-xxx-xxxx
-                $formatted2 = '+1 ' . substr($digits2,1,3) . '-' . substr($digits2,4,3) . '-' . substr($digits2,7,4);
+              // Format Malaysian phone number (10-11 digits)
+              if (strlen($digits2) === 11) {
+                $formatted2 = substr($digits2,0,3) . '-' . substr($digits2,3,4) . ' ' . substr($digits2,7,4);
               } elseif (strlen($digits2) === 10) {
-                // Default 10-digit local format: xxx-xxx xxxx
                 $formatted2 = substr($digits2,0,3) . '-' . substr($digits2,3,3) . ' ' . substr($digits2,6,4);
               } else {
                 $formatted2 = $rawPhone2;
@@ -325,10 +327,10 @@ include __DIR__ . '/../../general/_navbar.php';
               name="contact_no"
               value="<?php echo html_escape($formatted2); ?>"
               required
-              pattern="^[0-9+\s\-\(\)]{10,20}$"
-              title="Enter a valid phone number (10–11 digits, you may include +, spaces, dashes, or parentheses)."
+              pattern="^[0-9\s\-]{10,12}$"
+              title="Enter a valid Malaysian phone number (10-11 digits, e.g. 011-5550 5761)."
             />
-            <div class="form-error" id="err_contact" style="display:none;">Enter a valid phone number (10–11 digits, e.g. local MY or US number).</div>
+            <div class="form-error" id="err_contact" style="display:none;">Enter a valid Malaysian phone number (10-11 digits, e.g. 011-5550 5761).</div>
           </div>
         </div>
 

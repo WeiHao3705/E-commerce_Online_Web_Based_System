@@ -123,9 +123,16 @@ class AdminController
                     throw new Exception('Invalid email format.');
                 }
 
-                // Contact number is already validated and formatted by JavaScript (format: "+60 11-5550 5761")
-                // Just trim it, no need to extract digits or validate length since different countries have different formats
+                // Validate Malaysian phone number (10-11 digits)
                 $contactNo = $contactNo === '' ? '' : trim($contactNo);
+                if ($contactNo !== '') {
+                    $contact_digits = preg_replace('/\D+/', '', $contactNo);
+                    $len = strlen($contact_digits);
+                    if ($len < 10 || $len > 11) {
+                        throw new Exception("Invalid phone number format. Please enter a valid Malaysian phone number (10-11 digits).");
+                    }
+                    $contactNo = $contact_digits; // Store digits only
+                }
 
                 $adminDTO = new AdminRegistrationDTO(
                     $username,
@@ -183,9 +190,16 @@ class AdminController
                     throw new Exception('Invalid email format.');
                 }
 
-                // Contact number is already validated and formatted by JavaScript (format: "+60 11-5550 5761")
-                // Just trim it, no need to extract digits or validate length since different countries have different formats
+                // Validate Malaysian phone number (10-11 digits)
                 $contactNo = $contactNo === '' ? '' : trim($contactNo);
+                if ($contactNo !== '') {
+                    $contact_digits = preg_replace('/\D+/', '', $contactNo);
+                    $len = strlen($contact_digits);
+                    if ($len < 10 || $len > 11) {
+                        throw new Exception("Invalid phone number format. Please enter a valid Malaysian phone number (10-11 digits).");
+                    }
+                    $contactNo = $contact_digits; // Store digits only
+                }
 
                 // Get old values before update for logging
                 $database = new Database();

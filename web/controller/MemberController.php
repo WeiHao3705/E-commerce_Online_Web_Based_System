@@ -227,6 +227,44 @@ class MemberController
                     exit;
                 }
             }
+        } catch (PDOException $e) {
+            // Handle database integrity constraint violations
+            $errorCode = $e->getCode();
+            $errorMessage = $e->getMessage();
+            $errorField = null;
+            $userFriendlyMessage = '';
+
+            // Check for duplicate entry error (SQLSTATE[23000] or MySQL error code 1062)
+            if ($errorCode == 23000 || strpos($errorMessage, '23000') !== false || strpos($errorMessage, '1062') !== false) {
+                // Extract which field is duplicated from the error message
+                // Error format: "SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry 'test1' for key 'username'"
+                if (stripos($errorMessage, "key 'username'") !== false || (stripos($errorMessage, "Duplicate entry") !== false && stripos($errorMessage, 'username') !== false)) {
+                    $errorField = 'username';
+                    $userFriendlyMessage = 'This username is already taken. Please choose a different username.';
+                } elseif (stripos($errorMessage, "key 'email'") !== false || (stripos($errorMessage, "Duplicate entry") !== false && stripos($errorMessage, 'email') !== false)) {
+                    $errorField = 'email';
+                    $userFriendlyMessage = 'This email address is already registered. Please use a different email or try logging in.';
+                } elseif (stripos($errorMessage, "key 'contact_no'") !== false || (stripos($errorMessage, "Duplicate entry") !== false && stripos($errorMessage, 'contact') !== false)) {
+                    $errorField = 'contact_no';
+                    $userFriendlyMessage = 'This contact number is already registered. Please use a different contact number.';
+                } else {
+                    // Generic duplicate entry message
+                    $userFriendlyMessage = 'This information is already registered. Please check your details and try again.';
+                }
+            } else {
+                // Other database errors
+                $userFriendlyMessage = 'An error occurred during registration. Please try again later.';
+            }
+
+            $_SESSION['error_message'] = $userFriendlyMessage;
+            $_SESSION['form_data'] = $_POST;
+
+            if ($errorField) {
+                $_SESSION['error_field'] = $errorField;
+            }
+
+            header('Location: ../views/member_management/MemberRegisterForm.php');
+            exit;
         } catch (Exception $e) {
             $_SESSION['error_message'] = $e->getMessage();
 
@@ -449,14 +487,14 @@ class MemberController
                     throw new Exception("Invalid email format.");
                 }
 
-                // Normalize phone: keep only digits, support 10–11 digit numbers (e.g. MY or US including country code)
+                // Normalize phone: keep only digits, Malaysian format (10-11 digits)
                 $contact_digits = preg_replace('/\D+/', '', $contact_no);
                 $len = strlen($contact_digits);
                 if ($len < 10 || $len > 11) {
-                    throw new Exception("Invalid phone number format. Please enter a valid 10–11 digit number.");
+                    throw new Exception("Invalid phone number format. Please enter a valid Malaysian phone number (10-11 digits).");
                 }
 
-                // Store digits-only (keep leading country code if present, e.g. 1XXXXXXXXXX for US)
+                // Store digits-only
                 $contact_no = $contact_digits;
 
                 // Get current user data to preserve gender

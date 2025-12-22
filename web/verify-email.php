@@ -60,8 +60,8 @@ $_SESSION[$rateLimitKey . '_time'] = time();
 try {
     // Initialize services
     $database = new Database();
-    $memberRepository = new MemberRepository($database);
-    $memberService = new MemberService($memberRepository);
+    $memberRepository = new MembershipRepository($database);
+    $memberService = new MembershipServices($memberRepository);
     
     // Verify email
     $result = $memberService->verifyEmail($token);

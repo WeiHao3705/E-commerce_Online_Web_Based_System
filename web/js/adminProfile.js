@@ -315,8 +315,9 @@ $(document).ready(function() {
         }
 
         const contactNo = $('#contact_no').val().trim();
-        const phonePattern = /^[0-9]{3}-[0-9]{3}-[0-9]{4}$/;
-        if (!phonePattern.test(contactNo)) {
+        const digits = contactNo.replace(/\D+/g, '');
+        // Validate Malaysian phone number (10-11 digits)
+        if (digits.length < 10 || digits.length > 11) {
             $('#err_contact_no').show();
             isValid = false;
         }
@@ -359,11 +360,14 @@ $(document).ready(function() {
         }
     });
 
-    // Auto-format phone number
+    // Auto-format Malaysian phone number
     $('#contact_no').on('input', function() {
         let value = $(this).val().replace(/\D/g, '');
-        if (value.length >= 6) {
-            value = value.substring(0, 3) + '-' + value.substring(3, 6) + '-' + value.substring(6, 10);
+        // Format Malaysian phone number (10-11 digits)
+        if (value.length >= 11) {
+            value = value.substring(0, 3) + '-' + value.substring(3, 7) + ' ' + value.substring(7, 11);
+        } else if (value.length >= 7) {
+            value = value.substring(0, 3) + '-' + value.substring(3, 6) + ' ' + value.substring(6);
         } else if (value.length >= 3) {
             value = value.substring(0, 3) + '-' + value.substring(3);
         }

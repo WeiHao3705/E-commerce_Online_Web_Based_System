@@ -261,38 +261,17 @@ $(document).ready(function() {
         return String(text).replace(/[&<>"']/g, m => map[m]);
     }
 
-    function parseContactNumber(contactNo) {
-        if (!contactNo) {
-            return { countryCode: '+60', phoneNumber: '' };
-        }
-        
-        // Try to extract country code (format: "+60 11-5550 5761" or "+60 1155505761")
-        const countryCodes = ['+60', '+1', '+44', '+65', '+86', '+81', '+61', '+33', '+49'];
-        let countryCode = '+60'; // default
-        let phoneNumber = contactNo;
-        
-        for (const code of countryCodes) {
-            if (contactNo.startsWith(code)) {
-                countryCode = code;
-                phoneNumber = contactNo.substring(code.length).trim();
-                break;
-            }
-        }
-        
-        return { countryCode, phoneNumber };
-    }
-
     function openEditModal(userId, username, fullName, email, contactNo, gender, dateOfBirth) {
         $('#editUserId').val(userId);
         $('#editUsername').val(username);
         $('#editFullName').val(fullName);
         $('#editEmail').val(email);
         
-        // Parse contact number
-        const parsed = parseContactNumber(contactNo);
-        $('#editCountryCode').val(parsed.countryCode);
-        $('#editPhoneNumber').val(parsed.phoneNumber);
-        updateEditPhoneFormatHint();
+        // Display contact number (remove any country code prefix if present)
+        let phoneNumber = contactNo || '';
+        // Remove country code prefixes if they exist
+        phoneNumber = phoneNumber.replace(/^\+60\s*/, '').replace(/^\+1\s*/, '').replace(/^\+44\s*/, '').replace(/^\+65\s*/, '').replace(/^\+86\s*/, '').replace(/^\+81\s*/, '').replace(/^\+61\s*/, '').replace(/^\+33\s*/, '').replace(/^\+49\s*/, '');
+        $('#editPhoneNumber').val(phoneNumber.trim());
         
         $('#editGender').val(gender);
         $('#editDateOfBirth').val(dateOfBirth || '');
@@ -304,68 +283,12 @@ $(document).ready(function() {
         $('#editModal').addClass('hidden');
     }
 
-    // Phone validation patterns by country code
-    const phonePatterns = {
-        '+60': { // Malaysia
-            pattern: /^[0-9]{2,3}[- ]?[0-9]{3,4}[- ]?[0-9]{4}$/,
-            example: '11-5550 5761',
-            minLength: 9,
-            maxLength: 12
-        },
-        '+1': { // US/Canada
-            pattern: /^[0-9]{3}[- ]?[0-9]{3}[- ]?[0-9]{4}$/,
-            example: '555-123-4567',
-            minLength: 10,
-            maxLength: 12
-        },
-        '+44': { // UK
-            pattern: /^[0-9]{2,4}[- ]?[0-9]{3,4}[- ]?[0-9]{3,4}$/,
-            example: '20 7946 0958',
-            minLength: 10,
-            maxLength: 13
-        },
-        '+65': { // Singapore
-            pattern: /^[689][0-9]{7}$/,
-            example: '81234567',
-            minLength: 8,
-            maxLength: 8
-        },
-        '+86': { // China
-            pattern: /^1[3-9][0-9]{9}$/,
-            example: '13800138000',
-            minLength: 11,
-            maxLength: 11
-        },
-        '+81': { // Japan
-            pattern: /^[0-9]{2,4}[- ]?[0-9]{2,4}[- ]?[0-9]{4}$/,
-            example: '90-1234-5678',
-            minLength: 10,
-            maxLength: 13
-        },
-        '+61': { // Australia
-            pattern: /^[0-9]{2}[- ]?[0-9]{4}[- ]?[0-9]{4}$/,
-            example: '04 1234 5678',
-            minLength: 10,
-            maxLength: 12
-        },
-        '+33': { // France
-            pattern: /^[0-9]{2}[- ]?[0-9]{2}[- ]?[0-9]{2}[- ]?[0-9]{2}[- ]?[0-9]{2}$/,
-            example: '06 12 34 56 78',
-            minLength: 10,
-            maxLength: 14
-        },
-        '+49': { // Germany
-            pattern: /^[0-9]{3,4}[- ]?[0-9]{3,8}$/,
-            example: '151 23456789',
-            minLength: 10,
-            maxLength: 13
-        }
-    };
+    // Malaysian phone number validation only
+    const malaysiaPattern = /^0?[0-9]{2,3}[- ]?[0-9]{3,4}[- ]?[0-9]{4}$/;
+    const example = '011-5550 5761';
 
     function validateEditPhoneNumber() {
-        const countryCode = $('#editCountryCode').val();
         const phoneNumber = $('#editPhoneNumber').val().replace(/\s+/g, ' ').trim();
-        const config = phonePatterns[countryCode];
         const $phoneNumber = $('#editPhoneNumber');
         const $phoneValidationError = $('#editPhoneValidationError');
 
@@ -379,48 +302,31 @@ $(document).ready(function() {
         // Remove spaces and dashes for validation
         const cleanPhone = phoneNumber.replace(/[- ]/g, '');
         
-        // Check length
-        if (cleanPhone.length < config.minLength || cleanPhone.length > config.maxLength) {
+        // Check length (10-11 digits for Malaysia)
+        if (cleanPhone.length < 10 || cleanPhone.length > 11) {
             $phoneNumber.addClass('input-error').removeClass('input-success');
-            $phoneValidationError.text(`Phone number must be ${config.minLength}-${config.maxLength} digits. Example: ${config.example}`).show();
+            $phoneValidationError.text('Malaysian phone number must be 10-11 digits. Example: ' + example).show();
             $('#editContactNo').val('');
             return false;
         }
 
         // Check pattern
-        if (!config.pattern.test(phoneNumber)) {
+        if (!malaysiaPattern.test(phoneNumber)) {
             $phoneNumber.addClass('input-error').removeClass('input-success');
-            $phoneValidationError.text(`Invalid phone format. Example: ${config.example}`).show();
+            $phoneValidationError.text('Invalid Malaysian phone format. Example: ' + example).show();
             $('#editContactNo').val('');
             return false;
         }
 
-        // Valid phone number
+        // Valid phone number - store digits only
         $phoneNumber.removeClass('input-error').addClass('input-success');
         $phoneValidationError.text('').hide();
-        
-        // Combine country code and phone number
-        const fullPhoneNumber = countryCode + ' ' + phoneNumber;
-        $('#editContactNo').val(fullPhoneNumber);
+        $('#editContactNo').val(cleanPhone);
         
         return true;
     }
 
-    function updateEditPhoneFormatHint() {
-        const countryCode = $('#editCountryCode').val();
-        const config = phonePatterns[countryCode];
-        if (config) {
-            $('#editPhoneFormatHint').text(`Format: ${config.example} (${config.minLength}-${config.maxLength} digits)`);
-            $('#editPhoneNumber').attr('placeholder', `e.g., ${config.example}`);
-        }
-    }
-
     // Phone validation event handlers
-    $(document).on('change', '#editCountryCode', function() {
-        updateEditPhoneFormatHint();
-        validateEditPhoneNumber();
-    });
-
     $(document).on('input', '#editPhoneNumber', function() {
         validateEditPhoneNumber();
     });
@@ -429,7 +335,7 @@ $(document).ready(function() {
     $(document).on('submit', '#editForm', function(e) {
         if (!validateEditPhoneNumber()) {
             e.preventDefault();
-            alert('Please enter a valid phone number.');
+            alert('Please enter a valid Malaysian phone number (10-11 digits).');
             $('#editPhoneNumber').focus();
             return false;
         }
@@ -644,35 +550,30 @@ $(document).ready(function() {
     });
 
     function validateAddAdminPhoneNumber() {
-        const countryCode = $('#addAdminCountryCode').val();
         const phoneNumber = $('#addAdminPhoneNumber').val().replace(/\s+/g, ' ').trim();
-        const config = phonePatterns[countryCode];
         const $phoneNumber = $('#addAdminPhoneNumber');
         const $phoneValidationError = $('#addAdminPhoneValidationError');
 
         if (!phoneNumber) {
             $phoneNumber.removeClass('input-error input-success');
             $phoneValidationError.text('').hide();
-            $('#addAdminContactNo').val('');
             return false;
         }
 
         // Remove spaces and dashes for validation
         const cleanPhone = phoneNumber.replace(/[- ]/g, '');
         
-        // Check length
-        if (cleanPhone.length < config.minLength || cleanPhone.length > config.maxLength) {
+        // Check length (10-11 digits for Malaysia)
+        if (cleanPhone.length < 10 || cleanPhone.length > 11) {
             $phoneNumber.addClass('input-error').removeClass('input-success');
-            $phoneValidationError.text(`Phone number must be ${config.minLength}-${config.maxLength} digits. Example: ${config.example}`).show();
-            $('#addAdminContactNo').val('');
+            $phoneValidationError.text('Malaysian phone number must be 10-11 digits. Example: ' + example).show();
             return false;
         }
 
         // Check pattern
-        if (!config.pattern.test(phoneNumber)) {
+        if (!malaysiaPattern.test(phoneNumber)) {
             $phoneNumber.addClass('input-error').removeClass('input-success');
-            $phoneValidationError.text(`Invalid phone format. Example: ${config.example}`).show();
-            $('#addAdminContactNo').val('');
+            $phoneValidationError.text('Invalid Malaysian phone format. Example: ' + example).show();
             return false;
         }
 
@@ -680,28 +581,10 @@ $(document).ready(function() {
         $phoneNumber.removeClass('input-error').addClass('input-success');
         $phoneValidationError.text('').hide();
         
-        // Combine country code and phone number
-        const fullPhoneNumber = countryCode + ' ' + phoneNumber;
-        $('#addAdminContactNo').val(fullPhoneNumber);
-        
         return true;
     }
 
-    function updateAddAdminPhoneFormatHint() {
-        const countryCode = $('#addAdminCountryCode').val();
-        const config = phonePatterns[countryCode];
-        if (config) {
-            $('#addAdminPhoneFormatHint').text(`Format: ${config.example} (${config.minLength}-${config.maxLength} digits)`);
-            $('#addAdminPhoneNumber').attr('placeholder', `e.g., ${config.example}`);
-        }
-    }
-
     // Phone validation event handlers for add admin
-    $(document).on('change', '#addAdminCountryCode', function() {
-        updateAddAdminPhoneFormatHint();
-        validateAddAdminPhoneNumber();
-    });
-
     $(document).on('input', '#addAdminPhoneNumber', function() {
         validateAddAdminPhoneNumber();
     });
@@ -755,7 +638,7 @@ $(document).ready(function() {
         if (!validateAddAdminPhoneNumber()) {
             isValid = false;
             if (!errorMessage) {
-                errorMessage = 'Please enter a valid phone number.';
+                errorMessage = 'Please enter a valid Malaysian phone number (10-11 digits).';
                 $('#addAdminPhoneNumber').focus();
             }
         }
@@ -981,12 +864,7 @@ $(document).ready(function() {
         }
         
         // Reset phone fields
-        $('#addAdminCountryCode').val('+60');
-        if (typeof updateAddAdminPhoneFormatHint === 'function') {
-            updateAddAdminPhoneFormatHint();
-        }
         $('#addAdminPhoneNumber').val('');
-        $('#addAdminContactNo').val('');
         $('#addAdminPhoneValidationError').text('').hide();
         $('#addAdminPhoneNumber').removeClass('input-error input-success');
         
