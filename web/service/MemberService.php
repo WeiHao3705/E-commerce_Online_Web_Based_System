@@ -477,4 +477,38 @@ class MembershipServices
     {
         return $this->membershipRepository->clearRememberToken($userId);
     }
+
+    /**
+     * Send a password reset OTP to the user's email
+     */
+    public function sendResetOtp($user)
+    {
+        $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+        $this->membershipRepository->setResetOtp($user['user_id'], $otp, $expiresAt);
+
+        require_once __DIR__ . '/EmailService.php';
+        $emailService = new EmailService();
+        $emailService->sendOtpEmail($user['email'], $user['full_name'], $otp);
+    }
+
+    /**
+     * Verify the OTP for password reset
+     */
+    public function verifyResetOtp($userId, $otp)
+    {
+        $row = $this->membershipRepository->getResetOtp($userId);
+        if (!$row || !$row['reset_otp'] || !$row['reset_otp_expires_at']) {
+            return false;
+        }
+        if ($row['reset_otp'] !== $otp) {
+            return false;
+        }
+        if (strtotime($row['reset_otp_expires_at']) < time()) {
+            return false;
+        }
+        // Clear OTP after successful verification
+        $this->membershipRepository->clearResetOtp($userId);
+        return true;
+    }
 }

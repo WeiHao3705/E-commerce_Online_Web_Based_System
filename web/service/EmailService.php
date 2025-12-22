@@ -3,6 +3,31 @@ require_once __DIR__ . '/../lib/PHPMailer.php';
 require_once __DIR__ . '/../lib/SMTP.php';
 
 class EmailService {
+    public function sendOtpEmail($toEmail, $toName, $otp) {
+        $mail = new PHPMailer(true);
+        try {
+            $mail->isSMTP();
+            $mail->Host = $this->smtpHost;
+            $mail->SMTPAuth = true;
+            $mail->Username = $this->smtpUsername;
+            $mail->Password = $this->smtpPassword;
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port = $this->smtpPort;
+            $mail->CharSet = 'UTF-8';
+            $mail->setFrom($this->fromEmail, $this->fromName);
+            $mail->addAddress($toEmail, $toName);
+            $mail->isHTML(true);
+            $mail->Subject = 'Your Password Reset OTP - NGEAR';
+            $mail->Body = '<p>Dear ' . htmlspecialchars($toName) . ',</p>' .
+                '<p>Your OTP for password reset is: <b style="font-size:22px;">' . htmlspecialchars($otp) . '</b></p>' .
+                '<p>This OTP is valid for 10 minutes. If you did not request a password reset, please ignore this email.</p>' .
+                '<p>Thank you,<br>NGEAR Sports Store</p>';
+            $mail->AltBody = 'Your OTP for password reset is: ' . $otp;
+            $mail->send();
+        } catch (Exception $e) {
+            error_log('Failed to send OTP email: ' . $e->getMessage());
+        }
+    }
     private $smtpHost = 'smtp.gmail.com';
     private $smtpUsername = '6403360weihao@gmail.com';
     private $smtpPassword = 'kkch bjlp clpk kfyw';

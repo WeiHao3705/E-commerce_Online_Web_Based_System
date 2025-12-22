@@ -16,8 +16,8 @@ class MembershipRepository
 
     public function createMember(MemberRegistrationDTO $memberDTO)
     {
-        $sql = "INSERT INTO users (username, password, full_name, gender, contact_no, email, security_question, security_answer, profile_photo, DateOfBirth, email_verified, status) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE, 'inactive')";
+        $sql = "INSERT INTO users (username, password, full_name, gender, contact_no, email, profile_photo, DateOfBirth, email_verified, status) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, FALSE, 'inactive')";
 
         $stmt = $this->db->prepare($sql);
 
@@ -28,8 +28,6 @@ class MembershipRepository
             $memberDTO->getGender(),
             $memberDTO->getContactNo(),
             $memberDTO->getEmail(),
-            $memberDTO->getSecurityQuestion(),
-            $memberDTO->getSecurityAnswer(),
             $memberDTO->getProfilePhoto(),
             $memberDTO->getDateOfBirth()
         ]);
@@ -660,6 +658,37 @@ class MembershipRepository
     public function clearRememberToken(int $userId): bool
     {
         $sql = "UPDATE users SET remember_token = NULL WHERE user_id = ?";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$userId]);
+    }
+
+    /**
+     * Set OTP and expiry for password reset
+     */
+    public function setResetOtp($userId, $otp, $expiresAt)
+    {
+        $sql = "UPDATE users SET reset_otp = ?, reset_otp_expires_at = ? WHERE user_id = ?";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$otp, $expiresAt, $userId]);
+    }
+
+    /**
+     * Get OTP and expiry for a user
+     */
+    public function getResetOtp($userId)
+    {
+        $sql = "SELECT reset_otp, reset_otp_expires_at FROM users WHERE user_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$userId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Clear OTP after use
+     */
+    public function clearResetOtp($userId)
+    {
+        $sql = "UPDATE users SET reset_otp = NULL, reset_otp_expires_at = NULL WHERE user_id = ?";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([$userId]);
     }

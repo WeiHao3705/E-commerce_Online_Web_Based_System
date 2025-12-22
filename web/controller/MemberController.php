@@ -209,8 +209,6 @@ class MemberController
                     $_POST['gender'],
                     $_POST['contact_no'],
                     $_POST['email'],
-                    $_POST['security_question'],
-                    $_POST['security_answer'],
                     null, // profile_photo will be set later
                     $dateOfBirth
                 );
@@ -589,7 +587,6 @@ class MemberController
                 exit;
             }
 
-            // Step 1: user submitted username only -> show security question
             $username = isset($_POST['username']) ? trim($_POST['username']) : '';
             if ($username) {
                 $user = $this->membershipServices->getMemberByUsername($username);
@@ -599,22 +596,21 @@ class MemberController
                     exit;
                 }
 
-                // store user in session for next step (only minimal data)
+                // Generate and send OTP
+                $this->membershipServices->sendResetOtp($user);
+
+                // Store user in session for next step
                 $_SESSION['reset_user'] = [
                     'user_id' => $user['user_id'],
                     'username' => $user['username'],
-                    'security_question' => $user['security_question'] ?? '',
                     'created_at' => time()
                 ];
-
-                // ensure previous verification flag is cleared
                 unset($_SESSION['reset_verified']);
-
+                $_SESSION['fp_message'] = 'An OTP has been sent to your registered email address.';
                 header('Location: ../views/security/forgot_password.php');
                 exit;
             }
 
-            // Fallback: redirect back
             header('Location: ../views/security/forgot_password.php');
             exit;
         } catch (Exception $e) {
@@ -636,7 +632,7 @@ class MemberController
                 exit;
             }
 
-            $securityAnswer = isset($_POST['security_answer']) ? trim($_POST['security_answer']) : '';
+            $otp = isset($_POST['otp_code']) ? trim($_POST['otp_code']) : '';
 
             if (empty($_SESSION['reset_user'])) {
                 $_SESSION['fp_message'] = 'Session expired. Please start again.';
@@ -645,25 +641,16 @@ class MemberController
             }
 
             $userId = (int)$_SESSION['reset_user']['user_id'];
-            $user = $this->membershipServices->getMemberById($userId);
-            if (!$user) {
-                $_SESSION['fp_message'] = 'User not found';
-                unset($_SESSION['reset_user']);
+            if ($this->membershipServices->verifyResetOtp($userId, $otp)) {
+                $_SESSION['reset_verified'] = true;
+                $_SESSION['fp_message'] = 'OTP verified. You may now set a new password.';
+                header('Location: ../views/security/forgot_password.php');
+                exit;
+            } else {
+                $_SESSION['fp_message'] = 'Invalid or expired OTP.';
                 header('Location: ../views/security/forgot_password.php');
                 exit;
             }
-
-            $stored = isset($user['security_answer']) ? trim($user['security_answer']) : '';
-            if (strcasecmp($stored, $securityAnswer) !== 0) {
-                $_SESSION['fp_message'] = 'Security answer did not match';
-                header('Location: ../views/security/forgot_password.php');
-                exit;
-            }
-
-            // mark as verified and go to new-password step on the single page
-            $_SESSION['reset_verified'] = true;
-            header('Location: ../views/security/forgot_password.php');
-            exit;
         } catch (Exception $e) {
             $_SESSION['fp_message'] = $e->getMessage();
             header('Location: ../views/security/forgot_password.php');

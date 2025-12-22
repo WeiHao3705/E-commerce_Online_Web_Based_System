@@ -211,26 +211,7 @@ $isAdmin = isset($_SESSION['user']) && isset($_SESSION['user']->role) && $_SESSI
                         <small class="input-hint">Enter your date of birth (DD/MM/YYYY) or click the calendar icon to select</small>
                     </div>
 
-                    <div class="form-group full-width">
-                        <label for="security-question">Security Question</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-question-circle input-icon"></i>
-                            <select id="security-question" name="security_question" class="form-control" required>
-                                <option disabled selected>Select a Security Question</option>
-                                <option <?php echo (isset($formData['security_question']) && $formData['security_question'] == "What was your first pet's name?") ? 'selected' : ''; ?>>What was your first pet's name?</option>
-                                <option <?php echo (isset($formData['security_question']) && $formData['security_question'] == 'What city were you born in?') ? 'selected' : ''; ?>>What city were you born in?</option>
-                                <option <?php echo (isset($formData['security_question']) && $formData['security_question'] == "What is your mother's maiden name?") ? 'selected' : ''; ?>>What is your mother's maiden name?</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-group full-width">
-                        <label for="security-answer">Security Answer</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-key input-icon"></i>
-                            <input type="text" id="security-answer" name="security_answer" class="form-control" placeholder="Security Answer" value="<?php echo isset($formData['security_answer']) ? htmlspecialchars($formData['security_answer']) : ''; ?>" required>
-                        </div>
-                    </div>
+                    <!-- Security question and answer fields removed -->
 
                     <div class="form-group full-width">
                         <label for="profile-photo">Profile Photo (optional)</label>

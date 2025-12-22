@@ -69,9 +69,9 @@ $pageTitle = 'Forgot Password';
         </div>
         <h2>Reset your password</h2>
         <?php if (empty($_SESSION['reset_user'])): ?>
-            <p>Step 1 — enter your username and we'll show your security question.</p>
+            <p>Step 1 — enter your username and we'll send a one-time password (OTP) to your email.</p>
         <?php elseif (empty($_SESSION['reset_verified'])): ?>
-            <p>Step 2 — answer your security question to verify your identity.</p>
+            <p>Step 2 — enter the OTP sent to your email to verify your identity.</p>
         <?php else: ?>
             <p>Step 3 — set a new password for your account.</p>
         <?php endif; ?>
@@ -81,7 +81,6 @@ $pageTitle = 'Forgot Password';
         <?php endif; ?>
 
         <?php if (!empty($_SESSION['reset_user'])):
-            $reset = $_SESSION['reset_user'];
             if (!empty($_SESSION['reset_verified'])):
         ?>
             <form action="<?php echo $prefix; ?>controller/MemberController.php" method="POST">
@@ -106,19 +105,12 @@ $pageTitle = 'Forgot Password';
             <form action="<?php echo $prefix; ?>controller/MemberController.php" method="POST">
                 <input type="hidden" name="action" value="verify_reset">
                 <div class="form-group">
-                    <label>Security question</label>
+                    <label for="otp_code">Enter OTP</label>
                     <div class="input-wrapper">
-                        <div class="form-control" style="background:transparent;border:none;padding-left:0;color:#fff;"><?php echo htmlspecialchars($reset['security_question']); ?></div>
+                        <input type="text" id="otp_code" name="otp_code" class="form-control" placeholder="6-digit OTP" maxlength="6" required autocomplete="one-time-code">
                     </div>
                 </div>
-
-                <div class="form-group">
-                    <label for="security_answer">Answer</label>
-                    <div class="input-wrapper">
-                        <input type="text" id="security_answer" name="security_answer" class="form-control" placeholder="Your answer" required>
-                    </div>
-                </div>
-                <button type="submit" class="submit-btn">Verify answer</button>
+                <button type="submit" class="submit-btn">Verify OTP</button>
             </form>
         <?php endif; ?>
         <?php else: ?>
