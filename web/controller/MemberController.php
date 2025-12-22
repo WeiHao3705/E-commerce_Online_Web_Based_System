@@ -18,6 +18,7 @@ class MemberController
         $this->membershipServices = new MembershipServices($membershipRepository);
     }
 
+    // Redirects to account login page
     public function showLogin()
     {
         try {
@@ -30,6 +31,7 @@ class MemberController
         }
     }
 
+    // Authenticates user credentials and logs in the user
     public function login()
     {
         try {
@@ -163,6 +165,7 @@ class MemberController
         setcookie('remember_token', '', time() - 3600, '/', '', false, true);
     }
 
+    // Logs out the current user and clears session
     public function logout()
     {
         // Clear remember me token from database and cookie
@@ -179,6 +182,7 @@ class MemberController
         exit;
     }
 
+    // Registers a new member account
     public function registerMember()
     {
         try {
@@ -251,6 +255,7 @@ class MemberController
         }
     }
 
+    // Verifies member email using verification token
     public function verifyEmail()
     {
         try {
@@ -279,6 +284,7 @@ class MemberController
         }
     }
 
+    // Resends email verification link to member
     public function resendVerificationEmail()
     {
         try {
@@ -309,6 +315,7 @@ class MemberController
         }
     }
 
+    // Displays all members with pagination, search, and filtering options
     public function showAllMembers()
     {
         try {
@@ -355,6 +362,7 @@ class MemberController
         }
     }
 
+    // Returns member data as JSON for AJAX requests
     private function getMembersAjax()
     {
         try {
@@ -414,6 +422,7 @@ class MemberController
         }
     }
 
+    // Updates member profile information
     public function updateMember()
     {
         try {
@@ -513,6 +522,7 @@ class MemberController
      * POST with 'email' -> show question
      * POST with 'security_answer' and 'new_password' -> verify and update
      */
+    // Initiates password reset by showing security question
     public function sendReset()
     {
         try {
@@ -559,6 +569,7 @@ class MemberController
     /**
      * Verify the security answer. If correct, mark verified and redirect to new-password page.
      */
+    // Verifies security answer for password reset
     public function verifyReset()
     {
         try {
@@ -605,6 +616,7 @@ class MemberController
     /**
      * Complete the reset by setting the new password. Requires prior verification.
      */
+    // Completes password reset with new password
     public function completeReset()
     {
         try {
@@ -662,6 +674,7 @@ class MemberController
         }
     }
 
+    // Updates member profile photo
     public function updateProfilePhoto()
     {
         header('Content-Type: application/json');
@@ -763,6 +776,7 @@ class MemberController
         }
     }
 
+    // Adds or updates member shipping address
     public function addAddress()
     {
         header('Content-Type: application/json');
@@ -877,6 +891,7 @@ class MemberController
         }
     }
 
+    // Deletes member shipping address
     public function deleteAddress()
     {
         header('Content-Type: application/json');
@@ -945,6 +960,7 @@ class MemberController
         }
     }
 
+    // Updates member account status (active, inactive, banned)
     public function updateMemberStatus()
     {
         try {
@@ -990,6 +1006,7 @@ class MemberController
         }
     }
 
+    // Deletes a member account
     public function deleteMember()
     {
         try {
@@ -1019,6 +1036,7 @@ class MemberController
         }
     }
 
+    // Deletes multiple members in bulk
     public function bulkDeleteMembers()
     {
         try {

@@ -24,6 +24,7 @@ class ChatController
         }
     }
 
+    // Routes chat-related requests to appropriate handler methods
     public function handleRequest()
     {
         $this->requireAuth();
@@ -77,6 +78,7 @@ class ChatController
         }
     }
 
+    // Retrieves chat rooms for current user (admin or member)
     private function getChatRooms()
     {
         header('Content-Type: application/json');
@@ -111,6 +113,7 @@ class ChatController
         }
     }
 
+    // Retrieves specific chat room details
     private function getChatRoom()
     {
         header('Content-Type: application/json');
@@ -149,6 +152,7 @@ class ChatController
         }
     }
 
+    // Creates a new chat room for member
     private function createChatRoom()
     {
         header('Content-Type: application/json');
@@ -187,6 +191,7 @@ class ChatController
         }
     }
 
+    // Sends a message in a chat room
     private function sendMessage()
     {
         header('Content-Type: application/json');
@@ -224,6 +229,7 @@ class ChatController
         }
     }
 
+    // Retrieves messages for a chat room
     private function getMessages()
     {
         header('Content-Type: application/json');
@@ -278,6 +284,7 @@ class ChatController
         }
     }
 
+    // Marks messages in chat room as read
     private function markAsRead()
     {
         header('Content-Type: application/json');
@@ -299,6 +306,7 @@ class ChatController
         }
     }
 
+    // Closes a chat room
     private function closeChatRoom()
     {
         header('Content-Type: application/json');
@@ -326,6 +334,7 @@ class ChatController
         }
     }
 
+    // Reopens a closed chat room (admin only)
     private function reopenChatRoom()
     {
         header('Content-Type: application/json');
@@ -360,6 +369,7 @@ class ChatController
         }
     }
 
+    // Assigns chat room to an admin (admin only)
     private function assignToAdmin()
     {
         header('Content-Type: application/json');
@@ -395,6 +405,7 @@ class ChatController
         }
     }
 
+    // Returns count of unread messages for current user
     private function getUnreadCount()
     {
         header('Content-Type: application/json');
@@ -410,6 +421,7 @@ class ChatController
         }
     }
 
+    // Searches chat rooms by keyword
     private function searchChatRooms()
     {
         header('Content-Type: application/json');
@@ -447,6 +459,7 @@ class ChatController
         }
     }
 
+    // Creates chat room by member username (admin only)
     private function createChatRoomByUsername()
     {
         header('Content-Type: application/json');
@@ -481,6 +494,7 @@ class ChatController
         }
     }
 
+    // Searches members by username or name (admin only)
     private function searchMembers()
     {
         header('Content-Type: application/json');

@@ -103,6 +103,7 @@ try {
     }
     
     switch ($action) {
+        // Adds product to user wishlist
         case 'add':
             $productId = $_POST['product_id'] ?? null;
             $variantId = isset($_POST['variant_id']) && $_POST['variant_id'] !== '' ? (int)$_POST['variant_id'] : null;
@@ -155,6 +156,7 @@ try {
             ]);
             break;
             
+        // Removes product from user wishlist
         case 'remove':
             $productId = $_POST['product_id'] ?? null;
             $wishlistId = $_POST['wishlist_id'] ?? null;
@@ -194,6 +196,7 @@ try {
             ]);
             break;
             
+        // Checks if product is in user wishlist
         case 'check':
             $productId = $_GET['product_id'] ?? null;
             
@@ -217,6 +220,7 @@ try {
             ]);
             break;
             
+        // Lists all products in user wishlist
         case 'list':
             $listQuery = "
                 SELECT 
@@ -305,6 +309,7 @@ try {
             ]);
             break;
             
+        // Returns total count of items in user wishlist
         case 'count':
             $countStmt = $conn->prepare("SELECT COUNT(*) as count FROM wishlist WHERE user_id = :user_id");
             $countStmt->execute([':user_id' => $userId]);

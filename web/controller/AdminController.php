@@ -26,6 +26,7 @@ class AdminController
         }
     }
 
+    // Displays all admins with pagination, search, and filtering options
     public function showAllAdmins(): void
     {
         $this->requireAdmin();
@@ -61,6 +62,7 @@ class AdminController
         require_once __DIR__ . '/../views/admin/AllAdmins.php';
     }
 
+    // Returns admin data as JSON for AJAX requests
     private function getAdminsAjax(): void
     {
         $this->requireAdmin();
@@ -98,6 +100,7 @@ class AdminController
         }
     }
 
+    // Creates a new admin account
     public function createAdmin(): void
     {
         $this->requireAdmin();
@@ -155,6 +158,7 @@ class AdminController
         }
     }
 
+    // Updates admin profile information
     public function updateAdmin(): void
     {
         $this->requireAdmin();
@@ -228,6 +232,7 @@ class AdminController
         }
     }
 
+    // Updates admin account status
     public function updateAdminStatus(): void
     {
         $this->requireAdmin();
@@ -271,6 +276,7 @@ class AdminController
         }
     }
 
+    // Deletes an admin account
     public function deleteAdmin(): void
     {
         $this->requireAdmin();
@@ -311,6 +317,7 @@ class AdminController
     }
 
 
+    // Retrieves refund reason for an order
     public function getRefundReason(): void
     {
         $this->requireAdmin();
@@ -377,6 +384,7 @@ class AdminController
         }
     }
 
+    // Updates order status and payment status
     public function updateOrderStatus(): void
     {
         $this->requireAdmin();

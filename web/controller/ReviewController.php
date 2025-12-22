@@ -14,9 +14,7 @@ class ReviewController {
         $this->reviewService = new ReviewService($this->conn);
     }
     
-    /**
-     * Handle review-related requests
-     */
+    // Handles review-related requests and routes to appropriate methods
     public function handleRequest() {
         $action = $_GET['action'] ?? $_POST['action'] ?? '';
         
@@ -40,9 +38,7 @@ class ReviewController {
         }
     }
     
-    /**
-     * Submit a new review (POST)
-     */
+    // Submits a new product review
     private function submitReview() {
         header('Content-Type: application/json');
         
@@ -86,9 +82,7 @@ class ReviewController {
         }
     }
     
-    /**
-     * Get reviews for a product (GET/AJAX)
-     */
+    // Retrieves all reviews for a specific product
     private function getProductReviews() {
         header('Content-Type: application/json');
         
@@ -132,9 +126,7 @@ class ReviewController {
         }
     }
     
-    /**
-     * View all reviews (Admin only)
-     */
+    // Displays all reviews for admin management
     private function viewAllReviews() {
         // Check if user is admin
         if (!isset($_SESSION['user']) || $_SESSION['user']->role !== 'admin') {
@@ -164,9 +156,7 @@ class ReviewController {
         }
     }
     
-    /**
-     * Search products by name (AJAX)
-     */
+    // Searches products by name for review filtering
     private function searchProducts() {
         header('Content-Type: application/json');
         
@@ -209,10 +199,7 @@ class ReviewController {
         }
     }
     
-    /**
-     * Get current user ID from session
-     * @return int|null User ID or null if not logged in
-     */
+    // Gets current user ID from session
     private function getUserId() {
         if (isset($_SESSION['user']) && isset($_SESSION['user']->user_id)) {
             return $_SESSION['user']->user_id;

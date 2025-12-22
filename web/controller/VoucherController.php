@@ -26,6 +26,7 @@ class VoucherController
         $this->voucherService = new VoucherService($voucherRepository);
     }
 
+    // Displays all vouchers with pagination, search, and sorting options
     public function showAllVouchers()
     {
         try {
@@ -71,6 +72,7 @@ class VoucherController
         }
     }
 
+    // Returns voucher data as JSON for AJAX requests
     private function getVouchersAjax()
     {
         try {
@@ -129,6 +131,7 @@ class VoucherController
         }
     }
 
+    // Creates a new voucher
     public function registerVoucher()
     {
         try {
@@ -181,6 +184,7 @@ class VoucherController
         }
     }
 
+    // Updates voucher information
     public function updateVoucher()
     {
         try {
@@ -222,6 +226,7 @@ class VoucherController
         }
     }
 
+    // Updates voucher status (active, inactive, expired)
     public function updateVoucherStatus()
     {
         try {
@@ -267,6 +272,7 @@ class VoucherController
         }
     }
 
+    // Deletes a voucher
     public function deleteVoucher()
     {
         try {
@@ -296,6 +302,7 @@ class VoucherController
         }
     }
 
+    // Deletes multiple vouchers in bulk
     public function bulkDeleteVouchers()
     {
         try {
@@ -328,6 +335,7 @@ class VoucherController
         }
     }
 
+    // Assigns voucher to members (all or specific)
     public function assignVoucher()
     {
         try {
@@ -386,6 +394,7 @@ class VoucherController
         }
     }
 
+    // Returns list of members available for voucher assignment
     public function getMembersForAssignment()
     {
         try {
@@ -412,6 +421,7 @@ class VoucherController
         }
     }
 
+    // Downloads CSV template for bulk voucher import
     public function downloadTemplate()
     {
         try {
@@ -457,6 +467,7 @@ class VoucherController
         }
     }
 
+    // Previews vouchers from CSV file before bulk import
     public function previewBulkImport()
     {
         try {
@@ -504,6 +515,7 @@ class VoucherController
         }
     }
 
+    // Executes bulk import of vouchers from CSV
     public function executeBulkImport()
     {
         try {
@@ -546,6 +558,7 @@ class VoucherController
         }
     }
 
+    // Displays vouchers assigned to logged-in member
     public function showMemberVouchers()
     {
         try {
@@ -597,6 +610,7 @@ class VoucherController
         }
     }
 
+    // Redeems voucher code by member
     public function redeemVoucher()
     {
         try {
@@ -643,6 +657,7 @@ class VoucherController
      * The QR content is simply the voucher code. This can later be changed
      * to a full URL if you add a scan/redeem endpoint.
      */
+    // Downloads QR code image for voucher
     public function downloadVoucherQr()
     {
         try {
@@ -697,6 +712,7 @@ class VoucherController
      * Show a preview page with the voucher QR code so the admin can
      * view it first and then decide to download.
      */
+    // Displays QR code preview for voucher
     public function showVoucherQr()
     {
         try {

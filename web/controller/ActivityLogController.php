@@ -36,12 +36,14 @@ class ActivityLogController
         }
     }
 
+    // Generates and displays activity logs PDF
     public function showActivityLogs(): void
     {
         $this->requireAdmin();
         $this->generateActivityLogPDF();
     }
 
+    // Returns activity logs data as JSON for AJAX requests
     private function getActivityLogsAjax(): void
     {
         $this->requireAdmin();
@@ -93,6 +95,7 @@ class ActivityLogController
         }
     }
 
+    // Retrieves detailed information for a specific activity log
     public function getActivityLogDetails(): void
     {
         $this->requireAdmin();
@@ -135,6 +138,7 @@ class ActivityLogController
         }
     }
 
+    // Generates PDF report of activity logs
     public function generateActivityLogPDF(): void
     {
         $this->requireAdmin();
@@ -282,6 +286,7 @@ class ActivityLogController
         }
     }
 
+    // Archives old activity logs to archive table
     public function archiveOldLogs(): void
     {
         $this->requireAdmin();

@@ -10,6 +10,7 @@ class ActivityLogRepository {
         $this->db = $databaseConnection->getConnection();
     }
 
+    // Records admin activity in the activity log
     public function logActivity(ActivityLogDTO $logDTO): bool
     {
         $sql = "INSERT INTO admin_activity_log 
@@ -34,6 +35,7 @@ class ActivityLogRepository {
         ]);
     }
 
+    // Retrieves activity logs with filtering, pagination, and sorting
     public function getActivityLogs(
         $limit = 50,
         $offset = 0,
@@ -85,10 +87,6 @@ class ActivityLogRepository {
         }
 
         if ($adminId !== null) {
-            // Include logs where admin_id matches (actions performed BY this admin)
-            // OR where entity_id matches and entity_type is 'admin' (actions performed ON this admin)
-            // This ensures admin creation logs appear when viewing the created admin's activity
-            // Use separate parameter names to avoid PDO binding issues
             $sql .= " AND (al.admin_id = :admin_id OR (al.entity_id = :admin_id_entity AND al.entity_type = 'admin'))";
             $params[':admin_id'] = (int)$adminId;
             $params[':admin_id_entity'] = (int)$adminId;
@@ -122,6 +120,7 @@ class ActivityLogRepository {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    // Returns total count of activity logs matching filters
     public function getTotalCount(
         $searchTerm = '',
         $adminId = null,
@@ -147,10 +146,6 @@ class ActivityLogRepository {
         }
 
         if ($adminId !== null) {
-            // Include logs where admin_id matches (actions performed BY this admin)
-            // OR where entity_id matches and entity_type is 'admin' (actions performed ON this admin)
-            // This ensures admin creation logs appear when viewing the created admin's activity
-            // Use separate parameter names to avoid PDO binding issues
             $sql .= " AND (al.admin_id = :admin_id OR (al.entity_id = :admin_id_entity AND al.entity_type = 'admin'))";
             $params[':admin_id'] = (int)$adminId;
             $params[':admin_id_entity'] = (int)$adminId;
@@ -183,6 +178,7 @@ class ActivityLogRepository {
         return (int)$result['total'];
     }
 
+    // Retrieves a specific activity log by ID
     public function getActivityLogById($logId)
     {
         $sql = "SELECT 
@@ -201,11 +197,13 @@ class ActivityLogRepository {
         return $result ?: null;
     }
 
+    // Retrieves activity logs for a specific admin
     public function getActivityLogsByAdmin($adminId, $limit = 50, $offset = 0): array
     {
         return $this->getActivityLogs($limit, $offset, '', $adminId);
     }
 
+    // Retrieves activity logs for a specific entity
     public function getActivityLogsByEntity($entityType, $entityId, $limit = 50, $offset = 0): array
     {
         $sql = "SELECT 
@@ -224,6 +222,7 @@ class ActivityLogRepository {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    // Archives activity logs older than specified months
     public function archiveOldLogs($monthsOld = 6): int
     {
         $sql = "INSERT INTO admin_activity_log_archive 
@@ -238,7 +237,6 @@ class ActivityLogRepository {
         $stmt->execute([$monthsOld]);
         $archivedCount = $stmt->rowCount();
 
-        // Delete archived logs from main table
         $deleteSql = "DELETE FROM admin_activity_log 
                       WHERE created_at < DATE_SUB(NOW(), INTERVAL ? MONTH)";
         $deleteStmt = $this->db->prepare($deleteSql);
@@ -247,6 +245,7 @@ class ActivityLogRepository {
         return $archivedCount;
     }
 
+    // Returns distinct list of action types from activity logs
     public function getActionTypes(): array
     {
         $sql = "SELECT DISTINCT action_type 
@@ -257,6 +256,7 @@ class ActivityLogRepository {
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
+    // Returns distinct list of entity types from activity logs
     public function getEntityTypes(): array
     {
         $sql = "SELECT DISTINCT entity_type 
