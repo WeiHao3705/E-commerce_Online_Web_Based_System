@@ -209,20 +209,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				throw new Exception('Invalid product id.');
 			}
 
-			// Get product name before delete for logging
-			$nameStmt = $conn->prepare('SELECT product_name FROM product WHERE product_id = :id');
-			$nameStmt->execute([':id' => $productId]);
-			$product = $nameStmt->fetch(PDO::FETCH_ASSOC);
-			$productName = $product ? ($product['product_name'] ?? 'Unknown') : 'Unknown';
+			$conn->beginTransaction();
 
+			// Delete related records in correct order (child tables first)
+			// 1. Delete inventory for variants of this product
+			$stmt = $conn->prepare('DELETE FROM inventory WHERE variant_id IN (SELECT variant_id FROM product_variant WHERE product_id = :id)');
+			$stmt->execute([':id' => $productId]);
+
+			// 2. Delete inventory directly linked to product (no variant)
+			$stmt = $conn->prepare('DELETE FROM inventory WHERE product_id = :id');
+			$stmt->execute([':id' => $productId]);
+
+			// 3. Delete product images (for variants)
+			$stmt = $conn->prepare('DELETE FROM product_image WHERE variant_id IN (SELECT variant_id FROM product_variant WHERE product_id = :id)');
+			$stmt->execute([':id' => $productId]);
+
+			// 4. Delete product images (product-level)
+			$stmt = $conn->prepare('DELETE FROM product_image WHERE product_id = :id');
+			$stmt->execute([':id' => $productId]);
+
+			// 5. Delete cart items referencing this product
+			$stmt = $conn->prepare('DELETE FROM cart_item WHERE product_id = :id');
+			$stmt->execute([':id' => $productId]);
+
+			// 6. Delete product variants
+			$stmt = $conn->prepare('DELETE FROM product_variant WHERE product_id = :id');
+			$stmt->execute([':id' => $productId]);
+
+			// 7. Delete product price
+			$stmt = $conn->prepare('DELETE FROM product_price WHERE product_id = :id');
+			$stmt->execute([':id' => $productId]);
+
+			// 8. Finally delete the product
 			$stmt = $conn->prepare('DELETE FROM product WHERE product_id = :id');
 			$stmt->execute([':id' => $productId]);
 
-			// Log product deletion
-			ActivityLogger::logProductDelete($productId, $productName);
-
+			$conn->commit();
 			$_SESSION['success_message'] = 'Product deleted.';
 		} catch (Exception $e) {
+			if ($conn->inTransaction()) {
+				$conn->rollBack();
+			}
 			$_SESSION['error_message'] = $e->getMessage();
 		}
 

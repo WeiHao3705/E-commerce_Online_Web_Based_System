@@ -73,24 +73,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				}
 			}
 
-			// Create product via service
-			$productId = $productService->createProduct($productData, $imagePaths, $conn, $mainIndex);
-
-			// If variants enabled, create initial variant with provided color
+			// If variants enabled, don't save images to product level - save them to the variant instead
 			if ($hasVariants) {
 				if ($initialVariantColor === '') {
 					throw new Exception('Please specify an initial variant color.');
 				}
-				$variantId = $productService->createVariant([
+				
+				// Create product without images (images will be attached to the variant)
+				$productId = $productService->createProduct($productData, [], $conn, null);
+				
+				// Create initial variant with the uploaded images
+				$productService->createVariant([
 					'product_id' => (int)$productId,
 					'color' => $initialVariantColor,
-				], [], null);
-				
-				// Log variant creation only if current user is admin
-				if (isset($_SESSION['user']) && $_SESSION['user']->role === 'admin') {
-					require_once __DIR__ . '/../../helpers/ActivityLogger.php';
-					ActivityLogger::logVariantCreate($variantId, (int)$productId, $initialVariantColor);
-				}
+				], $imagePaths, $mainIndex);
+			} else {
+				// No variants - attach images directly to the product
+				$productId = $productService->createProduct($productData, $imagePaths, $conn, $mainIndex);
 			}
 
 			// Success: set message and redirect
