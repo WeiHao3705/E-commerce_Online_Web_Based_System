@@ -1,4 +1,4 @@
-CREATE TABLE payment (
+CREATE TABLE IF NOT EXISTS payment (
     payment_id INT(20) AUTO_INCREMENT PRIMARY KEY,
     order_id INT(20) NOT NULL,
     payment_method ENUM('credit_card', 'online-banking', 'e-wallet') NOT NULL,

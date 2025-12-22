@@ -1,4 +1,4 @@
-CREATE TABLE chat_message (
+CREATE TABLE IF NOT EXISTS chat_message (
     message_id INT AUTO_INCREMENT PRIMARY KEY,
     chat_room_id INT NOT NULL,
     sender_id INT NOT NULL,

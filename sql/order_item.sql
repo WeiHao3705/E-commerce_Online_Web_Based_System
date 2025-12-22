@@ -1,4 +1,4 @@
-CREATE TABLE order_item (
+CREATE TABLE IF NOT EXISTS order_item (
     order_item_id INT(20) AUTO_INCREMENT PRIMARY KEY,
     order_id INT(20) NOT NULL,
     product_id INT(20) NOT NULL,

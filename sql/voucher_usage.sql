@@ -1,4 +1,4 @@
-CREATE TABLE voucher_usage (
+CREATE TABLE IF NOT EXISTS voucher_usage (
     user_id INT NOT NULL,
     voucher_id INT NOT NULL,
     used_at DATETIME NOT NULL,

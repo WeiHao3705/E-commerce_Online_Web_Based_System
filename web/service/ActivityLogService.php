@@ -176,11 +176,6 @@ class ActivityLogService {
         }
     }
 
-    public function archiveOldLogs($monthsOld = 6): int
-    {
-        return $this->activityLogRepository->archiveOldLogs($monthsOld);
-    }
-
     public function getActionTypes(): array
     {
         return $this->activityLogRepository->getActionTypes();

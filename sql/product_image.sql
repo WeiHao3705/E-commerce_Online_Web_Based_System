@@ -1,4 +1,4 @@
-CREATE TABLE product_image (
+CREATE TABLE IF NOT EXISTS product_image (
     id INT AUTO_INCREMENT PRIMARY KEY,
     product_id INT NOT NULL,
     variant_id INT NULL,   

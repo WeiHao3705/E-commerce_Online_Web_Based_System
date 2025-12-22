@@ -1,4 +1,4 @@
-CREATE TABLE product_variant (
+CREATE TABLE IF NOT EXISTS product_variant (
     variant_id INT AUTO_INCREMENT PRIMARY KEY,
     product_id INT NOT NULL,
     color VARCHAR(50) DEFAULT NULL,

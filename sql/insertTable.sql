@@ -2,7 +2,7 @@ CREATE DATABASE IF NOT EXISTS ecommerce_db;
 USE ecommerce_db;
 
 -- Users table
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     full_name VARCHAR(100) NOT NULL,
@@ -54,7 +54,7 @@ WHERE NOT EXISTS (
 );
 
 -- Product table
-CREATE TABLE product (
+CREATE TABLE IF NOT EXISTS product (
     product_id INT AUTO_INCREMENT PRIMARY KEY,
     product_name VARCHAR(255) NOT NULL,
     category VARCHAR(255) NOT NULL,
@@ -63,7 +63,7 @@ CREATE TABLE product (
 );
 
 -- Voucher table
-CREATE TABLE voucher (
+CREATE TABLE IF NOT EXISTS voucher (
     voucher_id INT AUTO_INCREMENT PRIMARY KEY,
     description VARCHAR(255),
     code VARCHAR(50) NOT NULL UNIQUE,
@@ -79,7 +79,7 @@ CREATE TABLE voucher (
 );
 
 -- Address table (depends on users)
-CREATE TABLE address (
+CREATE TABLE IF NOT EXISTS address (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     address1 VARCHAR(30) NOT NULL,
@@ -94,7 +94,7 @@ CREATE TABLE address (
 );
 
 -- Shopping cart table (depends on users)
-CREATE TABLE shopping_cart (
+CREATE TABLE IF NOT EXISTS shopping_cart (
     cart_id INT(20) AUTO_INCREMENT PRIMARY KEY,
     user_id INT(20) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -103,7 +103,7 @@ CREATE TABLE shopping_cart (
 );
 
 -- Voucher usage table (depends on users and voucher)
-CREATE TABLE voucher_usage (
+CREATE TABLE IF NOT EXISTS voucher_usage (
     user_id INT NOT NULL,
     voucher_id INT NOT NULL,
     used_at DATETIME NOT NULL,
@@ -114,7 +114,7 @@ CREATE TABLE voucher_usage (
 );
 
 -- Product price table (depends on product)
-CREATE TABLE product_price (
+CREATE TABLE IF NOT EXISTS product_price (
     id INT AUTO_INCREMENT PRIMARY KEY,
     product_id INT NOT NULL,
     cost DECIMAL(10,2) NOT NULL,
@@ -133,7 +133,7 @@ CREATE TABLE product_price (
 );
 
 -- Product variant table (depends on product) - MOVED UP
-CREATE TABLE product_variant (
+CREATE TABLE IF NOT EXISTS product_variant (
     variant_id INT AUTO_INCREMENT PRIMARY KEY,
     product_id INT NOT NULL,
     color VARCHAR(50) DEFAULT NULL,
@@ -141,7 +141,7 @@ CREATE TABLE product_variant (
 );
 
 -- Product image table (depends on product and product_variant)
-CREATE TABLE product_image (
+CREATE TABLE IF NOT EXISTS product_image (
     id INT AUTO_INCREMENT PRIMARY KEY,
     product_id INT NOT NULL,
     variant_id INT NULL,   
@@ -158,7 +158,7 @@ CREATE TABLE product_image (
 );
 
 -- Orders table (depends on users and voucher)
-CREATE TABLE orders (
+CREATE TABLE IF NOT EXISTS orders (
     order_id INT(20) AUTO_INCREMENT PRIMARY KEY,
     user_id INT(20) NOT NULL,
     voucher_id INT(20),
@@ -174,7 +174,7 @@ CREATE TABLE orders (
 );
 
 -- Cart item table (depends on shopping_cart and product)
-CREATE TABLE cart_item (
+CREATE TABLE IF NOT EXISTS cart_item (
     cart_item_id INT(20) AUTO_INCREMENT PRIMARY KEY,
     cart_id INT(20) NOT NULL,
     product_id INT(20) NOT NULL,
@@ -185,7 +185,7 @@ CREATE TABLE cart_item (
 );
 
 -- Inventory table (depends on product_variant)
-CREATE TABLE inventory (
+CREATE TABLE IF NOT EXISTS inventory (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
     -- Allow stock for products WITHOUT variants
@@ -208,7 +208,7 @@ CREATE TABLE inventory (
         ON DELETE CASCADE
 );
 -- Order item table (depends on orders and product)
-CREATE TABLE order_item (
+CREATE TABLE IF NOT EXISTS order_item (
     order_item_id INT(20) AUTO_INCREMENT PRIMARY KEY,
     order_id INT(20) NOT NULL,
     product_id INT(20) NOT NULL,
@@ -222,7 +222,7 @@ CREATE TABLE order_item (
 );
 
 -- Payment table (depends on orders)
-CREATE TABLE payment (
+CREATE TABLE IF NOT EXISTS payment (
     payment_id INT(20) AUTO_INCREMENT PRIMARY KEY,
     order_id INT(20) NOT NULL,
     payment_method ENUM('credit_card', 'online-banking', 'e-wallet') NOT NULL,
@@ -235,7 +235,7 @@ CREATE TABLE payment (
     FOREIGN KEY (order_id) REFERENCES orders(order_id)
 );
 
-CREATE TABLE voucher_assignment (
+CREATE TABLE IF NOT EXISTS voucher_assignment (
     assignment_id INT AUTO_INCREMENT PRIMARY KEY,
     voucher_id INT NOT NULL,
     user_id INT NOT NULL,
@@ -254,7 +254,7 @@ CREATE TABLE voucher_assignment (
     INDEX idx_assigned_at (assigned_at)
 );
 
-CREATE TABLE chat_room (
+CREATE TABLE IF NOT EXISTS chat_room (
     chat_room_id INT AUTO_INCREMENT PRIMARY KEY,
     member_id INT NOT NULL,
     admin_id INT NULL,
@@ -266,7 +266,7 @@ CREATE TABLE chat_room (
     FOREIGN KEY (admin_id) REFERENCES users(user_id)
 );
 
-CREATE TABLE chat_message (
+CREATE TABLE IF NOT EXISTS chat_message (
     message_id INT AUTO_INCREMENT PRIMARY KEY,
     chat_room_id INT NOT NULL,
     sender_id INT NOT NULL,
@@ -294,7 +294,7 @@ CREATE TABLE IF NOT EXISTS order_notes (
     INDEX idx_created_at (created_at)
 );
 
-CREATE TABLE product_review (
+CREATE TABLE IF NOT EXISTS product_review (
     review_id INT AUTO_INCREMENT PRIMARY KEY,
     product_id INT NOT NULL,
     user_id INT NOT NULL,
@@ -362,28 +362,5 @@ CREATE TABLE IF NOT EXISTS admin_activity_log (
     INDEX idx_admin_action (admin_id, action_type),
     INDEX idx_entity (entity_type, entity_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS admin_activity_log_archive (
-    log_id INT AUTO_INCREMENT PRIMARY KEY,
-    admin_id INT NOT NULL,
-    action_type VARCHAR(100) NOT NULL,
-    entity_type VARCHAR(50) NOT NULL,
-    entity_id INT NULL,
-    action_description TEXT NOT NULL,
-    old_values JSON NULL,
-    new_values JSON NULL,
-    ip_address VARCHAR(45) NULL,
-    user_agent VARCHAR(500) NULL,
-    created_at TIMESTAMP NOT NULL,
-    archived_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    INDEX idx_admin_id (admin_id),
-    INDEX idx_action_type (action_type),
-    INDEX idx_entity_type (entity_type),
-    INDEX idx_entity_id (entity_id),
-    INDEX idx_created_at (created_at),
-    INDEX idx_archived_at (archived_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 
 

@@ -1,4 +1,4 @@
-CREATE TABLE address (
+CREATE TABLE IF NOT EXISTS address (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     address1 VARCHAR(30) NOT NULL,

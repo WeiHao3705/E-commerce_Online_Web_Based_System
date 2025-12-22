@@ -1,4 +1,4 @@
-CREATE TABLE product_review (
+CREATE TABLE IF NOT EXISTS product_review (
     review_id INT AUTO_INCREMENT PRIMARY KEY,
     product_id INT NOT NULL,
     user_id INT NOT NULL,

@@ -1,4 +1,4 @@
-CREATE TABLE voucher (
+CREATE TABLE IF NOT EXISTS voucher (
     voucher_id INT AUTO_INCREMENT PRIMARY KEY,
     description VARCHAR(255),
     code VARCHAR(50) NOT NULL UNIQUE,

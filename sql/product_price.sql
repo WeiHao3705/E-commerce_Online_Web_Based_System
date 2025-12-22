@@ -1,4 +1,4 @@
-CREATE TABLE product_price (
+CREATE TABLE IF NOT EXISTS product_price (
     id INT AUTO_INCREMENT PRIMARY KEY,
     product_id INT NOT NULL,
     cost DECIMAL(10,2) NOT NULL,

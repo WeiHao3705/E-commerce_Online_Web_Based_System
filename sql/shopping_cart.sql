@@ -1,4 +1,4 @@
-CREATE TABLE shopping_cart (
+CREATE TABLE IF NOT EXISTS shopping_cart (
     cart_id INT(20) AUTO_INCREMENT PRIMARY KEY,
     user_id INT(20) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

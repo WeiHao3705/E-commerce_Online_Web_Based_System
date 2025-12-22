@@ -1,4 +1,4 @@
-CREATE TABLE inventory (
+CREATE TABLE IF NOT EXISTS inventory (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
     -- Allow stock for products WITHOUT variants

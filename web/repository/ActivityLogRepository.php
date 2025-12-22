@@ -222,29 +222,6 @@ class ActivityLogRepository {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Archives activity logs older than specified months
-    public function archiveOldLogs($monthsOld = 6): int
-    {
-        $sql = "INSERT INTO admin_activity_log_archive 
-                (admin_id, action_type, entity_type, entity_id, action_description, old_values, new_values, ip_address, user_agent, created_at)
-                SELECT 
-                    admin_id, action_type, entity_type, entity_id, action_description, 
-                    old_values, new_values, ip_address, user_agent, created_at
-                FROM admin_activity_log
-                WHERE created_at < DATE_SUB(NOW(), INTERVAL ? MONTH)";
-        
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$monthsOld]);
-        $archivedCount = $stmt->rowCount();
-
-        $deleteSql = "DELETE FROM admin_activity_log 
-                      WHERE created_at < DATE_SUB(NOW(), INTERVAL ? MONTH)";
-        $deleteStmt = $this->db->prepare($deleteSql);
-        $deleteStmt->execute([$monthsOld]);
-
-        return $archivedCount;
-    }
-
     // Returns distinct list of action types from activity logs
     public function getActionTypes(): array
     {

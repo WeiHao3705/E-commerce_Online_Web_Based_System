@@ -286,54 +286,19 @@ class ActivityLogController
         }
     }
 
-    // Archives old activity logs to archive table
-    public function archiveOldLogs(): void
-    {
-        $this->requireAdmin();
-
-        header('Content-Type: application/json');
-
-        try {
-            $monthsOld = isset($_POST['months']) ? (int)$_POST['months'] : 6;
-
-            if ($monthsOld < 1) {
-                throw new Exception('Invalid months value');
-            }
-
-            $archivedCount = $this->activityLogService->archiveOldLogs($monthsOld);
-
-            echo json_encode([
-                'success' => true,
-                'message' => "Archived $archivedCount log entries older than $monthsOld months",
-                'archived_count' => $archivedCount
-            ]);
-            exit;
-
-        } catch (Exception $e) {
-            echo json_encode([
-                'success' => false,
-                'error' => $e->getMessage()
-            ]);
-            exit;
-        }
-    }
 }
 
 $controller = new ActivityLogController();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? $_GET['action'] ?? '';
+} else {
+    $action = $_GET['action'] ?? 'showAll';
 
-    if ($action === 'archive') {
-        $controller->archiveOldLogs();
+    if ($action === 'showAll') {
+        $controller->showActivityLogs();
+    } elseif ($action === 'getDetails') {
+        $controller->getActivityLogDetails();
     }
-    } else {
-        $action = $_GET['action'] ?? 'showAll';
-
-        if ($action === 'showAll') {
-            $controller->showActivityLogs();
-        } elseif ($action === 'getDetails') {
-            $controller->getActivityLogDetails();
-        }
-    }
+}
 

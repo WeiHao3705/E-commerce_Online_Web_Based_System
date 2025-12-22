@@ -1,4 +1,4 @@
-CREATE TABLE voucher_assignment (
+CREATE TABLE IF NOT EXISTS voucher_assignment (
     assignment_id INT AUTO_INCREMENT PRIMARY KEY,
     voucher_id INT NOT NULL,
     user_id INT NOT NULL,
