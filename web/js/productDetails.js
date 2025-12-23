@@ -26,6 +26,8 @@
     const sizeSelectElement = document.getElementById('sizeSelect');
     const sizeFormGroup = document.getElementById('sizeFormGroup');
     const quantityInput = document.getElementById('quantityInput');
+    // Track current available stock for validation
+    let currentAvailableStock = null;
     
     // Named function for size change handler to avoid duplicate listeners
     let sizeChangeHandler = null;
@@ -254,9 +256,28 @@
             sizeSelectElement.disabled = false;
         }
         
-        // Only disable quantity input if the selected size is out of stock
+        // Quantity input: disable if out of stock, set max to available
         if (quantityInput) {
+            const available = Number.isFinite(parseInt(stock, 10)) ? parseInt(stock, 10) : null;
+            currentAvailableStock = available;
             quantityInput.disabled = isOutOfStock;
+            // Update max attribute: when stock is known and > 0, cap to stock; else leave as 0 to prevent submit
+            if (!isOutOfStock && available !== null && available > 0) {
+                quantityInput.max = String(available);
+            } else {
+                quantityInput.max = '0';
+            }
+            // Clamp current value within [1, max] when stock updates
+            const maxVal = parseInt(quantityInput.max, 10);
+            let currentVal = parseInt(quantityInput.value, 10);
+            if (!Number.isFinite(currentVal) || currentVal < 1) currentVal = 1;
+            if (Number.isFinite(maxVal) && maxVal > 0) {
+                if (currentVal > maxVal) currentVal = maxVal;
+            } else {
+                // No stock: set to 1 but keep disabled; won't submit
+                currentVal = 1;
+            }
+            quantityInput.value = String(currentVal);
         }
 
         // Update Add to Cart button - disable only if the selected size is out of stock
@@ -355,11 +376,50 @@
                     }
                 }
                 
+                // Quantity vs available stock validation
+                if (quantityInput) {
+                    const maxAttr = parseInt(quantityInput.max, 10);
+                    const requested = parseInt(quantityInput.value, 10);
+                    const effectiveMax = Number.isFinite(maxAttr) && maxAttr > 0 ? maxAttr : (Number.isFinite(currentAvailableStock) ? currentAvailableStock : null);
+                    if (effectiveMax !== null) {
+                        if (!Number.isFinite(requested) || requested < 1) {
+                            e.preventDefault();
+                            quantityInput.value = '1';
+                            alert('Please enter a valid quantity (minimum 1).');
+                            return;
+                        }
+                        if (requested > effectiveMax) {
+                            e.preventDefault();
+                            quantityInput.value = String(effectiveMax);
+                            alert('Quantity exceeds available stock. Maximum available: ' + effectiveMax);
+                            return;
+                        }
+                    }
+                }
+
                 if (!userId) {
                     e.preventDefault();
                     openLoginModal('cart');
                 }
             });
+        }
+
+        // Clamp quantity on user input/change
+        if (quantityInput) {
+            const clamp = () => {
+                const maxAttr = parseInt(quantityInput.max, 10);
+                const maxVal = Number.isFinite(maxAttr) && maxAttr > 0 ? maxAttr : (Number.isFinite(currentAvailableStock) ? currentAvailableStock : 99);
+                let val = parseInt(quantityInput.value, 10);
+                if (!Number.isFinite(val) || val < 1) val = 1;
+                if (Number.isFinite(maxVal)) {
+                    if (val > maxVal) val = maxVal;
+                }
+                quantityInput.value = String(val);
+            };
+            quantityInput.removeEventListener('input', clamp);
+            quantityInput.removeEventListener('change', clamp);
+            quantityInput.addEventListener('input', clamp);
+            quantityInput.addEventListener('change', clamp);
         }
 
         // Add login check to wishlist button
