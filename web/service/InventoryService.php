@@ -78,27 +78,49 @@ class InventoryService {
         $shouldNotify = $wasOutOfStock || $variantWasOutOfStock || $sizeWasOutOfStock;
         
         // Check wishlist count (total, including inactive members for reference)
+        // Now filtered by variant and size to only count users who have the specific variant/size in their wishlist
         $wishlistCount = 0;
         $wishlistCountAll = 0;
         if ($productId) {
-            // Count all wishlist entries
-            $wishlistCountAllSql = "SELECT COUNT(*) as count FROM wishlist WHERE product_id = :product_id";
+            // Build base query with variant/size filtering
+            $variantCondition = '';
+            $sizeCondition = '';
+            $queryParams = [':product_id' => $productId];
+            
+            // Match variant_id
+            if ($variantId !== null) {
+                $variantCondition = " AND (w.variant_id = :variant_id OR w.variant_id IS NULL)";
+                $queryParams[':variant_id'] = $variantId;
+            } else {
+                $variantCondition = " AND w.variant_id IS NULL";
+            }
+            
+            // Match size
+            if ($size !== null && $size !== '' && $size !== 'default') {
+                $sizeCondition = " AND (w.size = :size OR w.size IS NULL OR w.size = '' OR w.size = 'default')";
+                $queryParams[':size'] = $size;
+            } else {
+                $sizeCondition = " AND (w.size IS NULL OR w.size = '' OR w.size = 'default')";
+            }
+            
+            // Count all wishlist entries matching variant/size
+            $wishlistCountAllSql = "SELECT COUNT(*) as count FROM wishlist w WHERE w.product_id = :product_id" . $variantCondition . $sizeCondition;
             $wishlistAllStmt = $this->conn->prepare($wishlistCountAllSql);
-            $wishlistAllStmt->execute([':product_id' => $productId]);
+            $wishlistAllStmt->execute($queryParams);
             $wishlistCountAll = $wishlistAllStmt->fetch(PDO::FETCH_ASSOC)['count'] ?? 0;
             
-            // Count only active members (this is what will be notified)
+            // Count only active members matching variant/size (this is what will be notified)
             $wishlistCountSql = "SELECT COUNT(*) as count 
                                  FROM wishlist w
                                  JOIN users u ON w.user_id = u.user_id
                                  WHERE w.product_id = :product_id
                                  AND u.role = 'member'
-                                 AND u.status = 'active'";
+                                 AND u.status = 'active'" . $variantCondition . $sizeCondition;
             $wishlistStmt = $this->conn->prepare($wishlistCountSql);
-            $wishlistStmt->execute([':product_id' => $productId]);
+            $wishlistStmt->execute($queryParams);
             $wishlistCount = $wishlistStmt->fetch(PDO::FETCH_ASSOC)['count'] ?? 0;
             
-            error_log("InventoryService: Restock - Product ID: {$productId}, Variant ID: " . ($variantId ?? 'NULL') . ", Size: {$size}, Total wishlist entries: {$wishlistCountAll}, Active members: {$wishlistCount}");
+            error_log("InventoryService: Restock - Product ID: {$productId}, Variant ID: " . ($variantId ?? 'NULL') . ", Size: {$size}, Matching wishlist entries: {$wishlistCountAll}, Active members: {$wishlistCount}");
             error_log("InventoryService: Stock before - Total: {$stockBefore}, Variant: {$variantStockBefore}, Size '{$size}': {$sizeStockBefore}");
             error_log("InventoryService: Out of stock - Product: " . ($wasOutOfStock ? 'yes' : 'no') . ", Variant: " . ($variantWasOutOfStock ? 'yes' : 'no') . ", Size: " . ($sizeWasOutOfStock ? 'yes' : 'no') . ", Should notify: " . ($shouldNotify ? 'yes' : 'no'));
         }
@@ -125,7 +147,8 @@ class InventoryService {
             if ($shouldNotify && $productId) {
                 // Use a separate try-catch so notification errors don't affect restock success
                 try {
-                    $notificationResult = $this->notifyWishlistMembers($productId);
+                    // Pass variant_id and size to only notify users who have this specific variant/size in their wishlist
+                    $notificationResult = $this->notifyWishlistMembers($productId, $variantId, $size);
                     $notificationResult['was_out_of_stock'] = $wasOutOfStock;
                     $notificationResult['variant_was_out_of_stock'] = $variantWasOutOfStock;
                     $notificationResult['size_was_out_of_stock'] = $sizeWasOutOfStock;
@@ -476,27 +499,53 @@ class InventoryService {
     }
 
     /**
-     * Get all members who have a product in their wishlist
+     * Get all members who have a product with specific variant and size in their wishlist
+     * Only returns members whose wishlist entry matches the exact variant_id and size being restocked
      */
-    private function getWishlistMembers($productId) {
+    private function getWishlistMembers($productId, $variantId = null, $size = null) {
         $sql = "
-            SELECT DISTINCT w.user_id, u.full_name, u.username
+            SELECT DISTINCT w.user_id, u.full_name, u.username, w.variant_id, w.size
             FROM wishlist w
             JOIN users u ON w.user_id = u.user_id
             WHERE w.product_id = :product_id
             AND u.role = 'member'
             AND u.status = 'active'
         ";
+        
+        $params = [':product_id' => $productId];
+        
+        // Match variant_id: if restocking a specific variant, only notify users with that variant (or NULL variant)
+        if ($variantId !== null) {
+            $sql .= " AND (w.variant_id = :variant_id OR w.variant_id IS NULL)";
+            $params[':variant_id'] = $variantId;
+        } else {
+            // If restocking without variant, only notify users who have no variant specified
+            $sql .= " AND w.variant_id IS NULL";
+        }
+        
+        // Match size: if restocking a specific size, only notify users with that size (or NULL/default size)
+        if ($size !== null && $size !== '' && $size !== 'default') {
+            $sql .= " AND (w.size = :size OR w.size IS NULL OR w.size = '' OR w.size = 'default')";
+            $params[':size'] = $size;
+        } else {
+            // If restocking without size (or default size), only notify users who have no size specified
+            $sql .= " AND (w.size IS NULL OR w.size = '' OR w.size = 'default')";
+        }
+        
         $stmt = $this->conn->prepare($sql);
-        $stmt->execute([':product_id' => $productId]);
+        $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
      * Notify wishlist members when a product is restocked
+     * Only notifies members who have the specific variant and size in their wishlist
+     * @param int $productId The product ID
+     * @param int|null $variantId The variant ID being restocked (null if no variant)
+     * @param string|null $size The size being restocked (null if no size)
      * @return array Notification result with success status and counts
      */
-    private function notifyWishlistMembers($productId) {
+    private function notifyWishlistMembers($productId, $variantId = null, $size = null) {
         $result = [
             'success' => false,
             'notified' => 0,
@@ -505,7 +554,7 @@ class InventoryService {
         ];
         
         try {
-            // Get product name
+            // Get product name and variant color if applicable
             $sql = "SELECT product_name FROM product WHERE product_id = :product_id LIMIT 1";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute([':product_id' => $productId]);
@@ -518,9 +567,23 @@ class InventoryService {
 
             $productName = $product['product_name'];
             
-            // Get all members who have this product in their wishlist
-            $members = $this->getWishlistMembers($productId);
+            // Get variant color name if variant is specified
+            $variantColor = null;
+            if ($variantId !== null) {
+                $variantSql = "SELECT color FROM product_variant WHERE variant_id = :variant_id LIMIT 1";
+                $variantStmt = $this->conn->prepare($variantSql);
+                $variantStmt->execute([':variant_id' => $variantId]);
+                $variant = $variantStmt->fetch(PDO::FETCH_ASSOC);
+                if ($variant) {
+                    $variantColor = $variant['color'];
+                }
+            }
+            
+            // Get all members who have this product with the specific variant and size in their wishlist
+            $members = $this->getWishlistMembers($productId, $variantId, $size);
             $result['total'] = count($members);
+            
+            error_log("InventoryService: Checking wishlist for product {$productId}, variant " . ($variantId ?? 'NULL') . ", size '" . ($size ?? 'NULL') . "'");
             
             error_log("InventoryService: Found {$result['total']} wishlist member(s) for product {$productId}");
             
@@ -603,8 +666,15 @@ class InventoryService {
                     // We trust its return value and proceed directly to sending the message.
                     // If there's an issue, addMessage will throw an exception which we'll catch below.
                     
-                    // Create notification message
-                    $message = "Good news! The item \"{$productName}\" from your wishlist is now back in stock. You can add it to your cart now!";
+                    // Create notification message with variant and size details
+                    $itemDetails = $productName;
+                    if ($variantColor !== null && $variantColor !== '') {
+                        $itemDetails .= " ({$variantColor})";
+                    }
+                    if ($size !== null && $size !== '' && $size !== 'default') {
+                        $itemDetails .= " - Size {$size}";
+                    }
+                    $message = "Good news! The item \"{$itemDetails}\" from your wishlist is now back in stock. You can add it to your cart now!";
                     
                     // CRITICAL: Send message as system user ONLY (never use logged-in admin's ID)
                     // Directly to repository to bypass role checks and ensure system user is used

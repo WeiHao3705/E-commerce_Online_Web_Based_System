@@ -133,8 +133,63 @@ try {
                 }
             }
             
+            // ============================================
+            // STOCK CHECK: Only allow adding if OUT OF STOCK
+            // ============================================
+            $stockQuantity = 0;
+            
+            if ($variantId && $size) {
+                // Product WITH variant AND specific size
+                $stockQuery = "SELECT COALESCE(SUM(stock_quantity), 0) as stock 
+                               FROM inventory 
+                               WHERE variant_id = :variant_id AND size = :size";
+                $stockStmt = $conn->prepare($stockQuery);
+                $stockStmt->execute([':variant_id' => $variantId, ':size' => $size]);
+                $stockQuantity = (int)$stockStmt->fetch(PDO::FETCH_ASSOC)['stock'];
+            } elseif ($variantId) {
+                // Product WITH variant, NO specific size
+                $stockQuery = "SELECT COALESCE(SUM(stock_quantity), 0) as stock 
+                               FROM inventory 
+                               WHERE variant_id = :variant_id";
+                $stockStmt = $conn->prepare($stockQuery);
+                $stockStmt->execute([':variant_id' => $variantId]);
+                $stockQuantity = (int)$stockStmt->fetch(PDO::FETCH_ASSOC)['stock'];
+            } elseif ($size) {
+                // Product WITHOUT variant, WITH specific size
+                $stockQuery = "SELECT COALESCE(SUM(stock_quantity), 0) as stock 
+                               FROM inventory 
+                               WHERE product_id = :product_id AND variant_id IS NULL AND size = :size";
+                $stockStmt = $conn->prepare($stockQuery);
+                $stockStmt->execute([':product_id' => $productId, ':size' => $size]);
+                $stockQuantity = (int)$stockStmt->fetch(PDO::FETCH_ASSOC)['stock'];
+            } else {
+                // Product WITHOUT variant, NO specific size - check total product stock
+                $stockQuery = "SELECT COALESCE(SUM(i.stock_quantity), 0) as stock 
+                               FROM inventory i
+                               LEFT JOIN product_variant pv ON i.variant_id = pv.variant_id
+                               WHERE i.product_id = :product_id 
+                                  OR pv.product_id = :product_id2";
+                $stockStmt = $conn->prepare($stockQuery);
+                $stockStmt->execute([':product_id' => $productId, ':product_id2' => $productId]);
+                $stockQuantity = (int)$stockStmt->fetch(PDO::FETCH_ASSOC)['stock'];
+            }
+            
+            // If stock is available, reject adding to wishlist
+            if ($stockQuantity > 0) {
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'This item is currently in stock. Wishlist is only available for out-of-stock items.',
+                    'in_stock' => true,
+                    'stock_quantity' => $stockQuantity
+                ]);
+                exit;
+            }
+            // ============================================
+            // END STOCK CHECK
+            // ============================================
+            
             // Add to wishlist (ignore if already exists)
-            // Allow adding any product to wishlist, regardless of stock status or variant/size
+            // Only out-of-stock items can be added to wishlist
             $insertQuery = "INSERT IGNORE INTO wishlist (user_id, product_id, variant_id, size) VALUES (:user_id, :product_id, :variant_id, :size)";
             $insertStmt = $conn->prepare($insertQuery);
             $insertStmt->execute([
