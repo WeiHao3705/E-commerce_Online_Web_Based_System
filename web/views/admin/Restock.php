@@ -165,4 +165,4 @@ require __DIR__ . '/../../general/_header.php';
     </div>
 </div>
 <script src="<?= $assetPrefix ?>js/restock.js?v=<?= filemtime(__DIR__ . '/../../js/restock.js'); ?>"></script>
-<?php require __DIR__ . '/../../general/_footer.php'; ?>
+

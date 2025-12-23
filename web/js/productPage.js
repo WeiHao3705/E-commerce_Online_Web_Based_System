@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             products.forEach(product => {
                 const imagePath = product.image_path ? `/${escapeHtml(product.image_path)}` : '';
-                const price = product.original_price ? `RM ${parseFloat(product.original_price).toFixed(2)}` : 'Price unavailable';
+                const price = product.selling_price ? `RM ${parseFloat(product.selling_price).toFixed(2)}` : 'Price unavailable';
                 const colors = product.colors ? escapeHtml(product.colors) : 'No variants';
 
                 html += `

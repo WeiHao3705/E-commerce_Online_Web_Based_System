@@ -17,7 +17,8 @@ class ProductRepository {
                 p.product_name,
                 p.category,
                 p.description,
-                pr.original_price
+                pr.original_price,
+                pr.selling_price
             FROM product p
             LEFT JOIN product_price pr ON p.product_id = pr.product_id
             WHERE p.product_id = :id
@@ -228,5 +229,29 @@ class ProductRepository {
             ':path' => $imagePath,
             ':type' => $type,
         ]);
+    }
+
+    /**
+     * Get top selling products by summing order_item.quantity grouped by product
+     * Returns array of ['product_id','product_name','image_path','total_sold']
+     */
+    public function getTopSellingProducts($limit = 5) {
+        $limit = (int)$limit;
+        $sql = "
+            SELECT
+                p.product_id,
+                p.product_name,
+                COALESCE((SELECT pi.image_path FROM product_image pi WHERE pi.product_id = p.product_id LIMIT 1), '') AS image_path,
+                COALESCE(SUM(oi.quantity), 0) AS total_sold
+            FROM product p
+            LEFT JOIN order_item oi ON oi.product_id = p.product_id
+            GROUP BY p.product_id
+            ORDER BY total_sold DESC, p.product_id ASC
+            LIMIT " . $limit . "
+        ";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

@@ -112,7 +112,7 @@ require __DIR__ . '/../../general/_navbar.php';
 
 		<!-- Right: Product Details & Options -->
 		<div class="product-info">
-			<div class="price-badge">RM <?= htmlspecialchars($product->original_price) ?></div>
+			<div class="price-badge">RM <?= htmlspecialchars($product->selling_price) ?></div>
 
 			<p class="product-description"><?= nl2br(htmlspecialchars($product->description)) ?></p>
 

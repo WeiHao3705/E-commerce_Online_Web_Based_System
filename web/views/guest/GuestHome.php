@@ -47,16 +47,72 @@ $productImages = [];
 if (is_dir($productsDir)) {
         $productImages = glob($productsDir . '/*.{jpg,jpeg,png,gif,webp,avif}', GLOB_BRACE);
 }
-// Limit to first 12 to avoid huge DOM
-$productImages = array_slice($productImages, 0, 12);
+
+// Try to get top sellers from DB (sum of all sales per product)
+require_once __DIR__ . '/../../database/connection.php';
+require_once __DIR__ . '/../../repository/ProductRepository.php';
+$db = new Database();
+$conn = $db->getConnection();
+$productRepo = new ProductRepository($conn);
+$topSellers = $productRepo->getTopSellingProducts(5);
+
+// If we have at least 5 top sellers with data, use them; otherwise fallback to guest slider images
+$useTopSellers = is_array($topSellers) && count($topSellers) >= 5;
+
+$productImages = [];
+if ($useTopSellers) {
+    foreach ($topSellers as $p) {
+        $rawPath = $p['image_path'] ?? '';
+        $imgPath = !empty($rawPath) ? $rawPath : 'images/products/default.jpg';
+
+        if (strpos($imgPath, 'web/') === 0) $imgPath = substr($imgPath, 4);
+        if (preg_match('#[a-zA-Z]:\\\\|/#', $imgPath)) {
+            $imgPath = preg_replace('#.*images[\\/]#', 'images/', $imgPath);
+        }
+        $imgPath = str_replace('\\', '/', $imgPath);
+        if (strpos($imgPath, 'images/') !== 0) {
+            $imgPath = 'images/' . ltrim($imgPath, '/');
+        }
+
+        $productImages[] = [
+            'img' => $imgPath,
+            'link' => 'views/product/ProductDetails.php?id=' . urlencode($p['product_id'])
+        ];
+    }
+} else {
+    // fallback random 5 from images/guest/slider
+    if (!empty($productImages)) {
+        shuffle($productImages);
+        $fallback = array_slice($productImages, 0, 5);
+        $productImages = [];
+        foreach ($fallback as $p) {
+            $productImages[] = [
+                'img' => 'images/guest/slider/' . basename($p),
+                'link' => 'views/product/ProductPage.php'
+            ];
+        }
+    } else {
+        // if folder doesn't exist, use a repeat of the hero image
+        $productImages = [];
+        for ($i = 0; $i < 5; $i++) {
+            $productImages[] = [
+                'img' => 'images/guest/' . $randomGuestImg,
+                'link' => 'views/product/ProductPage.php'
+            ];
+        }
+    }
+}
 ?>
 
 <section class="product-slider-section">
     <div class="product-slider-container">
         <div class="product-slider" id="productSlider">
-            <?php foreach ($productImages as $imgPath): $name = basename($imgPath); ?>
+            <?php foreach ($productImages as $index => $item): $rank = $index + 1; ?>
                 <div class="slide">
-                    <img src="<?php echo $prefix; ?>images/guest/slider/<?php echo htmlspecialchars($name); ?>" alt="Product image">
+                    <a href="<?php echo $prefix; ?><?php echo htmlspecialchars($item['link']); ?>">
+                        <div class="rank-badge">#<?php echo $rank; ?></div>
+                        <img src="<?php echo $prefix; ?><?php echo htmlspecialchars($item['img']); ?>" alt="Product image">
+                    </a>
                 </div>
             <?php endforeach; ?>
             <?php if (empty($productImages)): ?>

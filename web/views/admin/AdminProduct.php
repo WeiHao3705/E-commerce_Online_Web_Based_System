@@ -652,6 +652,29 @@ $pageTitle = 'Admin Products';
 	<!-- Toast mount point -->
 	<div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 
+	<!-- Delete Confirmation Modal -->
+	<div class="modal-overlay" id="deleteConfirmModal" style="display: none;">
+		<div class="modal">
+			<div class="modal-header">
+				<h3 style="color: #ef4444; display: flex; align-items: center; gap: 8px; margin: 0;">
+					<i class="fas fa-exclamation-triangle"></i>
+					Confirm Delete
+				</h3>
+			</div>
+			<div class="modal-body">
+				<p id="deleteConfirmMessage" style="font-size: 14px; line-height: 1.5; color: #334155; margin: 0;">
+					Are you sure you want to delete this product? This action cannot be undone.
+				</p>
+			</div>
+			<div class="modal-footer" style="padding-bottom: 12px;">
+				<button type="button" class="btn btn-ghost" id="cancelDeleteBtn" style="flex: 1;">Cancel</button>
+				<button type="button" class="btn btn-primary" id="confirmDeleteBtn" style="flex: 1; background-color: #ef4444; border-color: #ef4444;">
+					<i class="fas fa-trash"></i> Delete
+				</button>
+			</div>
+		</div>
+	</div>
+
 	<div class="modal-overlay" id="editModal">
 		<div class="modal">
 			<div class="modal-header">

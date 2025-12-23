@@ -64,7 +64,7 @@ if (is_dir($imgDir)) {
 <section class="product-intro">
     <div class="intro-grid">
         <!-- Sport Shoes -->
-        <article class="intro-card">
+        <article class="intro-card" data-href="views/product/ProductPage.php?category=Shoes">
             <div class="intro-media">
                 <img src="<?php echo $prefix; ?>images/home/intro/intro_shoes.jpg" alt="Sport Shoes" onerror="this.style.display='none'">
             </div>
@@ -72,20 +72,20 @@ if (is_dir($imgDir)) {
                 <h2 class="intro-title">Step Into Performance</h2>
                 <p class="intro-text">Engineered sport shoes built for speed, stability, and comfort. Train harder with breathable uppers and responsive cushioning.</p>
                 <div class="intro-actions">
-                    <a class="btn primary" href="<?php echo $prefix; ?>views/product/ProductPage.php">Shop sport shoes</a>
-                    <a class="btn link" href="<?php echo $prefix; ?>views/product/ProductPage.php#shoes">Learn more</a>
+                    <a class="btn primary" href="<?php echo $prefix; ?>views/product/ProductPage.php?category=Shoes">Shop sport shoes</a>
+                    <a class="btn link" href="<?php echo $prefix; ?>views/product/ProductPage.php?category=Shoes#shoes">Learn more</a>
                 </div>
             </div>
         </article>
 
         <!-- Pants -->
-        <article class="intro-card">
+        <article class="intro-card" data-href="views/product/ProductPage.php?category=Pants">
             <div class="intro-content">
                 <h2 class="intro-title">Move With Ease</h2>
                 <p class="intro-text">Performance pants with stretch, moisture-wicking fabrics, and streamlined fits for workouts and daily wear.</p>
                 <div class="intro-actions">
-                    <a class="btn primary" href="<?php echo $prefix; ?>views/product/ProductPage.php">Browse pants</a>
-                    <a class="btn link" href="<?php echo $prefix; ?>views/product/ProductPage.php#pants">Learn more</a>
+                    <a class="btn primary" href="<?php echo $prefix; ?>views/product/ProductPage.php?category=Pants">Browse pants</a>
+                    <a class="btn link" href="<?php echo $prefix; ?>views/product/ProductPage.php?category=Pants#pants">Learn more</a>
                 </div>
             </div>
             <div class="intro-media">
@@ -94,7 +94,7 @@ if (is_dir($imgDir)) {
         </article>
 
         <!-- Wear (Tops/Jackets) -->
-        <article class="intro-card">
+        <article class="intro-card" data-href="views/product/ProductPage.php?category=Wear">
             <div class="intro-media">
                 <img src="<?php echo $prefix; ?>images/home/intro/intro_shirt.jpg" alt="Sports Wear" onerror="this.style.display='none'">
             </div>
@@ -102,10 +102,26 @@ if (is_dir($imgDir)) {
                 <h2 class="intro-title">Ready For Every Run</h2>
                 <p class="intro-text">Lightweight tops and weather-ready layers designed to keep you cool, dry, and focused on your goals.</p>
                 <div class="intro-actions">
-                    <a class="btn primary" href="<?php echo $prefix; ?>views/product/ProductPage.php">Explore wear</a>
-                    <a class="btn link" href="<?php echo $prefix; ?>views/product/ProductPage.php#wear">Learn more</a>
+                    <a class="btn primary" href="<?php echo $prefix; ?>views/product/ProductPage.php?category=Sportwear">Explore wear</a>
+                    <a class="btn link" href="<?php echo $prefix; ?>views/product/ProductPage.php?category=Sportwear#wear">Learn more</a>
                 </div>
             </div>
         </article>
     </div>
 </section>
+<script>
+// Make entire intro-card act as link to category (ignore clicks on internal anchors/buttons)
+document.addEventListener('DOMContentLoaded', function() {
+    var cards = document.querySelectorAll('.intro-card[data-href]');
+    cards.forEach(function(card) {
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', function(e) {
+            if (e.target.closest('a') || e.target.closest('button')) return;
+            var href = card.getAttribute('data-href');
+            if (!href) return;
+            var prefix = '<?php echo $prefix; ?>';
+            window.location.href = prefix + href;
+        });
+    });
+});
+</script>

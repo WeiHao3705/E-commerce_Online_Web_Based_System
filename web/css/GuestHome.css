@@ -198,6 +198,7 @@
     overflow: hidden;
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
     background: #fafafa;
+    position: relative; /* needed for rank badge positioning */
 }
 
 .product-slider .slide img {
@@ -205,6 +206,23 @@
     width: 100%;
     height: 180px;
     object-fit: cover;
+}
+
+/* Rank badge top-center */
+.product-slider .slide .rank-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    transform: none;
+    background: rgba(255,255,255,0.92);
+    color: #222;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    z-index: 30;
+    border: 1px solid rgba(0,0,0,0.06);
 }
 
 @media (max-width: 768px) {
