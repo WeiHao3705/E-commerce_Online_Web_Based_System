@@ -1,6 +1,7 @@
 <?php
-error_reporting(0);
-ini_set('display_errors', 0);
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
 session_start();
 
 // Redirect admins to AdminDashboard - they should not access member pages
@@ -19,12 +20,16 @@ require __DIR__ . '/../../service/InventoryService.php';
 
 \Stripe\Stripe::setApiKey(STRIPE_SECRET_KEY);
 
+error_log("=== PAYMENT PROCESSING START ===");
+
 try {
     $input = json_decode(file_get_contents('php://input'), true);
     $paymentIntentId = $input['paymentIntentId'] ?? null;
     $paymentMethod = $input['paymentMethod'] ?? null;
     $orderId = $input['orderId'] ?? ($_SESSION['pending_order_id'] ?? null);
     $userId = $_SESSION['user_id'] ?? null;
+
+    error_log("Payment Input: paymentIntentId={$paymentIntentId}, paymentMethod={$paymentMethod}, orderId={$orderId}, userId={$userId}");
 
     // Start database transaction
     $db = new Database();
@@ -43,6 +48,8 @@ try {
         throw new Exception('Order not found or already processed');
     }
 
+    error_log("Order verified: {$orderId}, total: {$order['total_amount']}");
+
     if ($paymentIntentId) {
         // Stripe payment flow
         $paymentIntent = \Stripe\PaymentIntent::retrieve($paymentIntentId);
@@ -55,10 +62,11 @@ try {
             WHERE order_id = :order_id
         ");
         $orderStmt->execute([':order_id' => $orderId]);
-        // Insert payment record
+        
+        // Insert payment record with 'paid' status directly (for stock deduction check)
         $paymentStmt = $conn->prepare("
             INSERT INTO payment (order_id, payment_method, payment_status, transaction_id, paid_amount, payment_date)
-            VALUES (:order_id, 'credit_card', 'completed', :transaction_id, :paid_amount, NOW())
+            VALUES (:order_id, 'credit_card', 'paid', :transaction_id, :paid_amount, NOW())
         ");
         $paymentStmt->execute([
             ':order_id' => $orderId,
@@ -66,9 +74,7 @@ try {
             ':paid_amount' => $paymentIntent->amount / 100 // Convert from cents
         ]);
         
-        // Update payment status to 'paid' for stock deduction
-        $updatePaymentStatus = $conn->prepare("UPDATE payment SET payment_status = 'paid' WHERE order_id = :order_id");
-        $updatePaymentStatus->execute([':order_id' => $orderId]);
+        error_log("Stripe payment recorded for order {$orderId} with status 'paid'");
     } elseif ($paymentMethod === 'online-banking') {
         // Simulated payment flow for online banking (FPX)
         $orderStmt = $conn->prepare("
@@ -103,17 +109,11 @@ try {
         throw new Exception('Invalid payment method or missing payment intent');
     }
 
-    // Deduct stock after successful payment
-    try {
-        $inventoryService = new InventoryService($conn);
-        $deductionResult = $inventoryService->deductStockForPaidOrder($orderId);
-        error_log("Stock deduction successful for order {$orderId}: " . json_encode($deductionResult));
-    } catch (Exception $stockError) {
-        // Log the error but don't fail the payment
-        error_log("WARNING: Stock deduction failed for order {$orderId}: " . $stockError->getMessage());
-        // Optionally: You could rollback here if you want payment to fail when stock can't be deducted
-        // throw $stockError;
-    }
+    // Deduct stock after successful payment (CRITICAL: must happen before commit)
+    error_log("=== Starting stock deduction for order {$orderId} ===");
+    $inventoryService = new InventoryService($conn);
+    $deductionResult = $inventoryService->deductStockForPaidOrder($orderId);
+    error_log("Stock deduction result for order {$orderId}: " . json_encode($deductionResult));
 
     // Get cart items from order_items to delete from cart
     $itemsStmt = $conn->prepare("
@@ -152,6 +152,9 @@ try {
     unset($_SESSION['pending_order_id']);
     unset($_SESSION['checkout_items']);
 
+    error_log("=== PAYMENT SUCCESSFUL ===");
+    error_log("Order {$orderId} payment processed successfully");
+
     echo json_encode([
         'success' => true,
         'orderId' => $orderId,
@@ -159,8 +162,17 @@ try {
     ]);
     
 } catch (Exception $e) {
+    error_log("=== PAYMENT FAILED ===");
+    error_log("Error: " . $e->getMessage());
+    error_log("Trace: " . $e->getTraceAsString());
+    
     if (isset($conn)) {
-        $conn->rollBack();
+        try {
+            $conn->rollBack();
+            error_log("Transaction rolled back");
+        } catch (Exception $rollbackError) {
+            error_log("Rollback error: " . $rollbackError->getMessage());
+        }
     }
     http_response_code(500);
     echo json_encode([
