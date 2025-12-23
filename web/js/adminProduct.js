@@ -143,13 +143,61 @@
         });
     }
 
+    // Delete confirmation modal
+    var deleteConfirmModal = document.getElementById('deleteConfirmModal');
+    var deleteConfirmMessage = document.getElementById('deleteConfirmMessage');
+    var confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    var cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+    var pendingDeleteAction = null;
+
+    function showDeleteConfirmation(message, onConfirm) {
+        if (deleteConfirmModal && deleteConfirmMessage) {
+            deleteConfirmMessage.textContent = message;
+            deleteConfirmModal.style.display = 'flex';
+            pendingDeleteAction = onConfirm;
+        }
+    }
+
+    function closeDeleteConfirmation() {
+        if (deleteConfirmModal) {
+            deleteConfirmModal.style.display = 'none';
+            pendingDeleteAction = null;
+        }
+    }
+
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', function () {
+            if (pendingDeleteAction) {
+                pendingDeleteAction();
+            }
+            closeDeleteConfirmation();
+        });
+    }
+
+    if (cancelDeleteBtn) {
+        cancelDeleteBtn.addEventListener('click', closeDeleteConfirmation);
+    }
+
+    if (deleteConfirmModal) {
+        deleteConfirmModal.addEventListener('click', function (event) {
+            if (event.target === deleteConfirmModal) {
+                closeDeleteConfirmation();
+            }
+        });
+    }
+
+    // Handle single product delete
     var deleteForms = document.querySelectorAll('.delete-form');
     deleteForms.forEach(function (form) {
         form.addEventListener('submit', function (event) {
-            var ok = window.confirm('Delete this product? This cannot be undone.');
-            if (!ok) {
-                event.preventDefault();
-            }
+            event.preventDefault();
+            var productName = form.querySelector('button[type="submit"]').closest('tr').querySelector('[data-product-name]').getAttribute('data-product-name');
+            showDeleteConfirmation(
+                'Are you sure you want to delete "' + productName + '"? This action cannot be undone.',
+                function () {
+                    form.submit();
+                }
+            );
         });
     });
 
@@ -239,7 +287,11 @@
         bulkDeleteBtn.addEventListener('click', function () {
             var checkedBoxes = document.querySelectorAll('.product-checkbox:checked');
             if (checkedBoxes.length === 0) {
-                alert('Please select at least one product to delete.');
+                if (window.__adminShowToast) {
+                    window.__adminShowToast('error', 'Error', 'Please select at least one product to delete.');
+                } else {
+                    alert('Please select at least one product to delete.');
+                }
                 return;
             }
 
@@ -248,32 +300,32 @@
                 productNames.push(cb.getAttribute('data-product-name'));
             });
 
-            var confirmMsg = 'Are you sure you want to delete ' + checkedBoxes.length + ' product(s)?\n\n' + productNames.join(', ') + '\n\nThis action cannot be undone.';
-            if (!confirm(confirmMsg)) {
-                return;
-            }
+            var confirmMsg = 'Are you sure you want to delete ' + checkedBoxes.length + ' product(s)? This includes: ' + 
+                (productNames.length > 3 ? productNames.slice(0, 3).join(', ') + ' and ' + (productNames.length - 3) + ' more' : productNames.join(', '));
+            
+            showDeleteConfirmation(confirmMsg, function () {
+                // Create a form and submit for batch deletion
+                var form = document.createElement('form');
+                form.method = 'POST';
+                form.action = 'AdminProduct.php';
 
-            // Create a form and submit for batch deletion
-            var form = document.createElement('form');
-            form.method = 'POST';
-            form.action = 'AdminProduct.php';
+                var actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'batch_delete';
+                form.appendChild(actionInput);
 
-            var actionInput = document.createElement('input');
-            actionInput.type = 'hidden';
-            actionInput.name = 'action';
-            actionInput.value = 'batch_delete';
-            form.appendChild(actionInput);
+                checkedBoxes.forEach(function (cb) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'product_ids[]';
+                    input.value = cb.value;
+                    form.appendChild(input);
+                });
 
-            checkedBoxes.forEach(function (cb) {
-                var input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'product_ids[]';
-                input.value = cb.value;
-                form.appendChild(input);
+                document.body.appendChild(form);
+                form.submit();
             });
-
-            document.body.appendChild(form);
-            form.submit();
         });
     }
 })();
