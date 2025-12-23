@@ -322,20 +322,85 @@
         const imagePath = (el.dataset.imagePath || '').trim();
         const vid = el.dataset.variantId;
 
-        if (imagePath && mainImage) {
-            const newSrc = '/' + imagePath.replace(/^\/+/u, '');
-            mainImage.src = newSrc;
-        }
-
+        // Update selected thumbnail
         thumbImages.forEach((t) => t.classList.remove('selected'));
         el.classList.add('selected');
 
         if (vid && selectedVariantInput) {
             selectedVariantInput.value = vid;
+            
+            // Fetch all images for this variant via AJAX
+            $.ajax({
+                url: '../../controller/ProductController.php',
+                method: 'GET',
+                data: {
+                    action: 'getVariantImages',
+                    variant_id: vid
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response && response.success && response.images) {
+                        updateGalleryImages(response.images);
+                    } else {
+                        // Fallback to single image update
+                        updateSingleImage(imagePath);
+                    }
+                },
+                error: function() {
+                    // Fallback to single image update
+                    updateSingleImage(imagePath);
+                }
+            });
+            
             updateSizeOptions();
             // Stock status will be updated after sizes are populated
         }
     }
+    
+    function updateGalleryImages(images) {
+        if (!images || images.length === 0) {
+            return;
+        }
+        
+        // Find the main images grid container
+        const mainImagesGrid = document.querySelector('.main-images-grid');
+        if (!mainImagesGrid) {
+            return;
+        }
+        
+        // Clear existing images
+        mainImagesGrid.innerHTML = '';
+        
+        // Add new images
+        images.forEach((img, idx) => {
+            const imgEl = document.createElement('img');
+            const src = '/' + (img.image_path || '').replace(/^\/+/u, '');
+            imgEl.src = src;
+            imgEl.alt = 'Product Image';
+            
+            if (idx === 0) {
+                imgEl.id = 'mainImage';
+            } else {
+                imgEl.className = 'extra-image';
+            }
+            
+            mainImagesGrid.appendChild(imgEl);
+        });
+        
+        // Update the mainImage reference since we recreated the element
+        const newMainImage = document.getElementById('mainImage');
+        if (newMainImage && typeof window !== 'undefined') {
+            window.productDetailsMainImage = newMainImage;
+        }
+    }
+    
+    function updateSingleImage(imagePath) {
+        if (imagePath && mainImage) {
+            const newSrc = '/' + imagePath.replace(/^\/+/u, '');
+            mainImage.src = newSrc;
+        }
+    }
+
 
     function init() {
         thumbImages.forEach((img) => {

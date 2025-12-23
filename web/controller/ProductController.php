@@ -28,6 +28,9 @@ class ProductController {
             case 'getFilteredProducts':
                 $this->getFilteredProductsJSON();
                 break;
+            case 'getVariantImages':
+                $this->getVariantImagesJSON();
+                break;
             default:
                 $this->showAllProducts();
         }
@@ -130,6 +133,38 @@ class ProductController {
     }
     
     /**
+     * Get variant images as JSON (for AJAX requests)
+     */
+    public function getVariantImagesJSON() {
+        header('Content-Type: application/json');
+        
+        try {
+            // Validate variant_id
+            if (!isset($_GET['variant_id']) || !is_numeric($_GET['variant_id'])) {
+                throw new Exception('Invalid variant ID.');
+            }
+            
+            $variant_id = (int)$_GET['variant_id'];
+            
+            // Get variant images from service
+            $images = $this->productService->getVariantImages($variant_id);
+            
+            // Return JSON response
+            echo json_encode([
+                'success' => true,
+                'images' => $images
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+    
+    /**
      * Render a view with data
      * @param string $viewName Name of view file (without .php)
      * @param array $data Data to pass to view
@@ -161,4 +196,10 @@ class ProductController {
         echo "<div style='max-width:1000px;margin:40px auto;padding:20px;'><h2 style='color:#dc2626;'>Error</h2><p>{$error}</p></div>";
         require __DIR__ . '/../general/_footer.php';
     }
+}
+
+// Handle direct requests to this controller
+if (basename($_SERVER['PHP_SELF']) === 'ProductController.php') {
+    $controller = new ProductController();
+    $controller->handleRequest();
 }

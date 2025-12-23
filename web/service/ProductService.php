@@ -99,6 +99,16 @@ class ProductService {
     }
     
     /**
+     * Get all images for a specific variant
+     * @param int $variant_id Variant ID
+     * @return array Array of image paths
+     */
+    public function getVariantImages($variant_id) {
+        $images = $this->productRepository->getImagesForVariant($variant_id);
+        return $images;
+    }
+    
+    /**
      * Get all products grouped by category
      * @return array Products data formatted for catalog view
      */
