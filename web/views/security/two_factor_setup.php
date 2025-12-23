@@ -109,7 +109,7 @@ $setupData = $_SESSION['2fa_setup'];
                 <button type="submit" class="submit-btn">Verify & Complete Setup</button>
 
                 <div class="form-footer">
-                    <p><a href="<?php echo $prefix; ?>views/security/login.php">Cancel and return to login</a></p>
+                    <p><a href="<?php echo $prefix; ?>controller/MemberController.php?action=cancel_2fa_setup">Cancel and return to login</a></p>
                 </div>
             </form>
         </div>

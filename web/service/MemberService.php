@@ -598,6 +598,52 @@ class MembershipServices
     }
 
     /**
+     * Get setup data for existing secret (when setup was incomplete)
+     * Decrypts existing secret and generates QR code data
+     */
+    public function getSetupDataForExistingSecret($userId): array
+    {
+        require_once __DIR__ . '/TwoFactorService.php';
+        $twoFactorService = new TwoFactorService();
+        
+        $user = $this->membershipRepository->getMemberById($userId);
+        if (!$user) {
+            throw new Exception('User not found');
+        }
+        
+        // Get existing encrypted secret
+        $twoFactorData = $this->membershipRepository->getTwoFactorSecret($userId);
+        if (!$twoFactorData || !$twoFactorData['two_factor_secret']) {
+            // No secret exists, generate new one
+            return $this->setupTwoFactor($userId);
+        }
+        
+        // Decrypt existing secret
+        $encryptedSecret = $twoFactorData['two_factor_secret'];
+        $secret = $twoFactorService->decryptSecret($encryptedSecret);
+        
+        if (empty($secret)) {
+            // Decryption failed, generate new secret
+            return $this->setupTwoFactor($userId);
+        }
+        
+        // Generate QR code and manual entry code from existing secret
+        $username = $user['username'];
+        $qrCodeDataUrl = $twoFactorService->getQRCodeDataUrl($secret, $username);
+        $manualEntryCode = $twoFactorService->getManualEntryCode($secret, $username);
+        $secretKey = $twoFactorService->getSecretKey($secret);
+        
+        return [
+            'secret' => $secret, // Keep unencrypted for QR generation
+            'encrypted_secret' => $encryptedSecret,
+            'qr_code' => $qrCodeDataUrl,
+            'manual_entry' => $manualEntryCode,
+            'secret_key' => $secretKey, // Just the secret key for manual entry
+            'username' => $username
+        ];
+    }
+
+    /**
      * Complete 2FA setup by verifying test code and enabling 2FA
      */
     public function completeTwoFactorSetup($userId, $testCode): bool

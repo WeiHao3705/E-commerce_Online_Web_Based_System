@@ -56,13 +56,20 @@ class MemberController
                 if ($userDTO->getRole() === 'admin') {
                     $userId = $userDTO->getUserId();
                     
-                    // Check if 2FA secret exists
+                    // Check if 2FA secret exists and is enabled
                     $twoFactorSecret = $this->membershipServices->getTwoFactorSecret($userId);
+                    $isTwoFactorEnabled = $twoFactorSecret && isset($twoFactorSecret['two_factor_enabled']) && $twoFactorSecret['two_factor_enabled'] == 1;
                     
-                    if (!$twoFactorSecret || !$twoFactorSecret['two_factor_secret']) {
-                        // No 2FA secret - first time setup
-                        // Generate and store secret, redirect to setup page
-                        $setupData = $this->membershipServices->setupTwoFactor($userId);
+                    if (!$twoFactorSecret || !$twoFactorSecret['two_factor_secret'] || !$isTwoFactorEnabled) {
+                        // No 2FA secret OR 2FA not enabled (setup incomplete) - show setup page
+                        // If secret exists but not enabled, reuse it; otherwise generate new
+                        if ($twoFactorSecret && $twoFactorSecret['two_factor_secret']) {
+                            // Secret exists but setup incomplete - reuse existing secret
+                            $setupData = $this->membershipServices->getSetupDataForExistingSecret($userId);
+                        } else {
+                            // No secret - generate new one
+                            $setupData = $this->membershipServices->setupTwoFactor($userId);
+                        }
                         
                         // Store temporary session data for 2FA setup
                         $_SESSION['2fa_setup'] = [
@@ -80,7 +87,7 @@ class MemberController
                         header('Location: ../views/security/two_factor_setup.php');
                         exit;
                     } else {
-                        // 2FA secret exists - require verification
+                        // 2FA secret exists AND is enabled - require verification
                         // Store temporary session data for 2FA verification
                         $_SESSION['2fa_verify'] = [
                             'user_id' => $userId,
@@ -1324,6 +1331,20 @@ class MemberController
             exit;
         }
     }
+
+    /**
+     * Cancel 2FA setup - clear setup session and allow user to try again later
+     */
+    public function cancelTwoFactorSetup()
+    {
+        // Clear the 2FA setup session
+        unset($_SESSION['2fa_setup']);
+        
+        // Redirect to login
+        $_SESSION['info_message'] = '2FA setup cancelled. You can set it up again on your next login.';
+        header('Location: ../views/security/login.php');
+        exit;
+    }
 }
 
 // Handle the request
@@ -1365,6 +1386,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $controller->verifyTwoFactor();
     } elseif ($action === 'setup_2fa') {
         $controller->setupTwoFactor();
+    } elseif ($action === 'cancel_2fa_setup') {
+        $controller->cancelTwoFactorSetup();
     }
 } else {
     // Handle GET requests
@@ -1378,5 +1401,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $controller->logout();
     } elseif ($action === 'verifyEmail') {
         $controller->verifyEmail();
+    } elseif ($action === 'cancel_2fa_setup') {
+        $controller->cancelTwoFactorSetup();
     }
 }
