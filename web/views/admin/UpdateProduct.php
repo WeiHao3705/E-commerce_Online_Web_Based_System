@@ -531,20 +531,21 @@ $pageTitle = 'Manage Variants & Images';
 		</div>
 	</div>
 
-	<script>
-	// Server-provided flash messages
-	<?php if (!empty($flashSuccess)): ?>
-	if (window.__adminShowToast) {
-		window.__adminShowToast('success', 'Success', <?php echo json_encode($flashSuccess, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT); ?>);
-	}
-	<?php endif; ?>
-	<?php if (!empty($flashError)): ?>
-	if (window.__adminShowToast) {
-		window.__adminShowToast('error', 'Error', <?php echo json_encode($flashError, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT); ?>);
-	}
-	<?php endif; ?>
-	</script>
 	<script src="<?php echo $jsBasePath; ?>updateProduct.js?v=<?php echo filemtime(__DIR__ . '/../../js/updateProduct.js'); ?>"></script>
+	<script>
+	document.addEventListener('DOMContentLoaded', function(){
+		<?php if (!empty($flashSuccess)): ?>
+		if (window.__adminShowToast) {
+			window.__adminShowToast('success', 'Success', <?php echo json_encode($flashSuccess, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT); ?>);
+		}
+		<?php endif; ?>
+		<?php if (!empty($flashError)): ?>
+		if (window.__adminShowToast) {
+			window.__adminShowToast('error', 'Error', <?php echo json_encode($flashError, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT); ?>);
+		}
+		<?php endif; ?>
+	});
+	</script>
 </body>
 
 </html>
