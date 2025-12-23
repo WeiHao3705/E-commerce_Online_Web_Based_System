@@ -17,7 +17,8 @@ class ProductRepository {
                 p.product_name,
                 p.category,
                 p.description,
-                pr.original_price
+                pr.original_price,
+                pr.selling_price
             FROM product p
             LEFT JOIN product_price pr ON p.product_id = pr.product_id
             WHERE p.product_id = :id

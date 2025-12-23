@@ -115,7 +115,7 @@ $assetPrefix = '../../';
                                     <div class="product-body">
                                         <h4 class="product-title"><?= htmlspecialchars($row['product_name']) ?></h4>
                                         <div class="product-price">
-                                            <?= $row['original_price'] ? "RM " . number_format($row['original_price'], 2) : "Price unavailable" ?>
+                                            <?= $row['selling_price'] ? "RM " . number_format($row['selling_price'], 2) : "Price unavailable" ?>
                                         </div>
                                         <?php 
                                             $avgRating = isset($row['average_rating']) ? (float)$row['average_rating'] : 0;

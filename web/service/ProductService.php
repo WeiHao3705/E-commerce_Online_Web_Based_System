@@ -572,6 +572,7 @@ class ProductService {
                 p.description,
                 pi.image_path,
                 pr.original_price,
+                pr.selling_price,
                 GROUP_CONCAT(DISTINCT pv.color SEPARATOR ', ') AS colors,
                 COALESCE((
                     SELECT AVG(rating) 
