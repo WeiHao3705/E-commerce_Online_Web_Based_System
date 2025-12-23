@@ -42,6 +42,27 @@ $flashSuccess = $_SESSION['success_message'] ?? '';
 $flashError = $_SESSION['error_message'] ?? '';
 unset($_SESSION['success_message'], $_SESSION['error_message']);
 
+// Handle AJAX requests for getting product variants
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'get_variants') {
+	header('Content-Type: application/json');
+	$productId = isset($_GET['product_id']) ? (int)$_GET['product_id'] : 0;
+	
+	if ($productId <= 0) {
+		echo json_encode(['success' => false, 'message' => 'Invalid product ID']);
+		exit;
+	}
+	
+	try {
+		$stmt = $conn->prepare('SELECT variant_id, color FROM product_variant WHERE product_id = :id ORDER BY variant_id');
+		$stmt->execute([':id' => $productId]);
+		$variants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+		echo json_encode(['success' => true, 'variants' => $variants]);
+	} catch (Exception $e) {
+		echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+	}
+	exit;
+}
+
 // Handle POST actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	$action = $_POST['action'] ?? '';
@@ -605,16 +626,11 @@ $pageTitle = 'Admin Products';
 										<div class="action-buttons">
 											<a class="action-btn btn-view" href="ViewProduct.php?id=<?php echo (int)$product['product_id']; ?>" title="View">
 												<i class="fas fa-eye"></i>
-											</a>										<button class="action-btn btn-edit" 
-											data-id="<?php echo (int)$product['product_id']; ?>"
-											data-name="<?php echo html_escape($product['product_name']); ?>"
-											data-category="<?php echo html_escape($product['category']); ?>"
-											data-description="<?php echo html_escape($product['description'] ?? ''); ?>"
-											data-cost="<?php echo $product['cost'] ?? ''; ?>"
-											data-original="<?php echo $product['original_price'] ?? ''; ?>"
-											data-selling="<?php echo $product['selling_price'] ?? ''; ?>"											data-variant-count="<?php echo (int)$product['variant_count']; ?>"											title="Edit">
-											<i class="fas fa-edit"></i>
-										</button>											<form method="POST" action="AdminProduct.php" class="delete-form" style="margin:0;display:inline;">
+											</a>
+											<a class="action-btn btn-edit" href="UpdateProduct.php?id=<?php echo (int)$product['product_id']; ?>" title="Edit Products">
+												<i class="fas fa-edit"></i>
+											</a>
+											<form method="POST" action="AdminProduct.php" class="delete-form" style="margin:0;display:inline;">
 												<input type="hidden" name="action" value="delete_product">
 												<input type="hidden" name="product_id" value="<?php echo (int)$product['product_id']; ?>">
 												<button type="submit" class="action-btn btn-delete" title="Delete">
@@ -654,14 +670,31 @@ $pageTitle = 'Admin Products';
 
 	<!-- Delete Confirmation Modal -->
 	<div class="modal-overlay" id="deleteConfirmModal" style="display: none;">
-		<div class="modal">
+		<div class="modal" style="max-width: 500px;">
 			<div class="modal-header">
 				<h3 style="color: #ef4444; display: flex; align-items: center; gap: 8px; margin: 0;">
 					<i class="fas fa-exclamation-triangle"></i>
-					Confirm Delete
+					Delete Product
 				</h3>
 			</div>
-			<div class="modal-body">
+			<div class="modal-body" style="max-height: 400px; overflow-y: auto;">
+				<!-- Product Details -->
+				<div style="background-color: #f8fafc; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+					<p style="margin: 0 0 8px 0; font-size: 13px; color: #64748b;">Product to delete:</p>
+					<p id="deleteProductName" style="margin: 0; font-size: 16px; font-weight: 600; color: #1e293b;">-</p>
+				</div>
+				
+				<!-- Variants Section -->
+				<div id="deleteVariantsSection" style="display: none;">
+					<p style="margin: 0 0 8px 0; font-size: 13px; color: #64748b; font-weight: 600;">Variants:</p>
+					<div id="deleteVariantsList" style="background-color: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px; padding: 12px; margin-bottom: 16px;">
+						<div id="variantItems"></div>
+					</div>
+					<p style="margin: 0 0 12px 0; font-size: 12px; color: #64748b;">
+						<strong>Warning:</strong> Deleting the product will also delete all associated variants and their inventory data.
+					</p>
+				</div>
+				
 				<p id="deleteConfirmMessage" style="font-size: 14px; line-height: 1.5; color: #334155; margin: 0;">
 					Are you sure you want to delete this product? This action cannot be undone.
 				</p>
@@ -669,7 +702,7 @@ $pageTitle = 'Admin Products';
 			<div class="modal-footer" style="padding-bottom: 12px;">
 				<button type="button" class="btn btn-ghost" id="cancelDeleteBtn" style="flex: 1;">Cancel</button>
 				<button type="button" class="btn btn-primary" id="confirmDeleteBtn" style="flex: 1; background-color: #ef4444; border-color: #ef4444;">
-					<i class="fas fa-trash"></i> Delete
+					<i class="fas fa-trash"></i> Delete Product
 				</button>
 			</div>
 		</div>

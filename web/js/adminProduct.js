@@ -4,11 +4,6 @@
     var closeBtn = document.getElementById('closeCreateModal');
     var cancelBtn = document.getElementById('cancelCreate');
 
-    // Edit modal elements
-    var editModal = document.getElementById('editModal');
-    var closeEditBtn = document.getElementById('closeEditModal');
-    var cancelEditBtn = document.getElementById('cancelEdit');
-
     function openModal() {
         if (modal) {
             modal.style.display = 'flex';
@@ -18,18 +13,6 @@
     function closeModal() {
         if (modal) {
             modal.style.display = 'none';
-        }
-    }
-
-    function openEditModal() {
-        if (editModal) {
-            editModal.style.display = 'flex';
-        }
-    }
-
-    function closeEditModal() {
-        if (editModal) {
-            editModal.style.display = 'none';
         }
     }
 
@@ -54,77 +37,6 @@
         });
     }
 
-    // Edit modal event handlers
-    [closeEditBtn, cancelEditBtn].forEach(function (btn) {
-        if (btn) {
-            btn.addEventListener('click', function (event) {
-                event.preventDefault();
-                closeEditModal();
-            });
-        }
-    });
-
-    if (editModal) {
-        editModal.addEventListener('click', function (event) {
-            if (event.target === editModal) {
-                closeEditModal();
-            }
-        });
-    }
-
-    // Handle edit button clicks
-    var editBtns = document.querySelectorAll('.btn-edit');
-    editBtns.forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            var productId = this.getAttribute('data-id');
-            var productName = this.getAttribute('data-name');
-            var category = this.getAttribute('data-category');
-            var description = this.getAttribute('data-description');
-            var cost = this.getAttribute('data-cost');
-            var originalPrice = this.getAttribute('data-original');
-            var sellingPrice = this.getAttribute('data-selling');
-            var variantCount = parseInt(this.getAttribute('data-variant-count')) || 0;
-
-            // Populate the edit form
-            document.getElementById('edit_product_id').value = productId;
-            document.getElementById('edit_product_name').value = productName;
-            document.getElementById('edit_category').value = category;
-            document.getElementById('edit_description').value = description;
-            document.getElementById('edit_cost').value = cost;
-            document.getElementById('edit_original_price').value = originalPrice;
-            document.getElementById('edit_selling_price').value = sellingPrice;
-
-            // Handle variant toggle based on existing variants
-            var enableVariantToggle = document.getElementById('edit_enable_variant');
-            var variantColorGroup = document.getElementById('edit_variant_color_group');
-            var variantColorInput = document.getElementById('edit_variant_color');
-            var variantStatus = document.getElementById('edit_variant_status');
-
-            if (variantCount > 0) {
-                // Product has variants - set toggle ON and make it readonly
-                enableVariantToggle.checked = true;
-                enableVariantToggle.disabled = true;
-                variantColorGroup.style.display = 'none';
-                variantColorInput.removeAttribute('required');
-                variantColorInput.value = '';
-                variantStatus.textContent = 'This product has ' + variantCount + ' variant(s). Variant mode cannot be disabled.';
-                variantStatus.style.color = '#667eea';
-            } else {
-                // Product has no variants - set toggle OFF and make it editable
-                enableVariantToggle.checked = false;
-                enableVariantToggle.disabled = false;
-                variantColorGroup.style.display = 'none';
-                variantColorInput.removeAttribute('required');
-                variantColorInput.value = '';
-                variantStatus.textContent = 'Enable this to create the first variant for this product.';
-                variantStatus.style.color = '#6c757d';
-            }
-
-            // Open the edit modal
-            openEditModal();
-        });
-    });
-
     // Handle enable variant checkbox toggle
     var enableVariantCheckbox = document.getElementById('edit_enable_variant');
     var variantColorGroup = document.getElementById('edit_variant_color_group');
@@ -146,23 +58,59 @@
     // Delete confirmation modal
     var deleteConfirmModal = document.getElementById('deleteConfirmModal');
     var deleteConfirmMessage = document.getElementById('deleteConfirmMessage');
+    var deleteProductName = document.getElementById('deleteProductName');
+    var deleteVariantsSection = document.getElementById('deleteVariantsSection');
+    var variantItems = document.getElementById('variantItems');
     var confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
     var cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
     var pendingDeleteAction = null;
+    var pendingProductId = null;
 
-    function showDeleteConfirmation(message, onConfirm) {
-        if (deleteConfirmModal && deleteConfirmMessage) {
-            deleteConfirmMessage.textContent = message;
+    function fetchProductVariants(productId) {
+        return fetch('AdminProduct.php?action=get_variants&product_id=' + encodeURIComponent(productId))
+            .then(function(response) {
+                return response.json();
+            })
+            .catch(function(error) {
+                console.error('Error fetching variants:', error);
+                return { success: false, variants: [] };
+            });
+    }
+
+    function showDeleteConfirmation(productId, productName, onConfirm) {
+        if (!deleteConfirmModal) return;
+
+        pendingProductId = productId;
+        pendingDeleteAction = onConfirm;
+        deleteProductName.textContent = productName;
+
+        // Fetch variants
+        fetchProductVariants(productId).then(function(result) {
+            if (result.success && result.variants && result.variants.length > 0) {
+                deleteVariantsSection.style.display = 'block';
+                variantItems.innerHTML = '';
+                
+                result.variants.forEach(function(variant) {
+                    var variantBadge = document.createElement('div');
+                    variantBadge.style.cssText = 'display: inline-block; background-color: #fee2e2; color: #991b1b; padding: 6px 10px; border-radius: 4px; font-size: 12px; margin-right: 6px; margin-bottom: 6px;';
+                    variantBadge.textContent = '● ' + (variant.color || 'Unnamed');
+                    variantItems.appendChild(variantBadge);
+                });
+            } else {
+                deleteVariantsSection.style.display = 'none';
+                variantItems.innerHTML = '';
+            }
+
             deleteConfirmModal.style.display = 'flex';
-            pendingDeleteAction = onConfirm;
-        }
+        });
     }
 
     function closeDeleteConfirmation() {
         if (deleteConfirmModal) {
             deleteConfirmModal.style.display = 'none';
-            pendingDeleteAction = null;
         }
+        pendingDeleteAction = null;
+        pendingProductId = null;
     }
 
     if (confirmDeleteBtn) {
@@ -191,13 +139,14 @@
     deleteForms.forEach(function (form) {
         form.addEventListener('submit', function (event) {
             event.preventDefault();
-            var productName = form.querySelector('button[type="submit"]').closest('tr').querySelector('[data-product-name]').getAttribute('data-product-name');
-            showDeleteConfirmation(
-                'Are you sure you want to delete "' + productName + '"? This action cannot be undone.',
-                function () {
-                    form.submit();
-                }
-            );
+            var row = form.closest('tr');
+            var productIdInput = form.querySelector('input[name="product_id"]');
+            var productId = productIdInput ? productIdInput.value : 0;
+            var productName = row.querySelector('[data-product-name]').getAttribute('data-product-name');
+            
+            showDeleteConfirmation(productId, productName, function () {
+                form.submit();
+            });
         });
     });
 
@@ -300,32 +249,39 @@
                 productNames.push(cb.getAttribute('data-product-name'));
             });
 
-            var confirmMsg = 'Are you sure you want to delete ' + checkedBoxes.length + ' product(s)? This includes: ' + 
-                (productNames.length > 3 ? productNames.slice(0, 3).join(', ') + ' and ' + (productNames.length - 3) + ' more' : productNames.join(', '));
-            
-            showDeleteConfirmation(confirmMsg, function () {
-                // Create a form and submit for batch deletion
-                var form = document.createElement('form');
-                form.method = 'POST';
-                form.action = 'AdminProduct.php';
+            // For batch delete, show a simplified message (no variants per product)
+            if (deleteConfirmModal) {
+                deleteConfirmModal.style.display = 'flex';
+                deleteProductName.textContent = checkedBoxes.length + ' product(s) selected';
+                deleteVariantsSection.style.display = 'none';
+                deleteConfirmMessage.textContent = checkedBoxes.length > 3 
+                    ? 'Delete: ' + productNames.slice(0, 3).join(', ') + ' and ' + (productNames.length - 3) + ' more?'
+                    : 'Delete: ' + productNames.join(', ') + '?';
+                
+                pendingDeleteAction = function () {
+                    // Create a form and submit for batch deletion
+                    var form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = 'AdminProduct.php';
 
-                var actionInput = document.createElement('input');
-                actionInput.type = 'hidden';
-                actionInput.name = 'action';
-                actionInput.value = 'batch_delete';
-                form.appendChild(actionInput);
+                    var actionInput = document.createElement('input');
+                    actionInput.type = 'hidden';
+                    actionInput.name = 'action';
+                    actionInput.value = 'batch_delete';
+                    form.appendChild(actionInput);
 
-                checkedBoxes.forEach(function (cb) {
-                    var input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'product_ids[]';
-                    input.value = cb.value;
-                    form.appendChild(input);
-                });
+                    checkedBoxes.forEach(function (cb) {
+                        var input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'product_ids[]';
+                        input.value = cb.value;
+                        form.appendChild(input);
+                    });
 
-                document.body.appendChild(form);
-                form.submit();
-            });
+                    document.body.appendChild(form);
+                    form.submit();
+                };
+            }
         });
     }
 })();
