@@ -368,6 +368,37 @@ include __DIR__ . '/../../general/_navbar.php';
         <button type="button" class="btn-add-address" id="btnOpenAddAddress">
           <i class="fas fa-plus-circle"></i> Add New Address
         </button>
+        
+        <!-- Password Update Section -->
+        <div class="section-title" style="margin-top: 18px;">UPDATE PASSWORD <span class="optional">(Optional)</span></div>
+        <div class="form-grid">
+          <div class="form-row form-row-full">
+            <label for="current_password">Current Password</label>
+            <div class="input-with-icon">
+              <i class="fas fa-lock"></i>
+              <input type="password" id="current_password" name="current_password" placeholder="Enter current password" />
+            </div>
+            <div class="form-error" id="err_current_password" style="display:none;">Current password is required to update password.</div>
+          </div>
+
+          <div class="form-row">
+            <label for="new_password">New Password</label>
+            <div class="input-with-icon">
+              <i class="fas fa-key"></i>
+              <input type="password" id="new_password" name="new_password" placeholder="Enter new password" />
+            </div>
+            <div class="form-error" id="err_new_password" style="display:none;">Password must be at least 8 characters.</div>
+          </div>
+
+          <div class="form-row">
+            <label for="confirm_password">Confirm New Password</label>
+            <div class="input-with-icon">
+              <i class="fas fa-key"></i>
+              <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm new password" />
+            </div>
+            <div class="form-error" id="err_confirm_password" style="display:none;">Passwords do not match.</div>
+          </div>
+        </div>
       </div>
       
       <div class="modal-actions">

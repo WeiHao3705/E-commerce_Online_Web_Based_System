@@ -388,6 +388,33 @@
     }
   });
 
+  // Client-side validation for password update (optional)
+  document.getElementById('updateForm')?.addEventListener('submit', function(e) {
+    // hide previous errors (if any)
+    try { document.querySelectorAll('.form-error').forEach(el => el.style.display = 'none'); } catch(err){}
+
+    var currentPassword = document.getElementById('current_password')?.value.trim() || '';
+    var newPassword = document.getElementById('new_password')?.value.trim() || '';
+    var confirmPassword = document.getElementById('confirm_password')?.value.trim() || '';
+
+    // If any password field is filled, validate all
+    if (currentPassword !== '' || newPassword !== '' || confirmPassword !== '') {
+      var ok = true;
+      if (currentPassword === '') { document.getElementById('err_current_password').style.display = 'block'; ok = false; }
+      if (newPassword === '') { document.getElementById('err_new_password').textContent = 'New password is required.'; document.getElementById('err_new_password').style.display = 'block'; ok = false; }
+      else if (newPassword.length < 8) { document.getElementById('err_new_password').textContent = 'Password must be at least 8 characters.'; document.getElementById('err_new_password').style.display = 'block'; ok = false; }
+      if (confirmPassword === '') { document.getElementById('err_confirm_password').textContent = 'Please confirm your new password.'; document.getElementById('err_confirm_password').style.display = 'block'; ok = false; }
+      else if (newPassword !== confirmPassword) { document.getElementById('err_confirm_password').textContent = 'Passwords do not match.'; document.getElementById('err_confirm_password').style.display = 'block'; ok = false; }
+
+      if (!ok) {
+        e.preventDefault();
+        // scroll to first visible error
+        var firstErr = document.querySelector('.form-error[style*="display: block"]');
+        if (firstErr) firstErr.scrollIntoView({behavior:'smooth', block:'center'});
+      }
+    }
+  });
+
   // Label buttons for address
   document.querySelectorAll('.label-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {

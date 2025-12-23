@@ -572,6 +572,11 @@ class MemberController
                     $contact_no
                 );
 
+                // Collect password change request fields (optional)
+                $currentPassword = isset($_POST['current_password']) ? trim($_POST['current_password']) : '';
+                $newPassword = isset($_POST['new_password']) ? $_POST['new_password'] : '';
+                $confirmPassword = isset($_POST['confirm_password']) ? $_POST['confirm_password'] : '';
+
                 $result = $this->membershipServices->updateMember($memberDTO);
 
                 // Update default address if selected
@@ -598,13 +603,58 @@ class MemberController
                             'gender' => $gender
                         ];
                         ActivityLogger::logMemberUpdate((int)$_POST['user_id'], $username, $oldValues, $newValues);
+                        }
+                    // If a password change was requested, process it now
+                    if (!empty($newPassword)) {
+                        $targetUserId = (int)$_POST['user_id'];
+                        $isAdminEditingOther = isset($_SESSION['user']) && $_SESSION['user']->role === 'admin' && (int)$_SESSION['user']->user_id !== $targetUserId;
+
+                        // If not an admin editing another user, require current password verification
+                        if (!$isAdminEditingOther) {
+                            if ($currentPassword === '') {
+                                throw new Exception('Current password is required to change password.');
+                            }
+                            $targetUser = $this->membershipServices->getMemberById($targetUserId);
+                            if (!$targetUser || !password_verify($currentPassword, $targetUser['password'])) {
+                                throw new Exception('Current password is incorrect.');
+                            }
+                        }
+
+                        // Enforce same password constraints as registration
+                        $reqs = [];
+                        $reqs[] = (strlen($newPassword) >= 8);
+                        $reqs[] = (bool)preg_match('/[A-Z]/', $newPassword);
+                        $reqs[] = (bool)preg_match('/[a-z]/', $newPassword);
+                        $reqs[] = (bool)preg_match('/[0-9]/', $newPassword);
+                        $reqs[] = (bool)preg_match('/[!@#$%^&*(),.?":{}|<>]/', $newPassword);
+                        if (in_array(false, $reqs, true)) {
+                            throw new Exception('New password does not meet security requirements: at least 8 characters, include uppercase, lowercase, number and special character.');
+                        }
+
+                        // Ensure confirmation matches
+                        if ($newPassword !== $confirmPassword) {
+                            throw new Exception('Passwords do not match.');
+                        }
+
+                        // Perform the password update
+                        $updatedPwd = $this->membershipServices->resetPassword($targetUserId, $newPassword);
+                        if (!$updatedPwd) {
+                            throw new Exception('Failed to update password.');
+                        }
+                        // Append message
+                        $_SESSION['success_message'] = "Member updated successfully! Password changed.";
                     }
-                    
-                    $_SESSION['success_message'] = "Member updated successfully!";
+                    // Ensure a single success message is set after all processing (including optional password change)
+                    if (empty($_SESSION['success_message'])) {
+                        $_SESSION['success_message'] = "Member updated successfully!";
+                    }
+
                     // Allow redirection back to profile when updating from user profile page
                     $returnTo = isset($_POST['return_to']) ? $_POST['return_to'] : (isset($_GET['return_to']) ? $_GET['return_to'] : '');
                     if ($returnTo === 'profile') {
                         header('Location: ../views/member/profile.php');
+                    } elseif (isset($_SESSION['user']) && $_SESSION['user']->role === 'admin' && isset($_POST['user_id']) && (int)$_POST['user_id'] === (int)$_SESSION['user']->user_id) {
+                        header('Location: ../views/admin/AdminProfile.php');
                     } else {
                         header('Location: ../controller/MemberController.php?action=showAll');
                     }
@@ -618,6 +668,8 @@ class MemberController
             $returnTo = isset($_POST['return_to']) ? $_POST['return_to'] : (isset($_GET['return_to']) ? $_GET['return_to'] : '');
             if ($returnTo === 'profile') {
                 header('Location: ../views/member/profile.php');
+            } elseif (isset($_SESSION['user']) && $_SESSION['user']->role === 'admin' && isset($_POST['user_id']) && (int)$_POST['user_id'] === (int)$_SESSION['user']->user_id) {
+                header('Location: ../views/admin/AdminProfile.php');
             } else {
                 header('Location: ../controller/MemberController.php?action=showAll');
             }
@@ -743,8 +795,16 @@ class MemberController
                 exit;
             }
 
-            if (strlen($newPassword) < 6) {
-                $_SESSION['fp_message'] = 'Password must be at least 6 characters';
+            // Enforce same password constraints as registration
+            $requirements = [];
+            $requirements[] = (strlen($newPassword) >= 8);
+            $requirements[] = (bool)preg_match('/[A-Z]/', $newPassword);
+            $requirements[] = (bool)preg_match('/[a-z]/', $newPassword);
+            $requirements[] = (bool)preg_match('/[0-9]/', $newPassword);
+            $requirements[] = (bool)preg_match('/[!@#$%^&*(),.?":{}|<>]/', $newPassword);
+
+            if (in_array(false, $requirements, true)) {
+                $_SESSION['fp_message'] = 'Password does not meet security requirements: at least 8 characters, include uppercase, lowercase, number and special character.';
                 header('Location: ../views/security/forgot_password.php');
                 exit;
             }
