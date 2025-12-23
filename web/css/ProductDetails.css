@@ -102,21 +102,21 @@
 
 .thumbnail-gallery {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
     align-items: flex-start;
 }
 
 .thumbnail-item {
     text-align: center;
-    flex: 0 1 calc(25% - 8px);
+    flex: 0 1 calc(20% - 6px);
 }
 
 .thumbnail-item img {
     width: 100%;
     aspect-ratio: 1;
     border: 2px solid #e5e7eb;
-    border-radius: 10px;
+    border-radius: 8px;
     cursor: pointer;
     object-fit: cover;
     transition: all 140ms ease;
