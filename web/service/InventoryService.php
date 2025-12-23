@@ -193,17 +193,25 @@ class InventoryService {
         }
 
         $orderId = (int)$orderId;
+        
+        error_log("InventoryService: Starting stock deduction for order {$orderId}");
 
         $payStmt = $this->conn->prepare("SELECT payment_status FROM payment WHERE order_id = :order_id ORDER BY payment_date DESC, payment_id DESC LIMIT 1");
         $payStmt->execute([':order_id' => $orderId]);
         $payment = $payStmt->fetch(PDO::FETCH_ASSOC);
+        
+        error_log("InventoryService: Payment check - Order: {$orderId}, Payment status: " . ($payment ? $payment['payment_status'] : 'NOT FOUND'));
+        
         if (!$payment || strtolower((string)$payment['payment_status']) !== 'paid') {
-            throw new Exception('Payment is not marked as paid for this order.');
+            throw new Exception('Payment is not marked as paid for this order. Current status: ' . ($payment['payment_status'] ?? 'NO PAYMENT RECORD'));
         }
 
         $itemStmt = $this->conn->prepare("SELECT product_id, quantity FROM order_item WHERE order_id = :order_id");
         $itemStmt->execute([':order_id' => $orderId]);
         $items = $itemStmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        error_log("InventoryService: Found " . count($items) . " items in order {$orderId}");
+        
         if (!$items) {
             return ['success' => true, 'deductions' => [], 'message' => 'No order items found.'];
         }
@@ -215,20 +223,32 @@ class InventoryService {
             if ($qty <= 0) { continue; }
             if (!isset($requiredByProduct[$pid])) { $requiredByProduct[$pid] = 0; }
             $requiredByProduct[$pid] += $qty;
+            error_log("InventoryService: Order item - Product ID: {$pid}, Quantity: {$qty}");
         }
 
         foreach ($requiredByProduct as $pid => $need) {
             $available = $this->getProductTotalStock($pid);
+            error_log("InventoryService: Stock check - Product ID: {$pid}, Available: {$available}, Needed: {$need}");
             if ($available < $need) {
                 throw new Exception("Insufficient stock for product ID {$pid}. Needed {$need}, available {$available}.");
             }
         }
 
-        $this->conn->beginTransaction();
+        // Check if there's already an active transaction
+        $isTransactionActive = !$this->conn->inTransaction();
+        if ($isTransactionActive) {
+            error_log("InventoryService: Starting new transaction");
+            $this->conn->beginTransaction();
+        } else {
+            error_log("InventoryService: Using existing transaction");
+        }
+        
         try {
             $deductions = [];
             foreach ($requiredByProduct as $pid => $need) {
                 $remaining = (int)$need;
+                error_log("InventoryService: Starting deduction for product {$pid}, need to deduct {$remaining}");
+                
                 $sel = $this->conn->prepare(
                     "SELECT id, stock_quantity, variant_id, size
                      FROM inventory
@@ -241,6 +261,9 @@ class InventoryService {
                 );
                 $sel->execute([':product_id' => $pid]);
                 $rows = $sel->fetchAll(PDO::FETCH_ASSOC);
+                
+                error_log("InventoryService: Found " . count($rows) . " inventory rows for product {$pid}");
+                
                 if (!$rows) {
                     throw new Exception("No inventory rows found for product ID {$pid}.");
                 }
@@ -248,33 +271,58 @@ class InventoryService {
                 $rowDeductions = [];
                 foreach ($rows as $r) {
                     if ($remaining <= 0) { break; }
+                    
+                    $inventoryId = (int)$r['id'];
                     $available = (int)$r['stock_quantity'];
-                    if ($available <= 0) { continue; }
-                    $deduct = min($remaining, $available);
-                    $upd = $this->conn->prepare("UPDATE inventory SET stock_quantity = stock_quantity - :deduct WHERE id = :id AND stock_quantity >= :deduct");
-                    $upd->execute([':deduct' => $deduct, ':id' => (int)$r['id']]);
-
-                    if ($upd->rowCount() === 0) {
-                        $curStmt = $this->conn->prepare("SELECT stock_quantity FROM inventory WHERE id = :id FOR UPDATE");
-                        $curStmt->execute([':id' => (int)$r['id']]);
-                        $cur = (int)($curStmt->fetch(PDO::FETCH_ASSOC)['stock_quantity'] ?? 0);
-                        if ($cur <= 0) { continue; }
-                        $deduct = min($remaining, $cur);
-                        $upd->execute([':deduct' => $deduct, ':id' => (int)$r['id']]);
-                        if ($upd->rowCount() === 0) { continue; }
+                    $variantId = $r['variant_id'] ?? null;
+                    $size = $r['size'] ?? null;
+                    
+                    error_log("InventoryService: Processing inventory row - ID: {$inventoryId}, Available: {$available}, Variant: {$variantId}, Size: {$size}");
+                    
+                    if ($available <= 0) { 
+                        error_log("InventoryService: Skipping row {$inventoryId} (no stock)");
+                        continue; 
                     }
+                    
+                    $deduct = min($remaining, $available);
+                    
+                    // Execute the update
+                    $upd = $this->conn->prepare(
+                        "UPDATE inventory SET stock_quantity = stock_quantity - :deduct WHERE id = :id"
+                    );
+                    
+                    $updateResult = $upd->execute([
+                        ':deduct' => $deduct, 
+                        ':id' => $inventoryId
+                    ]);
+                    
+                    error_log("InventoryService: Update executed - Row: {$inventoryId}, Deduct: {$deduct}, Result: " . ($updateResult ? 'SUCCESS' : 'FAILED'));
+                    
+                    if (!$updateResult) {
+                        throw new Exception("Failed to update inventory row {$inventoryId}");
+                    }
+                    
+                    $rowCount = $upd->rowCount();
+                    error_log("InventoryService: Updated {$rowCount} row(s) for inventory ID {$inventoryId}");
 
-                    $remaining -= $deduct;
-                    $rowDeductions[] = [
-                        'inventory_id' => (int)$r['id'],
-                        'variant_id' => isset($r['variant_id']) && $r['variant_id'] !== null ? (int)$r['variant_id'] : null,
-                        'size' => $r['size'] ?? null,
-                        'deducted' => (int)$deduct
-                    ];
+                    if ($rowCount > 0) {
+                        $remaining -= $deduct;
+                        $rowDeductions[] = [
+                            'inventory_id' => $inventoryId,
+                            'variant_id' => $variantId !== null ? (int)$variantId : null,
+                            'size' => $size,
+                            'deducted' => (int)$deduct
+                        ];
+                        
+                        // Log the deduction
+                        $this->logDeduction($orderId, $pid, $inventoryId, $variantId, $size, $deduct);
+                        
+                        error_log("InventoryService: Successfully deducted {$deduct} from inventory {$inventoryId}, remaining: {$remaining}");
+                    }
                 }
 
                 if ($remaining > 0) {
-                    throw new Exception("Insufficient stock during deduction for product ID {$pid}.");
+                    throw new Exception("Insufficient stock during deduction for product ID {$pid}. Could not deduct {$remaining} units.");
                 }
 
                 $deductions[] = [
@@ -282,16 +330,43 @@ class InventoryService {
                     'total_deducted' => (int)$need,
                     'rows' => $rowDeductions
                 ];
+                
+                error_log("InventoryService: Completed deduction for product {$pid}: " . json_encode($rowDeductions));
             }
 
-            $this->conn->commit();
-            error_log("InventoryService: Deducted stock for paid order {$orderId}: " . json_encode($deductions));
-            return ['success' => true, 'deductions' => $deductions];
-        } catch (Exception $e) {
-            if ($this->conn->inTransaction()) {
-                $this->conn->rollBack();
+            if ($isTransactionActive) {
+                $this->conn->commit();
+                error_log("InventoryService: Transaction committed successfully. Deducted stock for paid order {$orderId}: " . json_encode($deductions));
+            } else {
+                error_log("InventoryService: Stock deduction completed (transaction managed by caller). Deducted stock for paid order {$orderId}: " . json_encode($deductions));
             }
+            return ['success' => true, 'deductions' => $deductions];
+            
+        } catch (Exception $e) {
+            if ($isTransactionActive && $this->conn->inTransaction()) {
+                $this->conn->rollBack();
+                error_log("InventoryService: Transaction rolled back due to error: " . $e->getMessage());
+            }
+            error_log("InventoryService: Stock deduction failed - " . $e->getMessage());
             throw $e;
+        }
+    }
+
+    /**
+     * Log inventory deduction to activity log
+     */
+    private function logDeduction($orderId, $productId, $inventoryId, $variantId, $size, $deductedQty) {
+        try {
+            $logStmt = $this->conn->prepare(
+                "INSERT INTO admin_activity_log (user_id, action, details, ip_address, timestamp)
+                 VALUES (NULL, 'Stock Deduction', :details, '0.0.0.0', NOW())"
+            );
+            $details = "Order {$orderId}: Deducted {$deductedQty} from inventory {$inventoryId} (Product {$productId}, Variant: {$variantId}, Size: {$size})";
+            $logStmt->execute([':details' => $details]);
+            error_log("InventoryService: Logged deduction - {$details}");
+        } catch (Exception $e) {
+            error_log("InventoryService: Failed to log deduction: " . $e->getMessage());
+            // Don't fail the deduction if logging fails
         }
     }
 
