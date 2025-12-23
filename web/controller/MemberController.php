@@ -52,6 +52,51 @@ class MemberController
                     exit;
                 }
 
+                // Check if admin requires 2FA
+                if ($userDTO->getRole() === 'admin') {
+                    $userId = $userDTO->getUserId();
+                    
+                    // Check if 2FA secret exists
+                    $twoFactorSecret = $this->membershipServices->getTwoFactorSecret($userId);
+                    
+                    if (!$twoFactorSecret || !$twoFactorSecret['two_factor_secret']) {
+                        // No 2FA secret - first time setup
+                        // Generate and store secret, redirect to setup page
+                        $setupData = $this->membershipServices->setupTwoFactor($userId);
+                        
+                        // Store temporary session data for 2FA setup
+                        $_SESSION['2fa_setup'] = [
+                            'user_id' => $userId,
+                            'username' => $userDTO->getUsername(),
+                            'full_name' => $userDTO->getFullName(),
+                            'email' => $userDTO->getEmail(),
+                            'role' => $userDTO->getRole(),
+                            'remember_me' => $rememberMe,
+                            'qr_code' => $setupData['qr_code'],
+                            'manual_entry' => $setupData['manual_entry'],
+                            'secret_key' => $setupData['secret_key'] // Secret key for manual entry
+                        ];
+                        
+                        header('Location: ../views/security/two_factor_setup.php');
+                        exit;
+                    } else {
+                        // 2FA secret exists - require verification
+                        // Store temporary session data for 2FA verification
+                        $_SESSION['2fa_verify'] = [
+                            'user_id' => $userId,
+                            'username' => $userDTO->getUsername(),
+                            'full_name' => $userDTO->getFullName(),
+                            'email' => $userDTO->getEmail(),
+                            'role' => $userDTO->getRole(),
+                            'remember_me' => $rememberMe
+                        ];
+                        
+                        header('Location: ../views/security/two_factor_verify.php');
+                        exit;
+                    }
+                }
+
+                // Non-admin users or 2FA not required - proceed with normal login
                 // Save minimal user info in session as stdClass object
                 $_SESSION['user'] = new stdClass();
                 $_SESSION['user']->user_id = $userDTO->getUserId();
@@ -1151,6 +1196,134 @@ class MemberController
             exit;
         }
     }
+
+    /**
+     * Verify 2FA code and complete login
+     */
+    public function verifyTwoFactor()
+    {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                header('Location: ../views/security/login.php');
+                exit;
+            }
+
+            if (empty($_SESSION['2fa_verify'])) {
+                $_SESSION['error_message'] = 'Session expired. Please log in again.';
+                header('Location: ../views/security/login.php');
+                exit;
+            }
+
+            $code = isset($_POST['code']) ? trim($_POST['code']) : '';
+            if (empty($code) || strlen($code) !== 6 || !ctype_digit($code)) {
+                $_SESSION['error_message'] = 'Please enter a valid 6-digit code.';
+                header('Location: ../views/security/two_factor_verify.php');
+                exit;
+            }
+
+            $userData = $_SESSION['2fa_verify'];
+            $userId = $userData['user_id'];
+
+            if (!$this->membershipServices->verifyTwoFactorCode($userId, $code)) {
+                $_SESSION['error_message'] = 'Invalid verification code. Please try again.';
+                header('Location: ../views/security/two_factor_verify.php');
+                exit;
+            }
+
+            // 2FA verified - complete login
+            $_SESSION['user'] = new stdClass();
+            $_SESSION['user']->user_id = $userData['user_id'];
+            $_SESSION['user']->username = $userData['username'];
+            $_SESSION['user']->full_name = $userData['full_name'];
+            $_SESSION['user']->email = $userData['email'];
+            $_SESSION['user']->role = $userData['role'];
+            $_SESSION['user']->profile_photo = null;
+
+            // Handle Remember Me functionality
+            if (!empty($userData['remember_me'])) {
+                $this->setRememberMeToken($userId);
+            } else {
+                $this->membershipServices->clearRememberToken($userId);
+                $this->clearRememberMeCookie();
+            }
+
+            // Clear temporary 2FA session
+            unset($_SESSION['2fa_verify']);
+
+            // Redirect to admin dashboard
+            header('Location: ../views/admin/AdminDashboard.php');
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
+            header('Location: ../views/security/two_factor_verify.php');
+            exit;
+        }
+    }
+
+    /**
+     * Complete 2FA setup by verifying test code
+     */
+    public function setupTwoFactor()
+    {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                header('Location: ../views/security/login.php');
+                exit;
+            }
+
+            if (empty($_SESSION['2fa_setup'])) {
+                $_SESSION['error_message'] = 'Session expired. Please log in again.';
+                header('Location: ../views/security/login.php');
+                exit;
+            }
+
+            $code = isset($_POST['code']) ? trim($_POST['code']) : '';
+            if (empty($code) || strlen($code) !== 6 || !ctype_digit($code)) {
+                $_SESSION['error_message'] = 'Please enter a valid 6-digit code.';
+                header('Location: ../views/security/two_factor_setup.php');
+                exit;
+            }
+
+            $userData = $_SESSION['2fa_setup'];
+            $userId = $userData['user_id'];
+
+            if (!$this->membershipServices->completeTwoFactorSetup($userId, $code)) {
+                $_SESSION['error_message'] = 'Invalid verification code. Please try again.';
+                header('Location: ../views/security/two_factor_setup.php');
+                exit;
+            }
+
+            // 2FA setup complete - complete login
+            $_SESSION['user'] = new stdClass();
+            $_SESSION['user']->user_id = $userData['user_id'];
+            $_SESSION['user']->username = $userData['username'];
+            $_SESSION['user']->full_name = $userData['full_name'];
+            $_SESSION['user']->email = $userData['email'];
+            $_SESSION['user']->role = $userData['role'];
+            $_SESSION['user']->profile_photo = null;
+
+            // Handle Remember Me functionality
+            if (!empty($userData['remember_me'])) {
+                $this->setRememberMeToken($userId);
+            } else {
+                $this->membershipServices->clearRememberToken($userId);
+                $this->clearRememberMeCookie();
+            }
+
+            // Clear temporary 2FA setup session
+            unset($_SESSION['2fa_setup']);
+
+            $_SESSION['success_message'] = 'Two-factor authentication has been enabled successfully!';
+            
+            // Redirect to admin dashboard
+            header('Location: ../views/admin/AdminDashboard.php');
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
+            header('Location: ../views/security/two_factor_setup.php');
+            exit;
+        }
+    }
 }
 
 // Handle the request
@@ -1188,6 +1361,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $controller->completeReset();
     } elseif ($action === 'resend_verification') {
         $controller->resendVerificationEmail();
+    } elseif ($action === 'verify_2fa') {
+        $controller->verifyTwoFactor();
+    } elseif ($action === 'setup_2fa') {
+        $controller->setupTwoFactor();
     }
 } else {
     // Handle GET requests

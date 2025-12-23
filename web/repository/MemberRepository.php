@@ -692,4 +692,48 @@ class MembershipRepository
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([$userId]);
     }
+
+    /**
+     * Get 2FA secret for a user
+     */
+    public function getTwoFactorSecret($userId)
+    {
+        $sql = "SELECT two_factor_secret, two_factor_enabled FROM users WHERE user_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$userId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ?: null;
+    }
+
+    /**
+     * Set 2FA secret for a user
+     */
+    public function setTwoFactorSecret($userId, $secret, $enabled = false)
+    {
+        $sql = "UPDATE users SET two_factor_secret = ?, two_factor_enabled = ? WHERE user_id = ?";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$secret, $enabled ? 1 : 0, $userId]);
+    }
+
+    /**
+     * Check if 2FA is enabled for a user
+     */
+    public function isTwoFactorEnabled($userId)
+    {
+        $sql = "SELECT two_factor_enabled FROM users WHERE user_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$userId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result && $result['two_factor_enabled'] == 1;
+    }
+
+    /**
+     * Enable 2FA for a user (after successful setup verification)
+     */
+    public function enableTwoFactor($userId)
+    {
+        $sql = "UPDATE users SET two_factor_enabled = 1 WHERE user_id = ?";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$userId]);
+    }
 }

@@ -21,6 +21,7 @@ This will install:
 - `endroid/qr-code` (^6.0)
 - `stripe/stripe-php` (^19.1)
 - `setasign/fpdf` (^1.8)
+- `robthree/twofactorauth` (^3.0) - For admin 2FA authentication
 
 ### Step 4: Verify Installation
 ```bash
@@ -28,6 +29,7 @@ dir vendor
 dir vendor\endroid\qr-code
 dir vendor\stripe\stripe-php
 dir vendor\setasign\fpdf
+dir vendor\robthree\twofactorauth
 ```
 
 ---
@@ -47,6 +49,11 @@ composer require stripe/stripe-php
 ### Install Only setasign/fpdf
 ```bash
 composer require setasign/fpdf
+```
+
+### Install Only robthree/twofactorauth
+```bash
+composer require robthree/twofactorauth
 ```
 
 ---

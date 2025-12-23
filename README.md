@@ -62,12 +62,14 @@ Once Composer is installed, you can install all project dependencies including `
    - Install `endroid/qr-code` (^6.0)
    - Install `stripe/stripe-php` (^19.1)
    - Install `setasign/fpdf` (^1.8)
+   - Install `robthree/twofactorauth` (^3.0) - For admin 2FA authentication
 
 4. **Verify Installation:**
    - Check if `vendor` folder exists in your project root
    - The `endroid/qr-code` package will be located at: `vendor/endroid/qr-code/`
    - The `stripe/stripe-php` package will be located at: `vendor/stripe/stripe-php/`
    - The `setasign/fpdf` package will be located at: `vendor/setasign/fpdf/`
+   - The `robthree/twofactorauth` package will be located at: `vendor/robthree/twofactorauth/`
 
 ## Project Structure
 
@@ -83,8 +85,10 @@ E-commerce_Online_Web_Based_System/
 │   │   └── qr-code/      # QR code library
 │   ├── stripe/
 │   │   └── stripe-php/   # Stripe payment library
-│   └── setasign/
-│       └── fpdf/         # FPDF library for PDF generation
+│   ├── setasign/
+│   │   └── fpdf/         # FPDF library for PDF generation
+│   └── robthree/
+│       └── twofactorauth/ # Two-factor authentication library
 ├── web/                   # Web application files
 └── ...
 ```
@@ -196,6 +200,12 @@ or
 
 ```bash
 composer update setasign/fpdf
+```
+
+or
+
+```bash
+composer update robthree/twofactorauth
 ```
 
 ## Troubleshooting

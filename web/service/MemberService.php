@@ -511,4 +511,118 @@ class MembershipServices
         $this->membershipRepository->clearResetOtp($userId);
         return true;
     }
+
+    /**
+     * Get 2FA secret data for a user
+     */
+    public function getTwoFactorSecret($userId)
+    {
+        return $this->membershipRepository->getTwoFactorSecret($userId);
+    }
+
+    /**
+     * Check if 2FA is required for a user (admin with 2FA enabled)
+     */
+    public function checkTwoFactorRequired($userId): bool
+    {
+        $user = $this->membershipRepository->getMemberById($userId);
+        if (!$user) {
+            return false;
+        }
+        
+        $isAdmin = isset($user['role']) && strtolower($user['role']) === 'admin';
+        if (!$isAdmin) {
+            return false;
+        }
+        
+        return $this->membershipRepository->isTwoFactorEnabled($userId);
+    }
+
+    /**
+     * Verify 2FA code for a user
+     */
+    public function verifyTwoFactorCode($userId, $code): bool
+    {
+        require_once __DIR__ . '/TwoFactorService.php';
+        $twoFactorService = new TwoFactorService();
+        
+        $twoFactorData = $this->membershipRepository->getTwoFactorSecret($userId);
+        if (!$twoFactorData || !$twoFactorData['two_factor_secret']) {
+            return false;
+        }
+        
+        $encryptedSecret = $twoFactorData['two_factor_secret'];
+        $secret = $twoFactorService->decryptSecret($encryptedSecret);
+        
+        if (empty($secret)) {
+            return false;
+        }
+        
+        return $twoFactorService->verifyCode($secret, $code);
+    }
+
+    /**
+     * Setup 2FA for a user - generate secret and return QR code data
+     */
+    public function setupTwoFactor($userId): array
+    {
+        require_once __DIR__ . '/TwoFactorService.php';
+        $twoFactorService = new TwoFactorService();
+        
+        $user = $this->membershipRepository->getMemberById($userId);
+        if (!$user) {
+            throw new Exception('User not found');
+        }
+        
+        // Generate new secret
+        $secret = $twoFactorService->generateSecret();
+        $encryptedSecret = $twoFactorService->encryptSecret($secret);
+        
+        // Store encrypted secret (but don't enable yet - wait for verification)
+        $this->membershipRepository->setTwoFactorSecret($userId, $encryptedSecret, false);
+        
+        // Generate QR code and manual entry code
+        $username = $user['username'];
+        $qrCodeDataUrl = $twoFactorService->getQRCodeDataUrl($secret, $username);
+        $manualEntryCode = $twoFactorService->getManualEntryCode($secret, $username);
+        $secretKey = $twoFactorService->getSecretKey($secret);
+        
+        return [
+            'secret' => $secret, // Keep unencrypted for QR generation
+            'encrypted_secret' => $encryptedSecret,
+            'qr_code' => $qrCodeDataUrl,
+            'manual_entry' => $manualEntryCode,
+            'secret_key' => $secretKey, // Just the secret key for manual entry
+            'username' => $username
+        ];
+    }
+
+    /**
+     * Complete 2FA setup by verifying test code and enabling 2FA
+     */
+    public function completeTwoFactorSetup($userId, $testCode): bool
+    {
+        require_once __DIR__ . '/TwoFactorService.php';
+        $twoFactorService = new TwoFactorService();
+        
+        $twoFactorData = $this->membershipRepository->getTwoFactorSecret($userId);
+        if (!$twoFactorData || !$twoFactorData['two_factor_secret']) {
+            throw new Exception('2FA setup not found. Please start over.');
+        }
+        
+        $encryptedSecret = $twoFactorData['two_factor_secret'];
+        $secret = $twoFactorService->decryptSecret($encryptedSecret);
+        
+        if (empty($secret)) {
+            throw new Exception('Invalid 2FA secret. Please start over.');
+        }
+        
+        // Verify the test code
+        if (!$twoFactorService->verifyCode($secret, $testCode)) {
+            return false;
+        }
+        
+        // Enable 2FA
+        return $this->membershipRepository->enableTwoFactor($userId);
+    }
 }

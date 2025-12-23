@@ -11,6 +11,10 @@ class ComposerStaticInit4e16e4e6aa435046f80ec55523ebe507
         array (
             'Stripe\\' => 7,
         ),
+        'R' =>
+        array (
+            'RobThree\\Auth\\' => 14,
+        ),
         'E' =>
         array (
             'Endroid\\QrCode\\' => 15,
@@ -33,6 +37,10 @@ class ComposerStaticInit4e16e4e6aa435046f80ec55523ebe507
         'Stripe\\' =>
         array (
             0 => __DIR__ . '/..' . '/stripe/stripe-php/lib',
+        ),
+        'RobThree\\Auth\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/robthree/twofactorauth/lib',
         ),
         'Endroid\\QrCode\\' =>
         array (
