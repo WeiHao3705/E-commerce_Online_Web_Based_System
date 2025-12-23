@@ -150,8 +150,8 @@ class ActivityLogController
             }
 
             $searchTerm = isset($_GET['search']) ? trim($_GET['search']) : '';
-            // Always use current logged-in admin's ID - ignore any admin_id parameter to prevent viewing other admins' logs
-            $adminId = (int)$_SESSION['user']->user_id;
+            // Use admin_id from GET parameter if provided, otherwise use current logged-in admin's ID
+            $adminId = isset($_GET['admin_id']) ? (int)$_GET['admin_id'] : (int)$_SESSION['user']->user_id;
             $actionType = isset($_GET['action_type']) ? trim($_GET['action_type']) : null;
             $entityType = isset($_GET['entity_type']) ? trim($_GET['entity_type']) : null;
             $startDate = isset($_GET['start_date']) ? trim($_GET['start_date']) : null;
@@ -256,19 +256,40 @@ class ActivityLogController
                     if ($log['entity_id']) {
                         $entity .= "\nID: " . $log['entity_id'];
                     }
-                    $description = substr($log['action_description'], 0, 60);
-                    if (strlen($log['action_description']) > 60) {
-                        $description .= '...';
-                    }
+                    // Use full description without truncation
+                    $description = $log['action_description'] ?? '';
 
-                    // Calculate row height
-                    $height = max(8, ceil(strlen($dateTime) / 20) * 4, ceil(strlen($admin) / 20) * 4);
+                    // Calculate the number of lines needed for each cell
+                    $descWidth = 70;
+                    $charPerLine = floor($descWidth / 2); // Approximate characters per line at font size 8
+                    $descLines = max(1, ceil(strlen($description) / $charPerLine));
                     
+                    // Calculate row height based on content (minimum 8, 4mm per line)
+                    $height = max(8, $descLines * 4, 8);
+                    
+                    // Store the starting position
+                    $startX = $pdf->GetX();
+                    $startY = $pdf->GetY();
+                    
+                    // Draw cells with borders
                     $pdf->Cell(25, $height, $dateTime, 1, 0, 'L', $fill);
                     $pdf->Cell(40, $height, $admin, 1, 0, 'L', $fill);
                     $pdf->Cell(30, $height, $action, 1, 0, 'L', $fill);
                     $pdf->Cell(25, $height, $entity, 1, 0, 'L', $fill);
-                    $pdf->Cell(70, $height, $description, 1, 1, 'L', $fill);
+                    
+                    // Use MultiCell for description to allow text wrapping
+                    $descX = $pdf->GetX();
+                    $descY = $pdf->GetY();
+                    
+                    // Draw the cell border first
+                    $pdf->Cell(70, $height, '', 1, 0, 'L', $fill);
+                    
+                    // Position back to write the text with MultiCell
+                    $pdf->SetXY($descX, $descY);
+                    $pdf->MultiCell(70, 4, $description, 0, 'L', false);
+                    
+                    // Move to the next row position
+                    $pdf->SetXY($startX, $startY + $height);
                 }
             }
 
