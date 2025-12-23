@@ -281,13 +281,18 @@
         }
 
         // Show/hide wishlist button and update variant_id and size
-        // Always show wishlist button - users can add any product to wishlist
+        // Only show wishlist button when item is OUT OF STOCK
         if (wishlistSection) {
-            wishlistSection.style.display = 'block';
-            const wishlistBtn = document.getElementById('wishlistBtn');
-            if (wishlistBtn) {
-                wishlistBtn.setAttribute('data-variant-id', variantId || '');
-                wishlistBtn.setAttribute('data-size', size || '');
+            if (isOutOfStock) {
+                wishlistSection.style.display = 'block';
+                const wishlistBtn = document.getElementById('wishlistBtn');
+                if (wishlistBtn) {
+                    wishlistBtn.setAttribute('data-variant-id', variantId || '');
+                    wishlistBtn.setAttribute('data-size', size || '');
+                }
+            } else {
+                // Hide wishlist button when item is in stock
+                wishlistSection.style.display = 'none';
             }
         }
     }
