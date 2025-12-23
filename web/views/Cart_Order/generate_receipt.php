@@ -85,6 +85,9 @@ $grandTotal = $subtotal - $discount + $shippingFee + $tax;
     <title>E-Receipt #<?= str_pad($order['order_id'], 6, '0', STR_PAD_LEFT) ?></title>
     <link rel="stylesheet" href="../../css/receipt.css">
     <link rel="icon" type="image/png" href="/web/images/logo/logo1.png">
+    <!-- jsPDF and html2canvas CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
     <div class="receipt-container">
@@ -202,4 +205,21 @@ $grandTotal = $subtotal - $discount + $shippingFee + $tax;
         </div>
     </div>
 </body>
+<script>
+function downloadPDF() {
+    const receipt = document.querySelector('.receipt-container');
+    html2canvas(receipt, { scale: 2 }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jspdf.jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+        // Calculate width/height for A4
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        // Fit image to page width, keep aspect ratio
+        const imgWidth = pageWidth - 40;
+        const imgHeight = canvas.height * imgWidth / canvas.width;
+        pdf.addImage(imgData, 'PNG', 20, 20, imgWidth, imgHeight);
+        pdf.save('receipt_<?= str_pad($order['order_id'], 6, '0', STR_PAD_LEFT) ?>.pdf');
+    });
+}
+</script>
 </html>

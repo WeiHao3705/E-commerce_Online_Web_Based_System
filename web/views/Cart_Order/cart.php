@@ -104,14 +104,20 @@ include '../../general/_navbar.php';
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
 <?php 
 
-// query of fetching vouchers from db
-$voucherQuery = "SELECT * FROM voucher 
-WHERE status = 'active' 
-AND start_date <= CURDATE() 
-AND end_date >= CURDATE() 
-ORDER BY type, min_spend";
+
+// query of fetching vouchers from db, excluding those already used by this user
+$voucherQuery = "SELECT v.* FROM voucher v 
+WHERE v.status = 'active'
+    AND v.start_date <= CURDATE()
+    AND v.end_date >= CURDATE()
+    AND NOT EXISTS (
+        SELECT 1 FROM voucher_usage vu
+        WHERE vu.voucher_id = v.voucher_id
+            AND vu.user_id = :user_id
+    )
+ORDER BY v.type, v.min_spend";
 $voucherStmt = $conn->prepare($voucherQuery);
-$voucherStmt->execute();
+$voucherStmt->execute([':user_id' => $userId]);
 // fetch all vouchers as an array
 $vouchers = $voucherStmt->fetchAll(PDO::FETCH_ASSOC);
 

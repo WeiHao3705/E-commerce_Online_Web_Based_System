@@ -115,6 +115,19 @@ try {
     $deductionResult = $inventoryService->deductStockForPaidOrder($orderId);
     error_log("Stock deduction result for order {$orderId}: " . json_encode($deductionResult));
 
+    // Record voucher usage for this user/order if a voucher was used
+    $voucherIdStmt = $conn->prepare("SELECT voucher_id FROM orders WHERE order_id = :order_id AND voucher_id IS NOT NULL");
+    $voucherIdStmt->execute([':order_id' => $orderId]);
+    $voucherRow = $voucherIdStmt->fetch(PDO::FETCH_ASSOC);
+    if ($voucherRow && !empty($voucherRow['voucher_id'])) {
+        $insertUsageStmt = $conn->prepare("INSERT INTO voucher_usage (user_id, voucher_id, used_at) VALUES (:user_id, :voucher_id, NOW()) ON DUPLICATE KEY UPDATE used_at = NOW()");
+        $insertUsageStmt->execute([
+            ':user_id' => $userId,
+            ':voucher_id' => $voucherRow['voucher_id']
+        ]);
+        error_log("Voucher usage recorded for user {$userId}, voucher {$voucherRow['voucher_id']}");
+    }
+
     // Get cart items from order_items to delete from cart
     $itemsStmt = $conn->prepare("
         SELECT oi.product_id, oi.quantity 
