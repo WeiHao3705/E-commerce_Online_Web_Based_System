@@ -187,6 +187,114 @@ class InventoryService {
         }
     }
 
+    public function deductStockForPaidOrder($orderId) {
+        if (!is_numeric($orderId) || (int)$orderId <= 0) {
+            throw new Exception('Invalid order ID.');
+        }
+
+        $orderId = (int)$orderId;
+
+        $payStmt = $this->conn->prepare("SELECT payment_status FROM payment WHERE order_id = :order_id ORDER BY payment_date DESC, payment_id DESC LIMIT 1");
+        $payStmt->execute([':order_id' => $orderId]);
+        $payment = $payStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$payment || strtolower((string)$payment['payment_status']) !== 'paid') {
+            throw new Exception('Payment is not marked as paid for this order.');
+        }
+
+        $itemStmt = $this->conn->prepare("SELECT product_id, quantity FROM order_item WHERE order_id = :order_id");
+        $itemStmt->execute([':order_id' => $orderId]);
+        $items = $itemStmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!$items) {
+            return ['success' => true, 'deductions' => [], 'message' => 'No order items found.'];
+        }
+
+        $requiredByProduct = [];
+        foreach ($items as $it) {
+            $pid = (int)$it['product_id'];
+            $qty = (int)$it['quantity'];
+            if ($qty <= 0) { continue; }
+            if (!isset($requiredByProduct[$pid])) { $requiredByProduct[$pid] = 0; }
+            $requiredByProduct[$pid] += $qty;
+        }
+
+        foreach ($requiredByProduct as $pid => $need) {
+            $available = $this->getProductTotalStock($pid);
+            if ($available < $need) {
+                throw new Exception("Insufficient stock for product ID {$pid}. Needed {$need}, available {$available}.");
+            }
+        }
+
+        $this->conn->beginTransaction();
+        try {
+            $deductions = [];
+            foreach ($requiredByProduct as $pid => $need) {
+                $remaining = (int)$need;
+                $sel = $this->conn->prepare(
+                    "SELECT id, stock_quantity, variant_id, size
+                     FROM inventory
+                     WHERE product_id = :product_id
+                     ORDER BY (variant_id IS NULL) DESC,
+                              (size IS NULL OR size = 'default') DESC,
+                              stock_quantity DESC,
+                              id ASC
+                     FOR UPDATE"
+                );
+                $sel->execute([':product_id' => $pid]);
+                $rows = $sel->fetchAll(PDO::FETCH_ASSOC);
+                if (!$rows) {
+                    throw new Exception("No inventory rows found for product ID {$pid}.");
+                }
+
+                $rowDeductions = [];
+                foreach ($rows as $r) {
+                    if ($remaining <= 0) { break; }
+                    $available = (int)$r['stock_quantity'];
+                    if ($available <= 0) { continue; }
+                    $deduct = min($remaining, $available);
+                    $upd = $this->conn->prepare("UPDATE inventory SET stock_quantity = stock_quantity - :deduct WHERE id = :id AND stock_quantity >= :deduct");
+                    $upd->execute([':deduct' => $deduct, ':id' => (int)$r['id']]);
+
+                    if ($upd->rowCount() === 0) {
+                        $curStmt = $this->conn->prepare("SELECT stock_quantity FROM inventory WHERE id = :id FOR UPDATE");
+                        $curStmt->execute([':id' => (int)$r['id']]);
+                        $cur = (int)($curStmt->fetch(PDO::FETCH_ASSOC)['stock_quantity'] ?? 0);
+                        if ($cur <= 0) { continue; }
+                        $deduct = min($remaining, $cur);
+                        $upd->execute([':deduct' => $deduct, ':id' => (int)$r['id']]);
+                        if ($upd->rowCount() === 0) { continue; }
+                    }
+
+                    $remaining -= $deduct;
+                    $rowDeductions[] = [
+                        'inventory_id' => (int)$r['id'],
+                        'variant_id' => isset($r['variant_id']) && $r['variant_id'] !== null ? (int)$r['variant_id'] : null,
+                        'size' => $r['size'] ?? null,
+                        'deducted' => (int)$deduct
+                    ];
+                }
+
+                if ($remaining > 0) {
+                    throw new Exception("Insufficient stock during deduction for product ID {$pid}.");
+                }
+
+                $deductions[] = [
+                    'product_id' => (int)$pid,
+                    'total_deducted' => (int)$need,
+                    'rows' => $rowDeductions
+                ];
+            }
+
+            $this->conn->commit();
+            error_log("InventoryService: Deducted stock for paid order {$orderId}: " . json_encode($deductions));
+            return ['success' => true, 'deductions' => $deductions];
+        } catch (Exception $e) {
+            if ($this->conn->inTransaction()) {
+                $this->conn->rollBack();
+            }
+            throw $e;
+        }
+    }
+
     /**
      * Get total stock quantity for a product
      */
