@@ -354,10 +354,10 @@ include __DIR__ . '/../../general/_navbar.php';
                   </div>
                 </div>
                 <div class="address-actions">
-                  <button type="button" class="btn-icon btn-edit-address" data-address-id="<?php echo (int)$addr['id']; ?>" data-address='<?php echo html_escape(json_encode($addr)); ?>' title="Edit">
+                  <button type="button" class="btn btn-logout btn-edit-address" data-address-id="<?php echo (int)$addr['id']; ?>" data-address='<?php echo html_escape(json_encode($addr)); ?>' title="Edit">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button type="button" class="btn-icon btn-delete-address" data-address-id="<?php echo (int)$addr['id']; ?>" title="Delete">
+                  <button type="button" class="btn btn-delete-address outlined" data-address-id="<?php echo (int)$addr['id']; ?>" title="Delete">
                     <i class="fas fa-trash"></i>
                   </button>
                 </div>

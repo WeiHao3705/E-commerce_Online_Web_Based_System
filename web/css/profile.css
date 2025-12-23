@@ -941,43 +941,46 @@
     gap: 8px;
     z-index: 2;
 }
-
-.btn-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
+.address-actions .btn {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 10px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
     font-size: 14px;
-    border: 2px solid;
+    gap: 6px;
 }
 
-.btn-edit-address {
-    background: #fff;
-    border-color: #ef4444;
-    color: #ef4444;
-}
-
-.btn-edit-address:hover {
-    background: #fef2f2;
-    transform: scale(1.1);
+/* Make address buttons use logout theme for stronger visibility */
+.address-actions .btn-logout {
+    background: #ef4444;
+    color: #fff;
+    border: none;
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
-
-.btn-delete-address {
-    background: #ef4444;
-    border-color: #ef4444;
-    color: #fff;
+.address-actions .btn-logout:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
 }
 
-.btn-delete-address:hover {
-    background: #dc2626;
-    border-color: #dc2626;
-    transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+/* If you prefer edit to be outlined instead, add .btn-edit-address-outlined */
+.address-actions .btn-edit-address.outlined {
+    background: #fff;
+    color: #ef4444;
+    border: 1px solid #ef4444;
+}
+
+.address-actions .btn-delete-address.outlined {
+    background: #fff;
+    color: #ef4444;
+    border: 1px solid #ef4444;
+    box-shadow: none;
+}
+.address-actions .btn-delete-address.outlined:hover {
+    background: #fef2f2;
+    transform: translateY(-2px);
 }
 
 .btn-add-address {
