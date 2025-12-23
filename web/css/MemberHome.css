@@ -33,6 +33,12 @@
     border-radius: 16px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
     overflow: hidden;
+    transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.intro-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 36px rgba(0,0,0,0.12);
 }
 
 @media (min-width: 900px) {
