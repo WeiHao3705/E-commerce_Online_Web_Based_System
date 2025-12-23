@@ -229,31 +229,48 @@ class InventoryService {
             throw new Exception('Payment is not marked as paid for this order. Current status: ' . ($payment['payment_status'] ?? 'NO PAYMENT RECORD'));
         }
 
-        $itemStmt = $this->conn->prepare("SELECT product_id, quantity FROM order_item WHERE order_id = :order_id");
+
+        $itemStmt = $this->conn->prepare("SELECT product_id, variant_id, size, quantity FROM order_item WHERE order_id = :order_id");
         $itemStmt->execute([':order_id' => $orderId]);
         $items = $itemStmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         error_log("InventoryService: Found " . count($items) . " items in order {$orderId}");
-        
+
         if (!$items) {
             return ['success' => true, 'deductions' => [], 'message' => 'No order items found.'];
         }
 
-        $requiredByProduct = [];
+        // Check stock for each item (product, variant, size)
         foreach ($items as $it) {
             $pid = (int)$it['product_id'];
+            $vid = isset($it['variant_id']) ? (int)$it['variant_id'] : null;
+            $size = isset($it['size']) ? $it['size'] : null;
             $qty = (int)$it['quantity'];
             if ($qty <= 0) { continue; }
-            if (!isset($requiredByProduct[$pid])) { $requiredByProduct[$pid] = 0; }
-            $requiredByProduct[$pid] += $qty;
-            error_log("InventoryService: Order item - Product ID: {$pid}, Quantity: {$qty}");
-        }
 
-        foreach ($requiredByProduct as $pid => $need) {
-            $available = $this->getProductTotalStock($pid);
-            error_log("InventoryService: Stock check - Product ID: {$pid}, Available: {$available}, Needed: {$need}");
-            if ($available < $need) {
-                throw new Exception("Insufficient stock for product ID {$pid}. Needed {$need}, available {$available}.");
+            // Check available stock for this product/variant/size
+            $sql = "SELECT stock_quantity FROM inventory WHERE product_id = :pid";
+            $params = [':pid' => $pid];
+            if ($vid !== null) {
+                $sql .= " AND variant_id = :vid";
+                $params[':vid'] = $vid;
+            } else {
+                $sql .= " AND variant_id IS NULL";
+            }
+            if ($size !== null && $size !== '') {
+                $sql .= " AND size = :size";
+                $params[':size'] = $size;
+            } else {
+                $sql .= " AND (size IS NULL OR size = '' OR size = 'default')";
+            }
+            $sql .= " LIMIT 1";
+            $stockStmt = $this->conn->prepare($sql);
+            $stockStmt->execute($params);
+            $row = $stockStmt->fetch(PDO::FETCH_ASSOC);
+            $available = $row ? (int)$row['stock_quantity'] : 0;
+            error_log("InventoryService: Stock check - Product ID: {$pid}, Variant: " . ($vid ?? 'NULL') . ", Size: " . ($size ?? 'NULL') . ", Available: {$available}, Needed: {$qty}");
+            if ($available < $qty) {
+                throw new Exception("Insufficient stock for product ID {$pid}, variant " . ($vid ?? 'NULL') . ", size " . ($size ?? 'NULL') . ". Needed {$qty}, available {$available}.");
             }
         }
 
@@ -268,63 +285,73 @@ class InventoryService {
         
         try {
             $deductions = [];
-            foreach ($requiredByProduct as $pid => $need) {
-                $remaining = (int)$need;
-                error_log("InventoryService: Starting deduction for product {$pid}, need to deduct {$remaining}");
-                
-                $sel = $this->conn->prepare(
-                    "SELECT id, stock_quantity, variant_id, size
-                     FROM inventory
-                     WHERE product_id = :product_id
-                     ORDER BY (variant_id IS NULL) DESC,
-                              (size IS NULL OR size = 'default') DESC,
-                              stock_quantity DESC,
-                              id ASC
-                     FOR UPDATE"
-                );
-                $sel->execute([':product_id' => $pid]);
+            foreach ($items as $it) {
+                $pid = (int)$it['product_id'];
+                $vid = isset($it['variant_id']) ? (int)$it['variant_id'] : null;
+                $size = isset($it['size']) ? $it['size'] : null;
+                $qty = (int)$it['quantity'];
+                $remaining = $qty;
+                error_log("InventoryService: Starting deduction for product {$pid}, variant " . ($vid ?? 'NULL') . ", size " . ($size ?? 'NULL') . ", need to deduct {$remaining}");
+
+                $selSql = "SELECT id, stock_quantity, variant_id, size FROM inventory WHERE product_id = :product_id";
+                $selParams = [':product_id' => $pid];
+                if ($vid !== null) {
+                    $selSql .= " AND variant_id = :variant_id";
+                    $selParams[':variant_id'] = $vid;
+                } else {
+                    $selSql .= " AND variant_id IS NULL";
+                }
+                if ($size !== null && $size !== '') {
+                    $selSql .= " AND size = :size";
+                    $selParams[':size'] = $size;
+                } else {
+                    $selSql .= " AND (size IS NULL OR size = '' OR size = 'default')";
+                }
+                $selSql .= " ORDER BY stock_quantity DESC, id ASC FOR UPDATE";
+                $sel = $this->conn->prepare($selSql);
+                $sel->execute($selParams);
                 $rows = $sel->fetchAll(PDO::FETCH_ASSOC);
-                
-                error_log("InventoryService: Found " . count($rows) . " inventory rows for product {$pid}");
-                
+
+                error_log("InventoryService: Found " . count($rows) . " inventory rows for product {$pid}, variant " . ($vid ?? 'NULL') . ", size " . ($size ?? 'NULL'));
+
                 if (!$rows) {
-                    throw new Exception("No inventory rows found for product ID {$pid}.");
+                    throw new Exception("No inventory rows found for product ID {$pid}, variant " . ($vid ?? 'NULL') . ", size " . ($size ?? 'NULL') . ".");
                 }
 
                 $rowDeductions = [];
                 foreach ($rows as $r) {
                     if ($remaining <= 0) { break; }
-                    
+
                     $inventoryId = (int)$r['id'];
                     $available = (int)$r['stock_quantity'];
                     $variantId = $r['variant_id'] ?? null;
-                    $size = $r['size'] ?? null;
-                    
-                    error_log("InventoryService: Processing inventory row - ID: {$inventoryId}, Available: {$available}, Variant: {$variantId}, Size: {$size}");
-                    
-                    if ($available <= 0) { 
+                    $rowSize = $r['size'] ?? null;
+
+                    error_log("InventoryService: Processing inventory row - ID: {$inventoryId}, Available: {$available}, Variant: {$variantId}, Size: {$rowSize}");
+
+                    if ($available <= 0) {
                         error_log("InventoryService: Skipping row {$inventoryId} (no stock)");
-                        continue; 
+                        continue;
                     }
-                    
+
                     $deduct = min($remaining, $available);
-                    
+
                     // Execute the update
                     $upd = $this->conn->prepare(
                         "UPDATE inventory SET stock_quantity = stock_quantity - :deduct WHERE id = :id"
                     );
-                    
+
                     $updateResult = $upd->execute([
-                        ':deduct' => $deduct, 
+                        ':deduct' => $deduct,
                         ':id' => $inventoryId
                     ]);
-                    
+
                     error_log("InventoryService: Update executed - Row: {$inventoryId}, Deduct: {$deduct}, Result: " . ($updateResult ? 'SUCCESS' : 'FAILED'));
-                    
+
                     if (!$updateResult) {
                         throw new Exception("Failed to update inventory row {$inventoryId}");
                     }
-                    
+
                     $rowCount = $upd->rowCount();
                     error_log("InventoryService: Updated {$rowCount} row(s) for inventory ID {$inventoryId}");
 
@@ -333,28 +360,30 @@ class InventoryService {
                         $rowDeductions[] = [
                             'inventory_id' => $inventoryId,
                             'variant_id' => $variantId !== null ? (int)$variantId : null,
-                            'size' => $size,
+                            'size' => $rowSize,
                             'deducted' => (int)$deduct
                         ];
-                        
+
                         // Log the deduction
-                        $this->logDeduction($orderId, $pid, $inventoryId, $variantId, $size, $deduct);
-                        
+                        $this->logDeduction($orderId, $pid, $inventoryId, $variantId, $rowSize, $deduct);
+
                         error_log("InventoryService: Successfully deducted {$deduct} from inventory {$inventoryId}, remaining: {$remaining}");
                     }
                 }
 
                 if ($remaining > 0) {
-                    throw new Exception("Insufficient stock during deduction for product ID {$pid}. Could not deduct {$remaining} units.");
+                    throw new Exception("Insufficient stock during deduction for product ID {$pid}, variant " . ($vid ?? 'NULL') . ", size " . ($size ?? 'NULL') . ". Could not deduct {$remaining} units.");
                 }
 
                 $deductions[] = [
                     'product_id' => (int)$pid,
-                    'total_deducted' => (int)$need,
+                    'variant_id' => $vid,
+                    'size' => $size,
+                    'total_deducted' => (int)$qty,
                     'rows' => $rowDeductions
                 ];
-                
-                error_log("InventoryService: Completed deduction for product {$pid}: " . json_encode($rowDeductions));
+
+                error_log("InventoryService: Completed deduction for product {$pid}, variant " . ($vid ?? 'NULL') . ", size " . ($size ?? 'NULL') . ": " . json_encode($rowDeductions));
             }
 
             if ($isTransactionActive) {

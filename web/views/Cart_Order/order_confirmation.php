@@ -156,8 +156,16 @@ include '../../general/_header.php';
             <h3>Items Ordered (<?= count($orderItems) ?>)</h3>
             <?php foreach ($orderItems as $item): ?>
                 <div class="item-row">
-                    <img src="<?= $item['image_path'] ?? '../../images/products/default.png' ?>" 
-                         alt="<?= htmlspecialchars($item['product_name_snapshot']) ?>" 
+                    <?php
+                        // Always use images/products/ as base
+                        $imgFile = 'default.png';
+                        if (!empty($item['image_path'])) {
+                            $imgFile = basename($item['image_path']);
+                        }
+                        $imgFullPath = '../../images/products/' . $imgFile;
+                    ?>
+                    <img src="<?= $imgFullPath ?>"
+                         alt="<?= htmlspecialchars($item['product_name_snapshot']) ?>"
                          class="item-image">
                     <div class="item-details">
                         <div class="item-name"><?= htmlspecialchars($item['product_name_snapshot']) ?></div>
@@ -165,7 +173,7 @@ include '../../general/_header.php';
                         <?php if ($order['order_status'] === 'delivered'): ?>
                             <div class="item-actions">
                                 <?php if (!$item['already_reviewed']): ?>
-                                    <a href="../../views/product/ProductDetails.php?id=<?= $item['product_id'] ?>&review_order_item=<?= $item['order_item_id'] ?>&review_order_id=<?= $orderId ?>" 
+                                    <a href="../../views/product/ProductDetails.php?id=<?= $item['product_id'] ?>&review_order_item=<?= $item['order_item_id'] ?>&review_order_id=<?= $orderId ?>"
                                        class="review-btn">
                                         <i class="fas fa-star"></i> Write Review
                                     </a>
