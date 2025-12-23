@@ -49,10 +49,19 @@ $returnTo = isset($_GET['return_to']) ? $_GET['return_to'] : '';
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="<?php echo $prefix; ?>css/VoucherForm.css">
+    <style>
+        body {
+            background-color: #f3f4f6;
+            min-height: 100vh;
+        }
+        .voucher-main {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+    </style>
 </head>
 <body>
-    <!-- Include Navbar -->
-    <?php include __DIR__ . '/../../general/_navbar.php'; ?>
+    <!-- Standalone page - no navbar or floating chat -->
 
     <main class="voucher-main">
         <div class="voucher-container" style="max-width: 72rem;">
@@ -226,7 +235,6 @@ $returnTo = isset($_GET['return_to']) ? $_GET['return_to'] : '';
         </div>
     </main>
 
-    <!-- Include Footer -->
-    <?php include __DIR__ . '/../../general/_footer.php'; ?>
+    <!-- Standalone page - no footer or floating chat -->
 </body>
 </html>

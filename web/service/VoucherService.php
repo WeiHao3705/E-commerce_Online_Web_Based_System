@@ -340,25 +340,25 @@ class VoucherService
         if (empty($row['start_date'])) {
             $errors[] = 'Start date is required';
         } else {
-            $startDate = DateTime::createFromFormat('Y-m-d', $row['start_date']);
+            $startDate = DateTime::createFromFormat('d-m-Y', $row['start_date']);
             if (!$startDate) {
-                $errors[] = 'Invalid start date format. Use YYYY-MM-DD';
+                $errors[] = 'Invalid start date format. Use DD-MM-YYYY';
             }
         }
 
         if (empty($row['end_date'])) {
             $errors[] = 'End date is required';
         } else {
-            $endDate = DateTime::createFromFormat('Y-m-d', $row['end_date']);
+            $endDate = DateTime::createFromFormat('d-m-Y', $row['end_date']);
             if (!$endDate) {
-                $errors[] = 'Invalid end date format. Use YYYY-MM-DD';
+                $errors[] = 'Invalid end date format. Use DD-MM-YYYY';
             }
         }
 
         // Validate date range
         if (!empty($row['start_date']) && !empty($row['end_date'])) {
-            $startDate = DateTime::createFromFormat('Y-m-d', $row['start_date']);
-            $endDate = DateTime::createFromFormat('Y-m-d', $row['end_date']);
+            $startDate = DateTime::createFromFormat('d-m-Y', $row['start_date']);
+            $endDate = DateTime::createFromFormat('d-m-Y', $row['end_date']);
             if ($startDate && $endDate && $endDate < $startDate) {
                 $errors[] = 'End date must be after start date';
             }
@@ -408,6 +408,12 @@ class VoucherService
                     // Handle is_redeemable
                     $isRedeemable = isset($voucherData['is_redeemable']) ? $voucherData['is_redeemable'] : true;
                     
+                    // Convert dates from DD-MM-YYYY to Y-m-d for database storage
+                    $startDate = DateTime::createFromFormat('d-m-Y', $voucherData['start_date']);
+                    $endDate = DateTime::createFromFormat('d-m-Y', $voucherData['end_date']);
+                    $startDateFormatted = $startDate ? $startDate->format('Y-m-d') : $voucherData['start_date'];
+                    $endDateFormatted = $endDate ? $endDate->format('Y-m-d') : $voucherData['end_date'];
+                    
                     // Create DTO
                     $voucherDTO = new VoucherRegistrationDTO(
                         $voucherData['code'],
@@ -416,8 +422,8 @@ class VoucherService
                         $discountValue,
                         $voucherData['min_spend'] ?? 0,
                         !empty($voucherData['max_discount']) ? $voucherData['max_discount'] : null,
-                        $voucherData['start_date'],
-                        $voucherData['end_date'],
+                        $startDateFormatted,
+                        $endDateFormatted,
                         false,
                         $isRedeemable
                     );
