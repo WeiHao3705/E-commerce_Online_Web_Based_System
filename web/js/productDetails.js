@@ -7,6 +7,14 @@
     const loginUrl = root.dataset.loginUrl || '../../account.php';
     const userId = (document.body.dataset.userId || '').trim();
     const hasSizeFlag = (root.dataset.hasSize || '0') === '1';
+
+    // Derived flag: if any sizes exist in the payload, treat as size-enabled even if has_size is missing
+    const hasAnySizes = () => {
+        return Object.keys(variantSizes || {}).some((vid) => {
+            const arr = variantSizes[vid];
+            return Array.isArray(arr) && arr.length > 0;
+        });
+    };
     const mainImage = document.getElementById('mainImage');
     const selectedVariantInput = document.getElementById('selectedVariantId');
     const sizeSelect = document.getElementById('sizeSelect');
@@ -30,8 +38,8 @@
 
     function toggleSizeVisibility() {
         if (!sizeFormGroup) return;
-        // If product does not have sizes, always hide the size input
-        if (!hasSizeFlag) {
+        // If product explicitly has no sizes AND we have no size data, hide
+        if (!hasSizeFlag && !hasAnySizes()) {
             sizeFormGroup.style.display = 'none';
             return;
         }
@@ -46,8 +54,8 @@
         const selectedVid = parseInt(selectedVariantInput.value, 10);
         sizeSelect.innerHTML = '<option value="">-- Select Size --</option>';
 
-        // If product is marked as no-size, hide the control and proceed without sizes
-        if (!hasSizeFlag) {
+        // If product is marked as no-size AND we have no size data, hide the control and proceed without sizes
+        if (!hasSizeFlag && !hasAnySizes()) {
             if (sizeFormGroup) {
                 sizeFormGroup.style.display = 'none';
             }

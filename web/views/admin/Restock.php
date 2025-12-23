@@ -24,6 +24,23 @@ $pageTitle = 'Restock Inventory';
 $success = '';
 $error = '';
 
+// Fetch data up front so POST handlers have product metadata (has_size)
+$data = $service->getRestockData();
+$products = $data['products'];
+$variantsMap = $data['variantsMap'];
+$sizesByProduct = $data['sizesByProduct'];
+$sizesByVariant = $data['sizesByVariant'];
+$hasSizeMap = [];
+foreach ($products as $p) {
+    $hasSizeMap[(int)$p['product_id']] = isset($p['has_size']) ? (int)$p['has_size'] : 0;
+}
+
+// Prepare JSON for client-side
+$variantsJson = htmlspecialchars(json_encode($variantsMap), ENT_QUOTES, 'UTF-8');
+$sizesProductJson = htmlspecialchars(json_encode($sizesByProduct), ENT_QUOTES, 'UTF-8');
+$sizesVariantJson = htmlspecialchars(json_encode($sizesByVariant), ENT_QUOTES, 'UTF-8');
+$hasSizeJson = htmlspecialchars(json_encode($hasSizeMap), ENT_QUOTES, 'UTF-8');
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $productId = isset($_POST['product_id']) ? (int)$_POST['product_id'] : null;
@@ -31,7 +48,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sizeOption = $_POST['size_option'] ?? 'existing';
         $size = $sizeOption === 'new' ? trim($_POST['size_new'] ?? '') : trim($_POST['size'] ?? '');
         $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 0;
-        $service->restock($productId, $variantId, $size, $quantity);
+        // Determine if this product requires size
+        $requiresSize = isset($hasSizeMap[$productId]) ? ((int)$hasSizeMap[$productId] === 1) : false;
+
+        if ($requiresSize && $size === '') {
+            throw new Exception('Size is required for this product.');
+        }
+
+        $service->restock($productId, $variantId, $size, $quantity, $requiresSize);
         $success = 'Stock updated successfully.';
         
         // Check if notifications were sent
@@ -84,11 +108,16 @@ $products = $data['products'];
 $variantsMap = $data['variantsMap'];
 $sizesByProduct = $data['sizesByProduct'];
 $sizesByVariant = $data['sizesByVariant'];
+$hasSizeMap = [];
+foreach ($products as $p) {
+    $hasSizeMap[(int)$p['product_id']] = isset($p['has_size']) ? (int)$p['has_size'] : 0;
+}
 
 // Prepare JSON for client-side
 $variantsJson = htmlspecialchars(json_encode($variantsMap), ENT_QUOTES, 'UTF-8');
 $sizesProductJson = htmlspecialchars(json_encode($sizesByProduct), ENT_QUOTES, 'UTF-8');
 $sizesVariantJson = htmlspecialchars(json_encode($sizesByVariant), ENT_QUOTES, 'UTF-8');
+$hasSizeJson = htmlspecialchars(json_encode($hasSizeMap), ENT_QUOTES, 'UTF-8');
 
 require __DIR__ . '/../../general/_header.php';
 ?>
@@ -109,7 +138,8 @@ require __DIR__ . '/../../general/_header.php';
         <form method="POST" id="restockForm" class="restock-form"
               data-variants='<?= $variantsJson ?>'
               data-sizes-product='<?= $sizesProductJson ?>'
-              data-sizes-variant='<?= $sizesVariantJson ?>'>
+              data-sizes-variant='<?= $sizesVariantJson ?>'
+              data-has-size='<?= $hasSizeJson ?>'>
             <div class="form-grid">
                 <div class="form-group">
                     <label for="productSelect">Product</label>

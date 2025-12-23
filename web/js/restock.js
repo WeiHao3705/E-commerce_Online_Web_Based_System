@@ -4,6 +4,7 @@
   const productSelect = document.getElementById('productSelect');
   const variantSelect = document.getElementById('variantSelect');
   const sizeSelect = document.getElementById('sizeSelect');
+  const sizeFormGroup = sizeSelect ? sizeSelect.closest('.form-group') : null;
   const newSizeToggle = document.getElementById('newSizeToggle');
   const sizeNewInput = document.getElementById('sizeNew');
   const sizeOption = document.getElementById('sizeOption');
@@ -11,6 +12,13 @@
   const variantsMap = JSON.parse(form.dataset.variants || '{}');
   const sizesByProduct = JSON.parse(form.dataset.sizesProduct || '{}');
   const sizesByVariant = JSON.parse(form.dataset.sizesVariant || '{}');
+  const hasSizeMap = JSON.parse(form.dataset.hasSize || '{}');
+
+  const requiresSize = (pid) => {
+    if(!pid) return false;
+    const val = hasSizeMap[pid];
+    return String(val) === '1';
+  };
 
   const clearSelect = (sel, placeholder) => {
     sel.innerHTML = '';
@@ -48,8 +56,36 @@
     });
   };
 
+  const toggleSizeFields = (pid) => {
+    const needSize = requiresSize(pid);
+    if (sizeFormGroup) {
+      sizeFormGroup.style.display = needSize ? '' : 'none';
+    }
+    if (sizeSelect) {
+      sizeSelect.disabled = !needSize;
+      sizeSelect.required = needSize;
+    }
+    if (newSizeToggle) {
+      newSizeToggle.disabled = !needSize;
+      if (!needSize) {
+        newSizeToggle.checked = false;
+      }
+    }
+    if (sizeNewInput) {
+      sizeNewInput.style.display = (needSize && newSizeToggle && newSizeToggle.checked) ? 'block' : 'none';
+      sizeNewInput.disabled = !needSize;
+      if (!needSize) {
+        sizeNewInput.value = '';
+      }
+    }
+    if (!needSize) {
+      sizeOption.value = 'existing';
+    }
+  };
+
   productSelect.addEventListener('change', () => {
     const pid = productSelect.value;
+    toggleSizeFields(pid);
     populateVariants(pid);
   });
 
@@ -68,4 +104,21 @@
       sizeNewInput.value = '';
     }
   });
+
+  form.addEventListener('submit', (e) => {
+    const pid = productSelect.value;
+    const needSize = requiresSize(pid);
+    if (!needSize) {
+      return; // size optional
+    }
+    const usingNew = newSizeToggle && newSizeToggle.checked;
+    const sizeVal = usingNew ? (sizeNewInput.value || '').trim() : (sizeSelect.value || '').trim();
+    if (!sizeVal) {
+      e.preventDefault();
+      alert('Size is required for this product.');
+    }
+  });
+
+  // initial state
+  toggleSizeFields(productSelect.value);
 })();

@@ -36,15 +36,23 @@ class InventoryService {
         ];
     }
 
-    public function restock($productId, $variantId, $size, $quantity) {
+    public function restock($productId, $variantId, $size, $quantity, $requiresSize = true) {
         if (!is_numeric($quantity) || (int)$quantity <= 0) {
             throw new Exception('Quantity must be a positive integer.');
         }
         $productId = $productId !== null ? (int)$productId : null;
         $variantId = $variantId !== null && $variantId !== '' ? (int)$variantId : null;
         $size = trim($size);
-        if ($size === '') {
-            throw new Exception('Size is required.');
+
+        if ($requiresSize) {
+            if ($size === '') {
+                throw new Exception('Size is required for this product.');
+            }
+        } else {
+            // Products without sizes: use a default placeholder value to satisfy NOT NULL
+            if ($size === '') {
+                $size = 'default';
+            }
         }
 
         // Check total stock before restocking

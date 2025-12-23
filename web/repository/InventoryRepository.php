@@ -63,7 +63,7 @@ class InventoryRepository {
     }
 
     public function getProductsBasic() {
-        $stmt = $this->conn->query('SELECT product_id, product_name FROM product ORDER BY product_name');
+        $stmt = $this->conn->query('SELECT product_id, product_name, has_size FROM product ORDER BY product_name');
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
