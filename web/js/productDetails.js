@@ -38,6 +38,44 @@
     const loginModalCancel = document.getElementById('loginModalCancel');
     const loginModalLogin = document.getElementById('loginModalLogin');
 
+    function showToast(message, type = 'success') {
+        let container = document.getElementById('pd-toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'pd-toast-container';
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+        
+        const toast = document.createElement('div');
+        toast.className = 'toast ' + type;
+        toast.innerHTML = '<div><div class="title">' + (type === 'success' ? 'Success' : 'Notice') + '</div><div class="msg">' + message + '</div></div>' +
+            '<button class="close" aria-label="Close">×</button>';
+        
+        container.appendChild(toast);
+        
+        const timer = setTimeout(() => dismiss(), 3000);
+        
+        function dismiss() {
+            if (!toast) return;
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-6px)';
+            setTimeout(() => {
+                if (toast && toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 180);
+        }
+        
+        const closeBtn = toast.querySelector('.close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                clearTimeout(timer);
+                dismiss();
+            });
+        }
+    }
+
     function toggleSizeVisibility() {
         if (!sizeFormGroup) return;
         // If product explicitly has no sizes AND we have no size data, hide
@@ -431,11 +469,11 @@
 
         if (addToCartForm) {
             addToCartForm.addEventListener('submit', (e) => {
+                e.preventDefault();
                 const selectedVid = selectedVariantInput ? parseInt(selectedVariantInput.value, 10) : null;
                 if (selectedVid && variantStock) {
                     const stock = variantStock[selectedVid] || 0;
                     if (stock <= 0) {
-                        e.preventDefault();
                         alert('This variant is currently out of stock. You can add it to your wishlist to be notified when it becomes available.');
                         return;
                     }
@@ -448,13 +486,11 @@
                     const effectiveMax = Number.isFinite(maxAttr) && maxAttr > 0 ? maxAttr : (Number.isFinite(currentAvailableStock) ? currentAvailableStock : null);
                     if (effectiveMax !== null) {
                         if (!Number.isFinite(requested) || requested < 1) {
-                            e.preventDefault();
                             quantityInput.value = '1';
                             alert('Please enter a valid quantity (minimum 1).');
                             return;
                         }
                         if (requested > effectiveMax) {
-                            e.preventDefault();
                             quantityInput.value = String(effectiveMax);
                             alert('Quantity exceeds available stock. Maximum available: ' + effectiveMax);
                             return;
@@ -463,9 +499,28 @@
                 }
 
                 if (!userId) {
-                    e.preventDefault();
                     openLoginModal('cart');
+                    return;
                 }
+
+                const formData = $(addToCartForm).serialize() + '&ajax=1';
+                $.ajax({
+                    url: addToCartForm.action,
+                    method: 'POST',
+                    data: formData,
+                    dataType: 'json'
+                }).done((resp) => {
+                    if (resp && resp.success) {
+                        showToast('Item added to cart');
+                        setTimeout(() => {
+                            window.location.href = 'ProductPage.php';
+                        }, 900);
+                    } else {
+                        alert((resp && resp.message) ? resp.message : 'Failed to add to cart.');
+                    }
+                }).fail(() => {
+                    alert('Failed to add to cart. Please try again.');
+                });
             });
         }
 

@@ -27,6 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['product_id'])) {
     $vid = isset($_POST['variant_id']) && $_POST['variant_id'] !== '' ? (int) $_POST['variant_id'] : null;
     $size = trim($_POST['size'] ?? '');
     $qty = max(1, (int) ($_POST['quantity'] ?? 1));
+    $isAjax = (!empty($_POST['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest'));
 
     // fetch product name & price
     $pStmt = $conn->prepare("SELECT p.product_id, p.product_name, pr.original_price 
@@ -81,6 +82,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['product_id'])) {
                 ':size' => $size,
                 ':quantity' => $qty
             ]);
+        }
+
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'Item added to cart']);
+            exit;
         }
 
         // Redirect to cart page to avoid form resubmission and show updated cart
