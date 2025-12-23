@@ -15,6 +15,7 @@ header('Content-Type: application/json');
 require __DIR__ . '/../../../vendor/autoload.php';
 require __DIR__ . '/../../config/stripe_config.php';
 require __DIR__ . '/../../database/connection.php';
+require __DIR__ . '/../../service/InventoryService.php';
 
 \Stripe\Stripe::setApiKey(STRIPE_SECRET_KEY);
 
@@ -64,6 +65,10 @@ try {
             ':transaction_id' => $paymentIntentId,
             ':paid_amount' => $paymentIntent->amount / 100 // Convert from cents
         ]);
+        
+        // Update payment status to 'paid' for stock deduction
+        $updatePaymentStatus = $conn->prepare("UPDATE payment SET payment_status = 'paid' WHERE order_id = :order_id");
+        $updatePaymentStatus->execute([':order_id' => $orderId]);
     } elseif ($paymentMethod === 'online-banking') {
         // Simulated payment flow for online banking (FPX)
         $orderStmt = $conn->prepare("
@@ -73,7 +78,7 @@ try {
         $orderStmt->execute([':order_id' => $orderId]);
         $paymentStmt = $conn->prepare("
             INSERT INTO payment (order_id, payment_method, payment_status, transaction_id, paid_amount, payment_date)
-            VALUES (:order_id, 'online-banking', 'completed', NULL, :paid_amount, NOW())
+            VALUES (:order_id, 'online-banking', 'paid', NULL, :paid_amount, NOW())
         ");
         $paymentStmt->execute([
             ':order_id' => $orderId,
@@ -88,7 +93,7 @@ try {
         $orderStmt->execute([':order_id' => $orderId]);
         $paymentStmt = $conn->prepare("
             INSERT INTO payment (order_id, payment_method, payment_status, transaction_id, paid_amount, payment_date)
-            VALUES (:order_id, 'e-wallet', 'completed', NULL, :paid_amount, NOW())
+            VALUES (:order_id, 'e-wallet', 'paid', NULL, :paid_amount, NOW())
         ");
         $paymentStmt->execute([
             ':order_id' => $orderId,
@@ -96,6 +101,18 @@ try {
         ]);
     } else {
         throw new Exception('Invalid payment method or missing payment intent');
+    }
+
+    // Deduct stock after successful payment
+    try {
+        $inventoryService = new InventoryService($conn);
+        $deductionResult = $inventoryService->deductStockForPaidOrder($orderId);
+        error_log("Stock deduction successful for order {$orderId}: " . json_encode($deductionResult));
+    } catch (Exception $stockError) {
+        // Log the error but don't fail the payment
+        error_log("WARNING: Stock deduction failed for order {$orderId}: " . $stockError->getMessage());
+        // Optionally: You could rollback here if you want payment to fail when stock can't be deducted
+        // throw $stockError;
     }
 
     // Get cart items from order_items to delete from cart

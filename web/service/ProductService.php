@@ -555,14 +555,15 @@ class ProductService {
     }
 
     /**
-     * Get filtered products based on category, price, and color
+     * Get filtered products based on category, price, color, and search query
      * @param string|null $category Filter by category
      * @param float|null $minPrice Filter by minimum price
      * @param float|null $maxPrice Filter by maximum price
      * @param array $colors Filter by colors (array of color names)
+     * @param string|null $searchQuery Search query for product name, category, or color
      * @return array Filtered products grouped by category
      */
-    public function getFilteredProducts($category = null, $minPrice = null, $maxPrice = null, $colors = []) {
+    public function getFilteredProducts($category = null, $minPrice = null, $maxPrice = null, $colors = [], $searchQuery = null) {
         $sql = "
             SELECT 
                 p.product_id, 
@@ -590,6 +591,13 @@ class ProductService {
         ";
 
         $params = [];
+
+        // Filter by search query
+        if (!empty($searchQuery)) {
+            $searchPattern = '%' . $searchQuery . '%';
+            $sql .= " AND (p.product_name LIKE :search OR p.category LIKE :search OR pv.color LIKE :search)";
+            $params[':search'] = $searchPattern;
+        }
 
         // Filter by category
         if (!empty($category)) {

@@ -7,6 +7,7 @@ $webBasePath = str_replace('\\', '/', $relativePath) . '/';
 $prefix = $webBasePath;
 ?>
 <link rel="stylesheet" href="<?php echo $prefix; ?>css/navbar.css?v=<?php echo filemtime(__DIR__ . '/../css/navbar.css'); ?>">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
 <nav class="navbar">
     <div class="container">
@@ -58,11 +59,13 @@ $prefix = $webBasePath;
                 <div class="search-container">
                     <form class="search-form" action="<?php echo $prefix; ?>search.php" method="GET">
                         <div class="search-input-group">
-                            <input type="text" name="q" class="search-input" placeholder="Search products..." autocomplete="off" value="<?php echo isset($_GET['q']) ? htmlspecialchars($_GET['q']) : ''; ?>">
+                            <input type="text" name="q" id="searchInput" class="search-input" placeholder="Search products..." autocomplete="off" value="<?php echo isset($_GET['q']) ? htmlspecialchars($_GET['q']) : ''; ?>">
                             <button type="submit" class="search-btn">
                                 <i class="fas fa-search"></i>
                             </button>
                         </div>
+                        <!-- Search Suggestions Dropdown -->
+                        <div class="search-suggestions" id="searchSuggestions" style="display: none;"></div>
                     </form>
                 </div>
 
@@ -83,6 +86,7 @@ $prefix = $webBasePath;
     </div>
 </nav>
 
+<script src="<?php echo $prefix; ?>js/searchSuggestions.js?v=<?php echo time(); ?>"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script>
     $(document).ready(function() {

@@ -69,13 +69,14 @@ class ProductController {
             $minPrice = $_GET['min_price'] ?? null;
             $maxPrice = $_GET['max_price'] ?? null;
             $colors = isset($_GET['colors']) && is_array($_GET['colors']) ? $_GET['colors'] : [];
+            $searchQuery = isset($_GET['search']) ? trim($_GET['search']) : null;
 
             // Get all available filters for sidebar
             $allCategories = $this->productService->getAllCategories();
             $allColors = $this->productService->getAllColors();
 
-            // Get filtered products from service
-            $productsData = $this->productService->getFilteredProducts($category, $minPrice, $maxPrice, $colors);
+            // Get filtered products from service (with search support)
+            $productsData = $this->productService->getFilteredProducts($category, $minPrice, $maxPrice, $colors, $searchQuery);
             
             // Add filter info to data
             $data = array_merge($productsData, [
@@ -84,7 +85,8 @@ class ProductController {
                 'selectedCategory' => $category,
                 'minPrice' => $minPrice,
                 'maxPrice' => $maxPrice,
-                'selectedColors' => $colors
+                'selectedColors' => $colors,
+                'searchQuery' => $searchQuery
             ]);
 
             // Render view with data
@@ -106,9 +108,10 @@ class ProductController {
             $minPrice = $_GET['min_price'] ?? null;
             $maxPrice = $_GET['max_price'] ?? null;
             $colors = isset($_GET['colors']) && is_array($_GET['colors']) ? $_GET['colors'] : [];
+            $searchQuery = isset($_GET['search']) ? trim($_GET['search']) : null;
 
-            // Get filtered products from service
-            $productsData = $this->productService->getFilteredProducts($category, $minPrice, $maxPrice, $colors);
+            // Get filtered products from service (with search support)
+            $productsData = $this->productService->getFilteredProducts($category, $minPrice, $maxPrice, $colors, $searchQuery);
             
             // Return JSON response
             echo json_encode([

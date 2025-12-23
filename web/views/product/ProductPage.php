@@ -37,6 +37,11 @@ $assetPrefix = '../../';
             </div>
 
             <form method="GET" id="filterForm" class="filters-form">
+                <!-- Search Query (hidden field to preserve search) -->
+                <?php if (isset($_GET['search']) && !empty($_GET['search'])): ?>
+                    <input type="hidden" name="search" value="<?= htmlspecialchars($_GET['search']) ?>">
+                <?php endif; ?>
+                
                 <!-- Category Filter -->
                 <div class="filter-group">
                     <h4 class="filter-title">Category</h4>
