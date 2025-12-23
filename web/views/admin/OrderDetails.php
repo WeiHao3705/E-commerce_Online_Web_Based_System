@@ -32,11 +32,14 @@ $orderQuery = "
            a.address2,
            a.city,
            a.postcode,
-           a.state
+           a.state,
+           p.payment_status,
+           p.payment_method
     FROM orders o
     LEFT JOIN users u ON o.user_id = u.user_id
     LEFT JOIN voucher v ON o.voucher_id = v.voucher_id
     LEFT JOIN address a ON u.user_id = a.user_id AND a.is_default = 1
+    LEFT JOIN payment p ON o.order_id = p.order_id
     WHERE o.order_id = :order_id
 ";
 $stmt = $conn->prepare($orderQuery);
@@ -50,14 +53,20 @@ if (!$order) {
 }
 
 // Get order items
+// Enhanced query: Try to get variant image, else product main image, else null
 $itemsQuery = "
     SELECT oi.*, 
            p.product_name,
-           pi.image_path
+           pv.color,
+           (
+               SELECT pi.image_path FROM product_image pi 
+               WHERE pi.product_id = oi.product_id AND pi.type = 'main' LIMIT 1
+           ) AS image_path
     FROM order_item oi
     LEFT JOIN product p ON oi.product_id = p.product_id
-    LEFT JOIN product_image pi ON p.product_id = pi.product_id AND pi.type = 'main'
+    LEFT JOIN product_variant pv ON oi.product_id = pv.product_id
     WHERE oi.order_id = :order_id
+    GROUP BY oi.order_item_id
 ";
 $itemsStmt = $conn->prepare($itemsQuery);
 $itemsStmt->execute([':order_id' => $orderId]);
@@ -117,8 +126,8 @@ $pageTitle = "Order #" . str_pad($orderId, 6, '0', STR_PAD_LEFT);
                     </span>
                     <span>
                         <i class="fas fa-credit-card"></i>
-                        <span class="payment-badge payment-<?= strtolower($order['payment_status']) ?>">
-                            <?= ucfirst($order['payment_status']) ?>
+                        <span class="payment-badge payment-<?= strtolower($order['payment_status'] ?? 'unknown') ?>">
+                            <?= isset($order['payment_status']) ? ucfirst($order['payment_status']) : 'N/A' ?>
                         </span>
                     </span>
                 </div>
@@ -142,11 +151,26 @@ $pageTitle = "Order #" . str_pad($orderId, 6, '0', STR_PAD_LEFT);
                     </div>
                     <?php foreach ($orderItems as $item): ?>
                         <div class="order-item">
-                            <img src="<?= $imagesBasePath . ($item['image_path'] ?? 'products/default.jpg') ?>" 
-                                 alt="<?= htmlspecialchars($item['product_name_snapshot']) ?>" 
+                            <?php
+                                $imgPath = 'products/default.jpg';
+                                if (!empty($item['image_path'])) {
+                                    $imgPath = $item['image_path'];
+                                    // If not already prefixed, add products/
+                                    if (strpos($imgPath, 'products/') !== 0) {
+                                        $imgPath = 'products/' . ltrim($imgPath, '/');
+                                    }
+                                }
+                            ?>
+                            <img src="<?= $imagesBasePath . $imgPath ?>"
+                                 alt="<?= htmlspecialchars($item['product_name_snapshot']) ?>"
                                  class="item-image">
                             <div class="item-details">
-                                <div class="item-name"><?= htmlspecialchars($item['product_name_snapshot']) ?></div>
+                                <div class="item-name">
+                                    <?= htmlspecialchars($item['product_name_snapshot']) ?>
+                                    <?php if (!empty($item['color'])): ?>
+                                        <span class="variant-label" style="font-size:0.95em; color:#555; margin-left:0.5em;">(Color: <?= htmlspecialchars($item['color']) ?>)</span>
+                                    <?php endif; ?>
+                                </div>
                                 <div class="item-price">RM <?= number_format($item['product_price_snapshot'], 2) ?> each</div>
                                 <div class="item-quantity">Quantity: <?= $item['quantity'] ?></div>
                             </div>
@@ -260,14 +284,15 @@ $pageTitle = "Order #" . str_pad($orderId, 6, '0', STR_PAD_LEFT);
                     </div>
                     <div class="info-row">
                         <span class="info-label">Payment Method</span>
-                        <span class="info-value"><?= ucfirst(str_replace('_', ' ', $order['payment_method'])) ?></span>
+                        <span class="info-value">
+                            <?= isset($order['payment_method']) ? ucfirst(str_replace('_', ' ', $order['payment_method'])) : 'N/A' ?>
+                        </span>
                     </div>
                     <div class="info-row">
-                        <span class="info-label">Payment Status</span>
+                        <span class="info-label">Order Status</span>
                         <span class="info-value">
-                            <span class="payment-badge payment-<?= strtolower($order['payment_status']) ?>">
-                                <?= ucfirst($order['payment_status']) ?>
-                            </span>
+                            <?= isset($order['order_status']) ? ucfirst($order['order_status']) : 'N/A' ?>
+                        </span>
                         </span>
                     </div>
                     <div class="info-row">
@@ -279,7 +304,7 @@ $pageTitle = "Order #" . str_pad($orderId, 6, '0', STR_PAD_LEFT);
                 </div>
 
                 <!-- Shipping Address -->
-                <div class="details-card" style="margin-top: 2rem;">@%!#$
+                <div class="details-card" style="margin-top: 2rem;">
                     <div class="card-header">
                         <i class="fas fa-truck"></i>
                         <h2>Shipping Address</h2>

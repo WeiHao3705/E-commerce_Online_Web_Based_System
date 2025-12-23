@@ -29,7 +29,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['product_id'])) {
     $qty = max(1, (int) ($_POST['quantity'] ?? 1));
 
     // fetch product name & price
-    $pStmt = $conn->prepare("SELECT p.product_id, p.product_name, pr.original_price FROM product p LEFT JOIN product_price pr ON p.product_id = pr.product_id WHERE p.product_id = :pid LIMIT 1");
+    $pStmt = $conn->prepare("SELECT p.product_id, p.product_name, pr.original_price 
+    FROM product p 
+    LEFT JOIN product_price pr 
+    ON p.product_id = pr.product_id 
+    WHERE p.product_id = :pid 
+    LIMIT 1");
     $pStmt->execute([':pid' => $pid]);
     $pRow = $pStmt->fetch(PDO::FETCH_ASSOC);
 
@@ -38,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['product_id'])) {
         $cartCheckStmt = $conn->prepare("SELECT cart_id FROM shopping_cart WHERE user_id = :user_id");
         $cartCheckStmt->execute([':user_id' => $userId]);
         $cartRow = $cartCheckStmt->fetch(PDO::FETCH_ASSOC);
-        
+
         if (!$cartRow) {
             // Create shopping cart for user
             $createCartStmt = $conn->prepare("INSERT INTO shopping_cart (user_id) VALUES (:user_id)");
@@ -47,15 +52,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['product_id'])) {
         } else {
             $cartId = $cartRow['cart_id'];
         }
-        
-        // Insert item into cart_item table
-        $insertStmt = $conn->prepare("INSERT INTO cart_item (cart_id, product_id, quantity) VALUES (:cart_id, :product_id, :quantity)");
-        $insertStmt->execute([
+
+        // Check if the item (product_id, variant_id, size) already exists in the cart
+        $checkItemStmt = $conn->prepare("SELECT cart_item_id, quantity FROM cart_item WHERE cart_id = :cart_id AND product_id = :product_id AND ((variant_id IS NULL AND :variant_id IS NULL) OR (variant_id = :variant_id)) AND size = :size");
+        $checkItemStmt->execute([
             ':cart_id' => $cartId,
             ':product_id' => $pid,
-            ':quantity' => $qty
+            ':variant_id' => $vid,
+            ':size' => $size
         ]);
-        
+        $existingItem = $checkItemStmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($existingItem) {
+            // If exists, just update the quantity
+            $newQty = $existingItem['quantity'] + $qty;
+            $updateStmt = $conn->prepare("UPDATE cart_item SET quantity = :quantity WHERE cart_item_id = :cart_item_id");
+            $updateStmt->execute([
+                ':quantity' => $newQty,
+                ':cart_item_id' => $existingItem['cart_item_id']
+            ]);
+        } else {
+            // Insert new item
+            $insertStmt = $conn->prepare("INSERT INTO cart_item (cart_id, product_id, variant_id, size, quantity) VALUES (:cart_id, :product_id, :variant_id, :size, :quantity)");
+            $insertStmt->execute([
+                ':cart_id' => $cartId,
+                ':product_id' => $pid,
+                ':variant_id' => $vid,
+                ':size' => $size,
+                ':quantity' => $qty
+            ]);
+        }
+
         // Redirect to cart page to avoid form resubmission and show updated cart
         header('Location: cart.php');
         exit;
@@ -83,40 +110,90 @@ $vouchers = $voucherStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch cart items from database
 $cartItems = [];
-if (isset($_SESSION['user_id'])) {
-    $userId = $_SESSION['user_id'];
-    
-    // Query to fetch cart items with product details
-    $cartQuery = "
+    if (isset($_SESSION['user_id'])) {
+        $userId = $_SESSION['user_id'];
+        
+        // Query to fetch cart items with variant details and correct image
+        $cartQuery = "
         SELECT 
             ci.cart_item_id,
             ci.product_id,
+            ci.variant_id,
+            ci.size,
             ci.quantity,
             p.product_name,
-            p.description,
+            pv.color,
             pp.original_price,
-            pi.image_path
+            COALESCE(
+                -- 1st Priority: The specific image for this exact variant
+                (SELECT pi.image_path FROM product_image pi 
+                WHERE pi.variant_id = ci.variant_id 
+                LIMIT 1),
+                -- 2nd Priority: The main image for the product if no variant image exists
+                (SELECT pi.image_path FROM product_image pi 
+                WHERE pi.product_id = ci.product_id AND pi.type = 'main' 
+                LIMIT 1)
+            ) AS image_path
         FROM cart_item ci
         JOIN shopping_cart sc ON ci.cart_id = sc.cart_id
         JOIN product p ON ci.product_id = p.product_id
+        LEFT JOIN product_variant pv ON ci.variant_id = pv.variant_id
         LEFT JOIN product_price pp ON p.product_id = pp.product_id
-        LEFT JOIN product_image pi ON p.product_id = pi.product_id
         WHERE sc.user_id = :user_id
         GROUP BY ci.cart_item_id
         ORDER BY ci.cart_item_id DESC
-    ";
-    
+        ";
+        
     $cartStmt = $conn->prepare($cartQuery);
     $cartStmt->execute([':user_id' => $userId]);
     $dbCartItems = $cartStmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Format cart items for display
+    // Format cart items for display
     foreach ($dbCartItems as $item) {
+        $rawPath = $item['image_path']; // The path exactly as it comes from SQL
+        
+        // 1. Set default if empty
+        $imgPath = !empty($rawPath) ? $rawPath : 'products/default.jpg';
+
+        // 2. Process the path if it's not the default
+        if ($imgPath !== 'products/default.jpg') {
+            // stipe the "web/" prefix if it exists in DB path
+            if (strpos($imgPath, 'web/') === 0) {
+            $imgPath = substr($imgPath, 4); // Removes "web/"
+            }
+
+            // handle the absolute path cleaning
+            if(preg_match('#[a-zA-Z]:\\\\|/#', $imgPath)) {
+                $imgPath = preg_replace('#.*images[\\\\/]#', 'images/', $imgPath);
+            }
+
+            // fix slashes for web
+            $imgPath = str_replace('\\', '/', $imgPath);
+
+            // add redirect prefix
+            $imgPath = '../../' . $imgPath;
+        }
+
+        // --- DEBUGGING BLOCK ---
+        // This prints to your Browser Console (F12 > Console)
+        echo "<script>
+            console.group('Cart Item Debug: " . addslashes($item['product_name']) . "');
+            console.log('Product ID:', " . $item['product_id'] . ");
+            console.log('Variant ID:', '" . ($item['variant_id'] ?? 'NULL') . "');
+            console.log('Raw Path from DB:', '" . addslashes($rawPath) . "');
+            console.log('Processed Path for HTML:', '" . addslashes($imgPath) . "');
+            console.groupEnd();
+        </script>";
+        // --- END DEBUGGING ---
+
+        $variantLabel = !empty($item['color']) ? $item['color'] : 'Null';
         $cartItems[] = [
-            'id' => $item['cart_item_id'], 
-            'image' => $item['image_path'] ?? '../../images/products/default.png',
+            'id' => $item['cart_item_id'],
+            'image' => $imgPath,
             'name' => $item['product_name'],
-            'variant' => $item['description'] ?? 'Standard',
+            'variant' => $variantLabel,
+            'size' => $item['size'] ?? '',
             'price' => (float) ($item['original_price'] ?? 0),
             'quantity' => (int) $item['quantity']
         ];
@@ -181,13 +258,15 @@ $grandTotal = $subtotal + $shippingFee + $tax;
                         </td>
                         <td class="item-details">
                             <div class="item-info">
-                                <img src="<?= $item['image'] ?>" alt="<?= $item['name'] ?>" class="item-image">
+                                <img src="<?= htmlspecialchars($item['image']) ?>" alt="<?= htmlspecialchars($item['name']) ?>" class="item-image">
                                 <div class="item-text">
                                     <h4><?= htmlspecialchars($item['name']) ?></h4>
-                                    <p class="item-variant"><?= htmlspecialchars($item['variant']) ?></p>
+                                        <p class="item-variant">Variant: <?= htmlspecialchars($item['variant']) ?></p>
+                                        <p class="item-size">Size: <?= htmlspecialchars($item['size']) ?></p>
                                 </div>
                             </div>
                         </td>
+                        
                         <td class="item-price">RM <?= number_format($item['price'], 2) ?></td>
                         <td class="item-quantity">
                             <div class="quantity-controls">

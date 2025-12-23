@@ -1,7 +1,25 @@
+</tbody>
+</table>
+</section>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); align-items:center; justify-content:center;">
+    <div class="modal-content" style="background:#fff; padding:2rem; border-radius:0.5rem; max-width:400px; margin:auto; box-shadow:0 2px 16px rgba(0,0,0,0.2); text-align:center;">
+        <h3 style="margin-bottom:1rem;">Confirm Deletion</h3>
+        <p id="deleteModalText">Are you sure you want to delete the selected order(s)?</p>
+        <div style="margin-top:2rem; display:flex; gap:1rem; justify-content:center;">
+            <button id="deleteModalCancel" class="btn btn-secondary">Cancel</button>
+            <button id="deleteModalConfirm" class="btn btn-danger">Delete</button>
+        </div>
+    </div>
+</div>
+</tbody>
+</table>
+</section>
+
+<script src="../js/adminOrder.js"></script>
 <?php
 session_start();
-
-// Check if user is logged in and is admin
 if (!isset($_SESSION['user']) || $_SESSION['user']->role !== 'admin') {
     header('Location: ../security/login.php');
     exit;
@@ -236,6 +254,7 @@ $pageTitle = "Manage Orders - Admin";
             <table class="orders-table">
                 <thead>
                     <tr>
+                        <th><input type="checkbox" id="selectAllOrders" title="Select all"></th>
                         <th>Order ID</th>
                         <th>Customer</th>
                         <th>Items</th>
@@ -259,6 +278,7 @@ $pageTitle = "Manage Orders - Admin";
                     <?php else: ?>
                         <?php foreach ($orders as $order): ?>
                             <tr>
+                                <td><input type="checkbox" class="order-checkbox" name="order_ids[]" value="<?= $order['order_id'] ?>"></td>
                                 <td><strong>#<?= str_pad($order['order_id'], 6, '0', STR_PAD_LEFT) ?></strong></td>
                                 <td>
                                     <div class="customer-info">
@@ -300,6 +320,9 @@ $pageTitle = "Manage Orders - Admin";
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                         <?php endif; ?>
+                                        <button onclick="deleteOrder(<?= $order['order_id'] ?>)" class="btn-action btn-danger" title="Delete Order">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>

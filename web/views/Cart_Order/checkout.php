@@ -387,4 +387,27 @@ if (isset($_GET['order_id'])) {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="../../js/checkout.js"></script>
 
+<!-- Modal for user messages -->
+<div id="customModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); justify-content:center; align-items:center;">
+    <div class="modal-content" style="background:#fff; padding:2rem; border-radius:8px; max-width:400px; margin:auto; text-align:center; position:relative;">
+        <span id="closeModalBtn" style="position:absolute; top:10px; right:16px; font-size:1.5rem; cursor:pointer;">&times;</span>
+        <div id="modalMessage" style="margin-top:1.5rem; font-size:1.1rem;"></div>
+        <button id="modalOkBtn" style="margin-top:2rem; padding:0.5rem 1.5rem; background:#dc3545; color:#fff; border:none; border-radius:4px; cursor:pointer;">OK</button>
+    </div>
+</div>
+<script>
+// Modal logic for user messages
+function showModalMessage(msg) {
+    document.getElementById('modalMessage').innerHTML = msg;
+    document.getElementById('customModal').style.display = 'flex';
+}
+document.getElementById('closeModalBtn').onclick = function() {
+    document.getElementById('customModal').style.display = 'none';
+}
+document.getElementById('modalOkBtn').onclick = function() {
+    document.getElementById('customModal').style.display = 'none';
+}
+window.showModalMessage = showModalMessage;
+</script>
+
 <?php include '../../general/_footer.php'; ?>

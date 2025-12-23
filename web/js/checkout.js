@@ -19,6 +19,7 @@ cardElement.on('change', function(event) {
     const displayError = document.getElementById('card-errors');
     if (event.error) {
         displayError.textContent = event.error.message;
+        showModalMessage(event.error.message);
     } else {
         displayError.textContent = '';
     }
@@ -87,76 +88,55 @@ $(document).ready(function() {
     
     // Handle place order button click
     $('#placeOrderBtn').click(async function() {
-        // Validate delivery address form
-        if (!$('#addressForm')[0].checkValidity()) {
-            alert('Please fill in all required delivery address fields');
-            $('#addressForm')[0].reportValidity();
-            return;
-        }
+    // 1. Validate Form
+    if (!$('#addressForm')[0].checkValidity()) {
+        showModalMessage('Please fill in all required delivery address fields');
+        $('#addressForm')[0].reportValidity();
+        return;
+    }
 
-        // Get selected payment method
-        var paymentMethod = $('input[name="payment"]:checked').val();
+    // 2. Disable button
+    $(this).prop('disabled', true).text('Processing...');
 
-        // Collect address data
-        ORDER_DATA.address = $('#address1').val() + ' ' + $('#address2').val();
-        ORDER_DATA.city = $('#city').val();
-        ORDER_DATA.postcode = $('#postcode').val();
-        ORDER_DATA.state = $('#state').val();
+    // 3. Get Payment Method
+    var paymentMethod = $('input[name="payment"]:checked').val();
 
-        // Progress to step 2 (Payment)
-        currentStep = 2;
-        updateProgressSteps(currentStep);
+    // 4. Update the global ORDER_DATA with the form values
+    ORDER_DATA.address = $('#address1').val() + ' ' + $('#address2').val();
+    ORDER_DATA.city = $('#city').val();
+    ORDER_DATA.postcode = $('#postcode').val();
+    ORDER_DATA.state = $('#state').val();
+    ORDER_DATA.fullName = $('#fullName').val();
+    ORDER_DATA.phone = $('#phone').val();
+    ORDER_DATA.email = $('#email').val();
 
-        // Disable button to prevent double submission
-        $(this).prop('disabled', true).text('Processing...');
+    // 5. Progress Step
+    updateProgressSteps(2);
 
-        // Always create the order first (pending)
+    // 6. Proceed to Payment based on method
+    if (paymentMethod === 'card') {
+        await processStripePayment();
+    } else {
+        // Handle Online Banking / E-Wallet
         $.ajax({
-            url: 'create_pending_order.php',
+            url: 'process_payment.php', // This should handle updating address + status
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({
-                // You may need to collect selectedItems and voucher from the page or session
-                selectedItems: window.selectedItems || [],
-                voucher: window.voucherData || null
+                paymentMethod: paymentMethod,
+                orderId: ORDER_DATA.orderId,
+                addressData: ORDER_DATA // Send the address details here!
             }),
-            success: async function(response) {
-                if (response.success && response.orderId) {
-                    ORDER_DATA.orderId = response.orderId;
-                    ORDER_DATA.total_amount = response.total_amount || 0;
-                    // Now proceed to payment
-                    if (paymentMethod === 'card') {
-                        await processStripePayment();
-                    } else if(paymentMethod === 'online-banking' || paymentMethod === 'e-wallet') {
-                        $.ajax({
-                            url: 'process_payment.php',
-                            type: 'POST',
-                            contentType: 'application/json',
-                            data: JSON.stringify({
-                                paymentMethod: paymentMethod,
-                                orderId: ORDER_DATA.orderId,
-                            }),
-                            success: function(response) {
-                                alert('Order placed successfully! Order ID: ' + ORDER_DATA.orderId);
-                                window.location.href = 'order_confirmation.php?order_id=' + ORDER_DATA.orderId;
-                            },
-                            error: function(xhr, status, error) {
-                                alert('Payment failed. Your order is saved as pending. Please try again.');
-                                $('#placeOrderBtn').prop('disabled', false).text('Retry Payment');
-                            }
-                        });
-                    }
-                } else {
-                    alert('Failed to create order: ' + (response.error || 'Unknown error'));
-                    $('#placeOrderBtn').prop('disabled', false).text('Place Order');
-                }
+            success: function(response) {
+                window.location.href = 'order_confirmation.php?order_id=' + ORDER_DATA.orderId;
             },
-            error: function(xhr, status, error) {
-                alert('Failed to create order. Please try again.');
+            error: function() {
+                showModalMessage('Payment failed. Please try again.');
                 $('#placeOrderBtn').prop('disabled', false).text('Place Order');
             }
         });
-    });
+    }
+});
     
     // Add visual feedback for payment method selection
     $('.payment-option input[type="radio"]').change(function() {
@@ -221,6 +201,15 @@ $(document).ready(function() {
 // Stripe payment processing function
 async function processStripePayment() {
     try {
+        // Step 0: Check if card fields are empty (by checking for errors or empty input)
+        // Stripe hides the real input, so we rely on Stripe's validation and the card-errors div
+        const cardErrorText = document.getElementById('card-errors').textContent;
+        if (cardErrorText) {
+            showModalMessage(cardErrorText);
+            $('#placeOrderBtn').prop('disabled', false).text('Place Order');
+            return;
+        }
+
         // Step 1: Create Payment Intent
         const response = await fetch('create_payment_intent.php', {
             method: 'POST',
@@ -235,6 +224,7 @@ async function processStripePayment() {
         const data = await response.json();
         
         if (!data.success) {
+            showModalMessage(data.error || 'Failed to create payment intent');
             throw new Error(data.error || 'Failed to create payment intent');
         }
         
@@ -246,6 +236,7 @@ async function processStripePayment() {
         });
         
         if (error) {
+            showModalMessage(error.message);
             throw new Error(error.message);
         }
         
@@ -262,18 +253,21 @@ async function processStripePayment() {
             const orderData = await orderResponse.json();
             
             if (!orderData.success) {
+                showModalMessage(orderData.error || 'Failed to save order');
                 throw new Error(orderData.error || 'Failed to save order');
             }
             
             // Progress to step 3 (Order Review)
             $('.step').addClass('completed').removeClass('active');
             
-            alert('Payment successful! Order ID: ' + orderData.orderId);
-            window.location.href = 'order_confirmation.php?order_id=' + orderData.orderId;
+            showModalMessage('Payment successful! Order ID: ' + orderData.orderId);
+            setTimeout(function() {
+                window.location.href = 'order_confirmation.php?order_id=' + orderData.orderId;
+            }, 1500);
         }
         
     } catch (error) {
-        alert('Payment failed: ' + error.message + '\nYour order is saved as pending. Please try again.');
+        showModalMessage('Payment failed: ' + error.message + '<br>Your order is saved as pending. Please try again.');
         $('#placeOrderBtn').prop('disabled', false).text('Place Order');
     }
 }
