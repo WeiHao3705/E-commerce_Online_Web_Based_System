@@ -626,18 +626,10 @@ $pageTitle = 'Admin Products';
 										<div class="action-buttons">
 											<a class="action-btn btn-view" href="ViewProduct.php?id=<?php echo (int)$product['product_id']; ?>" title="View">
 												<i class="fas fa-eye"></i>
-											</a>										<button class="action-btn btn-edit" 
-											data-id="<?php echo (int)$product['product_id']; ?>"
-											data-name="<?php echo html_escape($product['product_name']); ?>"
-											data-category="<?php echo html_escape($product['category']); ?>"
-											data-description="<?php echo html_escape($product['description'] ?? ''); ?>"
-											data-cost="<?php echo $product['cost'] ?? ''; ?>"
-											data-original="<?php echo $product['original_price'] ?? ''; ?>"
-											data-selling="<?php echo $product['selling_price'] ?? ''; ?>"											
-											data-variant-count="<?php echo (int)$product['variant_count']; ?>"											
-											title="Edit">
-											<i class="fas fa-edit"></i>
-										</button>											
+											</a>
+											<a class="action-btn btn-edit" href="UpdateProduct.php?id=<?php echo (int)$product['product_id']; ?>" title="Edit">
+												<i class="fas fa-edit"></i>
+											</a>
 											<form method="POST" action="AdminProduct.php" class="delete-form" style="margin:0;display:inline;">
 												<input type="hidden" name="action" value="delete_product">
 												<input type="hidden" name="product_id" value="<?php echo (int)$product['product_id']; ?>">
