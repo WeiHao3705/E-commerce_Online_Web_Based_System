@@ -1040,6 +1040,16 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
             color: var(--primary);
         }
         
+        /* Select dropdown styling to prevent overlap */
+        .form-group-enhanced select.form-input {
+            padding-right: 40px;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+        }
+        
         /* Password Strength Indicator */
         .password-strength {
             margin-top: 8px;
@@ -1179,7 +1189,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
         /* Validation Icons */
         .validation-icon {
             position: absolute;
-            right: 12px;
+            right: 48px;
             top: 50%;
             transform: translateY(-50%);
             font-size: 18px;
@@ -1196,7 +1206,7 @@ function getProfilePhotoUrl($photoPath, $imageBasePath) {
         }
         
         .form-input-wrapper.has-validation-icon .form-input {
-            padding-right: 40px;
+            padding-right: 80px;
         }
         
         /* Enhanced Modal Title */
