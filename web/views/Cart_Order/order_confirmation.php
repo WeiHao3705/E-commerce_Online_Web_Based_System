@@ -87,6 +87,8 @@ include '../../general/_header.php';
 
 <div class="confirmation-container">
     <!-- Progress Steps -->
+    <!-- If the order status is not refunded or cancelled then only display the order placed successfully-->
+     <?php if (!in_array($order['order_status'], ['refunded', 'canceled'])): ?>
     <div class="progress-steps">
         <div class="step completed">
             <div class="step-circle">
@@ -112,11 +114,20 @@ include '../../general/_header.php';
             <span class="step-label">Confirmed</span>
         </div>
     </div>
-
+    <?php endif; ?>
+    
     <div class="success-header">
         <div class="success-icon">✓</div>
+        <?php if ($order['order_status'] === 'refunded'): ?>
+            <h1>Order Refunded</h1>
+            <p>Your order has been refunded. If you have any questions, please contact support.</p>
+        <?php elseif ($order['order_status'] === 'canceled'): ?>
+            <h1>Order Cancelled</h1>
+            <p>Your order has been cancelled. If you have any questions, please contact support.</p>
+        <?php else: ?>
         <h1>Order Placed Successfully!</h1>
         <p>Thank you for your purchase. Your order has been confirmed.</p>
+        <?php endif; ?>
     </div>
 
     <div class="order-card">
@@ -223,8 +234,10 @@ include '../../general/_header.php';
         <a href="../../orders.php" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to Orders
         </a>
+        <?php if (!in_array($order['order_status'], ['refunded', 'canceled'])): ?>
         <a href="generate_receipt.php?order_id=<?= $orderId ?>" class="btn btn-success">
             <i class="fas fa-receipt"></i> Generate E-Receipt
+        <?php endif;?>
         </a>
         <?php if ($order['order_status'] === 'delivered'): ?>
             <?php
@@ -251,6 +264,7 @@ include '../../general/_header.php';
 </div>
 
 <script>
+console.log('Order Status: <?= isset($order['order_status']) ? addslashes($order['order_status']) : 'N/A' ?>');
 let slideIndex = 0;
 showSlides();
 

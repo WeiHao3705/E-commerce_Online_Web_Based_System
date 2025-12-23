@@ -152,16 +152,15 @@ $pageTitle = "Order #" . str_pad($orderId, 6, '0', STR_PAD_LEFT);
                     <?php foreach ($orderItems as $item): ?>
                         <div class="order-item">
                             <?php
-                                $imgPath = 'products/default.jpg';
+                                // Always use images/products/ as base
+                                $imgFile = 'default.jpg';
                                 if (!empty($item['image_path'])) {
-                                    $imgPath = $item['image_path'];
-                                    // If not already prefixed, add products/
-                                    if (strpos($imgPath, 'products/') !== 0) {
-                                        $imgPath = 'products/' . ltrim($imgPath, '/');
-                                    }
+                                    // Remove any leading path
+                                    $imgFile = basename($item['image_path']);
                                 }
+                                $imgFullPath = $imagesBasePath . 'products/' . $imgFile;
                             ?>
-                            <img src="<?= $imagesBasePath . $imgPath ?>"
+                            <img src="<?= $imgFullPath ?>"
                                  alt="<?= htmlspecialchars($item['product_name_snapshot']) ?>"
                                  class="item-image">
                             <div class="item-details">
@@ -172,7 +171,7 @@ $pageTitle = "Order #" . str_pad($orderId, 6, '0', STR_PAD_LEFT);
                                     <?php endif; ?>
                                 </div>
                                 <div class="item-price">RM <?= number_format($item['product_price_snapshot'], 2) ?> each</div>
-                                <div class="item-quantity">Quantity: <?= $item['quantity'] ?></div>
+                                <div class="item-quantity">Quantity: <?= $item['quantity'] ?> | Size: <?= htmlspecialchars($item['size']) ?></div>
                             </div>
                             <div class="item-subtotal">
                                 RM <?= number_format($item['subtotal'], 2) ?>

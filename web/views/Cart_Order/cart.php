@@ -125,14 +125,15 @@ $cartItems = [];
             pv.color,
             pp.original_price,
             COALESCE(
-                -- 1st Priority: The specific image for this exact variant
+
                 (SELECT pi.image_path FROM product_image pi 
                 WHERE pi.variant_id = ci.variant_id 
                 LIMIT 1),
-                -- 2nd Priority: The main image for the product if no variant image exists
+
                 (SELECT pi.image_path FROM product_image pi 
                 WHERE pi.product_id = ci.product_id AND pi.type = 'main' 
                 LIMIT 1)
+                
             ) AS image_path
         FROM cart_item ci
         JOIN shopping_cart sc ON ci.cart_id = sc.cart_id

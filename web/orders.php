@@ -14,13 +14,22 @@ $conn = $db->getConnection();
 $userId = $_SESSION['user_id'] ?? $_SESSION['user']->user_id;
 
 // Fetch all orders for the user
+
+$showCancelled = isset($_GET['show_cancelled']) ? ($_GET['show_cancelled'] === '1') : true;
 $ordersQuery = "
-    SELECT o.*, p.payment_method, p.paid_amount, p.payment_date,
-           COUNT(oi.order_item_id) as total_items
+    SELECT 
+        o.order_id, 
+        o.order_status, 
+        o.total_amount, 
+        o.create_at,
+        p.payment_method, 
+        p.payment_date,
+        COUNT(oi.order_item_id) as total_items
     FROM orders o
     LEFT JOIN payment p ON o.order_id = p.order_id
     LEFT JOIN order_item oi ON o.order_id = oi.order_id
     WHERE o.user_id = :user_id
+    " . ($showCancelled ? "" : "AND o.order_status NOT IN ('cancelled', 'canceled')") . "
     GROUP BY o.order_id
     ORDER BY o.create_at DESC
 ";
@@ -36,8 +45,32 @@ include 'general/_navbar.php';
 <link rel="stylesheet" href="css/orders.css">
 
 <div class="orders-container">
+    <!-- Cancel Order Modal -->
+    <div id="cancelOrderModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6); overflow: auto;">
+        <div class="modal-dialog cancel-modal-dialog">
+            <div class="modal-content cancel-modal-content">
+                <div class="cancel-modal-icon">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <h3 class="cancel-modal-title">Cancel Order?</h3>
+                <p class="cancel-modal-text">Are you sure you want to cancel this order? This action will immediately release the reserved stock.</p>
+                <div class="cancel-modal-actions">
+                    <button id="cancelOrderConfirmBtn" class="btn btn-danger">Yes, Cancel Order</button>
+                    <button id="cancelOrderCloseBtn" class="btn btn-outline-secondary">No, Keep Order</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="orders-header">
         <h1><i class="fas fa-box"></i> My Orders</h1>
+        <div style="margin-top:10px;">
+            <form method="get" style="display:inline;">
+                <label style="font-size:14px;">
+                    <input type="checkbox" name="show_cancelled" value="1" onchange="this.form.submit()" <?= $showCancelled ? 'checked' : '' ?>>
+                    Show Cancelled Orders
+                </label>
+            </form>
+        </div>
         <p>Track and manage all your orders</p>
     </div>
 
@@ -58,7 +91,12 @@ include 'general/_navbar.php';
                             <span class="order-date"><?= date('M d, Y', strtotime($order['create_at'])) ?></span>
                         </div>
                         <div class="order-status">
-                            <span class="status-badge status-<?= strtolower($order['order_status']) ?>">
+                            <?php 
+                                $displayStatus = strtolower($order['order_status']);
+                                // Normalize status for CSS classes
+                                $statusClass = ($displayStatus === 'canceled') ? 'cancelled' : $displayStatus;
+                            ?>
+                            <span class="status-badge status-<?= $statusClass ?>">
                                 <?= ucwords(str_replace('_', ' ', $order['order_status'])) ?>
                             </span>
                         </div>
@@ -100,13 +138,17 @@ include 'general/_navbar.php';
                         // Fetch order items for this order with review status
                         $itemsQuery = "
                             SELECT oi.*, 
-                                   pi.image_path,
-                                   CASE 
-                                       WHEN pr.review_id IS NOT NULL THEN 1 
-                                       ELSE 0 
-                                   END as already_reviewed
+                                (SELECT pi.image_path 
+                                    FROM product_image pi 
+                                    WHERE pi.product_id = oi.product_id 
+                                    AND pi.variant_id = oi.variant_id
+                                    ORDER BY pi.type = 'main' DESC 
+                                    LIMIT 1) as image_path,
+                                CASE 
+                                    WHEN pr.review_id IS NOT NULL THEN 1 
+                                    ELSE 0 
+                                END as already_reviewed
                             FROM order_item oi
-                            LEFT JOIN product_image pi ON oi.product_id = pi.product_id
                             LEFT JOIN product_review pr ON oi.order_item_id = pr.order_item_id AND pr.user_id = :user_id
                             WHERE oi.order_id = :order_id
                             GROUP BY oi.order_item_id
@@ -120,8 +162,30 @@ include 'general/_navbar.php';
                         <?php if (!empty($items)): ?>
                             <div class="order-items-preview">
                                 <?php foreach ($items as $item): ?>
+                                    <?php
+                                        $rawPath = $item['image_path'];
+                                        $imgPath = !empty($rawPath) ? $rawPath : 'products/default.jpg';
+                                        if ($imgPath !== 'products/default.jpg') {
+                                            // Remove web/ prefix if present
+                                            if (strpos($imgPath, 'web/') === 0) {
+                                                $imgPath = substr($imgPath, 4);
+                                            }
+                                            // Clean up absolute path to just images/...
+                                            if (preg_match('#[a-zA-Z]:\\\\|/#', $imgPath)) {
+                                                $imgPath = preg_replace('#.*images[\\\\/]#', 'images/', $imgPath);
+                                            }
+                                            $imgPath = str_replace('\\', '/', $imgPath);
+                                            $imgPath = 'images/' . ltrim(preg_replace('#^images/#', '', $imgPath), '/');
+                                            // If file doesn't exist, fallback
+                                            if (!file_exists(__DIR__ . '/' . $imgPath)) {
+                                                $imgPath = 'images/products/default.png';
+                                            }
+                                        } else {
+                                            $imgPath = 'images/products/default.png';
+                                        }
+                                    ?>
                                     <div class="item-preview">
-                                        <img src="<?= $item['image_path'] ?? 'images/products/default.png' ?>" 
+                                        <img src="<?= $imgPath ?>"
                                              alt="<?= htmlspecialchars($item['product_name_snapshot']) ?>">
                                         <div class="item-info">
                                             <span class="item-name"><?= htmlspecialchars($item['product_name_snapshot']) ?></span>
@@ -143,6 +207,9 @@ include 'general/_navbar.php';
                             <a href="views/Cart_Order/checkout.php?order_id=<?= $order['order_id'] ?>" class="btn btn-primary">
                                 <i class="fas fa-credit-card"></i> Complete Payment
                             </a>
+                            <button class="btn btn-danger cancel-order-btn" data-order-id="<?= $order['order_id'] ?>">
+                                <i class="fas fa-times"></i> Cancel Order
+                            </button>
                         <?php else: ?>
                             <a href="views/Cart_Order/order_confirmation.php?order_id=<?= $order['order_id'] ?>" class="btn btn-secondary">
                                 <i class="fas fa-eye"></i> View Details
@@ -176,15 +243,15 @@ include 'general/_navbar.php';
                             </button>
                         <?php endif; ?>
                         
-                        <?php if ($order['order_status'] === 'paid'|| $order['order_status'] === 'shipped'): ?>
-                            <button class="btn btn-outline" onclick="trackOrder(<?= $order['order_id'] ?>)">
-                                <i class="fas fa-truck"></i> Track Order
-                            </button>
-                        <?php endif; ?>
-                        
                         <?php if ($order['order_status'] === 'refunded'): ?>
                             <span class="refund-notice">
                                 <i class="fas fa-check-circle"></i> Refund Processed
+                            </span>
+                        <?php endif; ?>
+
+                        <?php if ($order['order_status'] === 'canceled'): ?>
+                            <span class="refund-notice">
+                                <i class="fas fa-check-circle"></i> Cancelled
                             </span>
                         <?php endif; ?>
                     </div>
@@ -290,6 +357,69 @@ document.getElementById('refundModal').addEventListener('click', function(e) {
     if (e.target === this) {
         closeRefundModal();
     }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    let cancelOrderId = null;
+    let cancelOrderBtn = null;
+    const modal = document.getElementById('cancelOrderModal');
+    const confirmBtn = document.getElementById('cancelOrderConfirmBtn');
+    const closeBtn = document.getElementById('cancelOrderCloseBtn');
+
+    document.querySelectorAll('.cancel-order-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            cancelOrderId = this.getAttribute('data-order-id');
+            cancelOrderBtn = this;
+            modal.style.display = 'block';
+        });
+    });
+
+    closeBtn.onclick = function() {
+        modal.style.display = 'none';
+        cancelOrderId = null;
+        cancelOrderBtn = null;
+    };
+
+    confirmBtn.onclick = function() {
+        if (!cancelOrderId) return;
+        confirmBtn.disabled = true;
+        fetch('views/Cart_Order/cancel_order.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'order_id=' + encodeURIComponent(cancelOrderId)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (cancelOrderBtn) {
+                    cancelOrderBtn.textContent = 'Order Cancelled';
+                    cancelOrderBtn.classList.remove('btn-danger');
+                    cancelOrderBtn.classList.add('btn-secondary');
+                }
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                alert(data.error || 'Failed to cancel order.');
+                confirmBtn.disabled = false;
+            }
+        })
+        .catch(() => {
+            alert('Failed to cancel order.');
+            confirmBtn.disabled = false;
+        })
+        .finally(() => {
+            modal.style.display = 'none';
+            cancelOrderId = null;
+            cancelOrderBtn = null;
+        });
+    };
+
+    window.onclick = function(event) {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+            cancelOrderId = null;
+            cancelOrderBtn = null;
+        }
+    };
 });
 </script>
 

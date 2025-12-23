@@ -531,8 +531,25 @@ $('#checkout-btn').click(function(e) {
         }),
         success: function(response) {
             if (response.success) {
-                // Navigate to checkout with order ID
-                window.location.href = 'checkout.php?order_id=' + response.orderId;
+                // After order is created, remove selected items from cart
+                $.ajax({
+                    url: '../../controller/CartController.php',
+                    type: 'POST',
+                    data: {
+                        action: 'batch_delete',
+                        cart_item_ids: selectedItems
+                    },
+                    dataType: 'json',
+                    success: function(deleteResponse) {
+                        // Optionally handle delete success/failure
+                        // Navigate to checkout with order ID
+                        window.location.href = 'checkout.php?order_id=' + response.orderId;
+                    },
+                    error: function() {
+                        // Still proceed to checkout even if delete fails
+                        window.location.href = 'checkout.php?order_id=' + response.orderId;
+                    }
+                });
             } else {
                 alert('Failed to create order: ' + response.error);
                 $('#checkout-btn').prop('disabled', false).text('Proceed to Checkout');

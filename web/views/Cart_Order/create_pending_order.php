@@ -31,6 +31,8 @@ try {
             ci.product_id,
             ci.quantity,
             p.product_name as name,
+            ci.variant_id,
+            ci.size,
             COALESCE(pp.original_price, 0) as price,
             COALESCE(pi.image_path, '../../images/no-image.png') as image
         FROM cart_item ci
@@ -118,8 +120,8 @@ try {
     
     // Insert order items
     $itemStmt = $conn->prepare("
-        INSERT INTO order_item (order_id, product_id, product_name_snapshot, product_price_snapshot, quantity, subtotal)
-        VALUES (:order_id, :product_id, :product_name, :product_price, :quantity, :subtotal)
+        INSERT INTO order_item (order_id, product_id, product_name_snapshot, product_price_snapshot, quantity, subtotal, variant_id, size)
+        VALUES (:order_id, :product_id, :product_name, :product_price, :quantity, :subtotal, :variant_id, :size)
     ");
     
     foreach ($cartItems as $item) {
@@ -130,7 +132,9 @@ try {
             ':product_name' => $item['name'],
             ':product_price' => $item['price'],
             ':quantity' => $item['quantity'],
-            ':subtotal' => $subtotal
+            ':subtotal' => $subtotal,
+            ':variant_id' => $item['variant_id'],
+            ':size' => $item['size']
         ]);
     }
     
