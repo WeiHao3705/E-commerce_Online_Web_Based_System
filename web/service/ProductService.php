@@ -608,11 +608,11 @@ class ProductService {
 
         // Filter by price range
         if (!empty($minPrice) && is_numeric($minPrice)) {
-            $sql .= " AND pr.original_price >= :min_price";
+            $sql .= " AND pr.selling_price >= :min_price";
             $params[':min_price'] = (float)$minPrice;
         }
         if (!empty($maxPrice) && is_numeric($maxPrice)) {
-            $sql .= " AND pr.original_price <= :max_price";
+            $sql .= " AND pr.selling_price <= :max_price";
             $params[':max_price'] = (float)$maxPrice;
         }
 
