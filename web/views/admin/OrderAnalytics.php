@@ -30,9 +30,9 @@ $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
 // Get payment method distribution
 $paymentQuery = "
     SELECT 
-        p.payment_method,
-        COUNT(*) as count,
-        ROUND((COUNT(*) * 100.0 / (SELECT COUNT(*) FROM orders)), 1) as percentage
+        COALESCE(p.payment_method, 'Pending') as payment_method,
+        COUNT(o.order_id) as count,
+        ROUND((COUNT(o.order_id) * 100.0 / (SELECT COUNT(*) FROM orders)), 1) as percentage
     FROM orders o
     LEFT JOIN payment p ON o.order_id = p.order_id
     GROUP BY p.payment_method
