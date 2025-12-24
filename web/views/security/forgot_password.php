@@ -15,7 +15,7 @@ if (isset($_GET['start']) && $_GET['start']) {
 // If a reset_user exists but is too old, expire it to avoid returning to later steps
 if (!empty($_SESSION['reset_user']) && !empty($_SESSION['reset_user']['created_at'])) {
     $age = time() - (int)$_SESSION['reset_user']['created_at'];
-    $expiry_seconds = 10 * 60; // 10 minutes expiry for reset flow
+    $expiry_seconds = 3 * 60; // 3 minutes expiry for reset flow
     if ($age > $expiry_seconds) {
         unset($_SESSION['reset_user']);
         unset($_SESSION['reset_verified']);

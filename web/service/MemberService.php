@@ -484,7 +484,7 @@ class MembershipServices
     public function sendResetOtp($user)
     {
         $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-        $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+3 minutes'));
         $this->membershipRepository->setResetOtp($user['user_id'], $otp, $expiresAt);
 
         require_once __DIR__ . '/EmailService.php';

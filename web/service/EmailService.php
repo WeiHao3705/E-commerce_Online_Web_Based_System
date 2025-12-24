@@ -20,7 +20,7 @@ class EmailService {
             $mail->Subject = 'Your Password Reset OTP - NGEAR';
             $mail->Body = '<p>Dear ' . htmlspecialchars($toName) . ',</p>' .
                 '<p>Your OTP for password reset is: <b style="font-size:22px;">' . htmlspecialchars($otp) . '</b></p>' .
-                '<p>This OTP is valid for 10 minutes. If you did not request a password reset, please ignore this email.</p>' .
+                '<p>This OTP is valid for 3 minutes. If you did not request a password reset, please ignore this email.</p>' .
                 '<p>Thank you,<br>NGEAR Sports Store</p>';
             $mail->AltBody = 'Your OTP for password reset is: ' . $otp;
             $mail->send();
