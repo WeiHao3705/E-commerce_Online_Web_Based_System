@@ -10,7 +10,7 @@ $(document).ready(function() {
         clearTimeout(searchTimeout);
         const query = $(this).val().trim();
         
-        if (query.length < 2) {
+        if (query.length < 1) {
             searchSuggestions.hide().empty();
             return;
         }
@@ -63,7 +63,7 @@ $(document).ready(function() {
     // Show suggestions on focus if there's a query
     searchInput.on('focus', function() {
         const query = $(this).val().trim();
-        if (query.length >= 2 && searchSuggestions.children().length > 0) {
+        if (query.length >= 1 && searchSuggestions.children().length > 0) {
             searchSuggestions.show();
         }
     });

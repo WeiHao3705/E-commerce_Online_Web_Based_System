@@ -6,7 +6,8 @@ require_once __DIR__ . '/../../database/connection.php';
 try {
     $query = isset($_GET['q']) ? trim($_GET['q']) : '';
     
-    if (strlen($query) < 2) {
+    // Allow suggestions from a single character
+    if (strlen($query) < 1) {
         echo json_encode(['suggestions' => []]);
         exit;
     }
