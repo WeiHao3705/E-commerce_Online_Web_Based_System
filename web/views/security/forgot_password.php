@@ -40,9 +40,13 @@ $pageTitle = 'Forgot Password';
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?php echo $pageTitle; ?></title>
-    <link rel="stylesheet" href="<?php echo $prefix; ?>css/Login.css">
+    <title><?php echo isset($pageTitle) ? $pageTitle . ' - NGEAR' : 'NGEAR - Sports & Fitness Store'; ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" referrerpolicy="no-referrer" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    <link rel="stylesheet" href="<?php echo $prefix; ?>css/MemberRegister.css">
+    <link rel="stylesheet" href="<?php echo $prefix; ?>css/Login.css">
+    <link rel="icon" type="image/png" href="/web/images/logo/logo1.png">
     <style>
         .navbar .search-input-group { position:relative; overflow:hidden; border-radius:25px; }
         .navbar .search-input { padding-right:48px; }
