@@ -254,7 +254,6 @@ $pageTitle = "Manage Orders - Admin";
             <table class="orders-table">
                 <thead>
                     <tr>
-                        <th><input type="checkbox" id="selectAllOrders" title="Select all"></th>
                         <th>Order ID</th>
                         <th>Customer</th>
                         <th>Items</th>
@@ -278,7 +277,6 @@ $pageTitle = "Manage Orders - Admin";
                     <?php else: ?>
                         <?php foreach ($orders as $order): ?>
                             <tr>
-                                <td><input type="checkbox" class="order-checkbox" name="order_ids[]" value="<?= $order['order_id'] ?>"></td>
                                 <td><strong>#<?= str_pad($order['order_id'], 6, '0', STR_PAD_LEFT) ?></strong></td>
                                 <td>
                                     <div class="customer-info">
@@ -320,9 +318,7 @@ $pageTitle = "Manage Orders - Admin";
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                         <?php endif; ?>
-                                        <button onclick="deleteOrder(<?= $order['order_id'] ?>)" class="btn-action btn-danger" title="Delete Order">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
+
                                     </div>
                                 </td>
                             </tr>
