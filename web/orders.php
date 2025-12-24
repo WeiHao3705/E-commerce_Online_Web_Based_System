@@ -63,14 +63,6 @@ include 'general/_navbar.php';
     </div>
     <div class="orders-header">
         <h1><i class="fas fa-box"></i> My Orders</h1>
-        <div style="margin-top:10px;">
-            <form method="get" style="display:inline;">
-                <label style="font-size:14px;">
-                    <input type="checkbox" name="show_cancelled" value="1" onchange="this.form.submit()" <?= $showCancelled ? 'checked' : '' ?>>
-                    Show Cancelled Orders
-                </label>
-            </form>
-        </div>
         <p>Track and manage all your orders</p>
     </div>
 

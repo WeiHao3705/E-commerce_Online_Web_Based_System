@@ -261,11 +261,7 @@ include '../../general/_header.php';
             $unreviewedResult = $unreviewedStmt->fetch(PDO::FETCH_ASSOC);
             $hasUnreviewedItems = (int)$unreviewedResult['count'] > 0;
             ?>
-            <?php if ($hasUnreviewedItems): ?>
-                <a href="order_confirmation.php?order_id=<?= $orderId ?>&show_reviews=1" class="btn btn-primary">
-                    <i class="fas fa-star"></i> Write Reviews
-                </a>
-            <?php endif; ?>
+
         <?php endif; ?>
         <a href="../../views/product/ProductPage.php" class="btn btn-primary">Continue Shopping</a>
     </div>
