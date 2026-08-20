@@ -9,8 +9,8 @@ $currentFileDir = dirname(__FILE__);
 $webRootDir = dirname(dirname($currentFileDir));
 $projectRoot = dirname($webRootDir);
 
-$docRoot = $_SERVER['DOCUMENT_ROOT'];
-$relativePath = str_replace($docRoot, '', $webRootDir);
+$docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
+$relativePath = str_replace($docRoot, '', str_replace('\\', '/', $webRootDir));
 $imageBasePath = str_replace('\\', '/', $relativePath) . '/';
 $cssBasePath = $imageBasePath . 'css/';
 $controllerBasePath = $imageBasePath . 'controller/';

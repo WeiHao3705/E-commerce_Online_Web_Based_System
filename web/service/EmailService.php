@@ -60,10 +60,10 @@ class EmailService {
             // EmailService is in web/service/, so go up one level to get web root
             $currentFileDir = dirname(__FILE__); // Gets web/service/
             $webRootDir = dirname($currentFileDir); // Gets web/
-            $docRoot = isset($_SERVER['DOCUMENT_ROOT']) ? $_SERVER['DOCUMENT_ROOT'] : '';
+            $docRoot = isset($_SERVER['DOCUMENT_ROOT']) ? str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']) : '';
             
             if ($docRoot) {
-                $relativePath = str_replace($docRoot, '', $webRootDir);
+                $relativePath = str_replace($docRoot, '', str_replace('\\', '/', $webRootDir));
                 $webBasePath = str_replace('\\', '/', $relativePath);
                 // Ensure path starts with / and ends with /
                 if (substr($webBasePath, 0, 1) !== '/') {

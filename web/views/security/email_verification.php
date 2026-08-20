@@ -15,8 +15,8 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Calculate base paths
 $webRoot = realpath(__DIR__ . '/../../');
-$docRoot = isset($_SERVER['DOCUMENT_ROOT']) ? realpath($_SERVER['DOCUMENT_ROOT']) : '';
-$prefix = rtrim(str_replace('\\', '/', str_replace($docRoot, '', $webRoot)), '/') . '/';
+$docRoot = isset($_SERVER['DOCUMENT_ROOT']) ? str_replace('\\', '/', realpath($_SERVER['DOCUMENT_ROOT'])) : '';
+$prefix = rtrim(str_replace($docRoot, '', str_replace('\\', '/', $webRoot)), '/') . '/';
 
 // ============================================
 // PAGE VARIABLES

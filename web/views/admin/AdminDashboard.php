@@ -22,8 +22,8 @@ if ($_SESSION['user']->role !== 'admin') {
 // Since this file is in web/views/admin/, go up two levels to get web root
 $currentFileDir = dirname(__FILE__); // Gets web/views/admin/
 $webRootDir = dirname(dirname($currentFileDir)); // Gets web/
-$docRoot = $_SERVER['DOCUMENT_ROOT'];
-$relativePath = str_replace($docRoot, '', $webRootDir);
+$docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
+$relativePath = str_replace($docRoot, '', str_replace('\\', '/', $webRootDir));
 $webBasePath = str_replace('\\', '/', $relativePath) . '/'; // Normalize slashes
 $cssBasePath = $webBasePath . 'css/';
 $controllerBasePath = $webBasePath . 'controller/';

@@ -30,8 +30,8 @@ if (!empty($_SESSION['reset_verified']) && empty($_SESSION['reset_user'])) {
 
 // Robust base path to the web folder, regardless of include origin
 $webRoot = realpath(__DIR__ . '/../../');
-$docRoot = isset($_SERVER['DOCUMENT_ROOT']) ? realpath($_SERVER['DOCUMENT_ROOT']) : '';
-$prefix = rtrim(str_replace('\\', '/', str_replace($docRoot, '', $webRoot)), '/') . '/';
+$docRoot = isset($_SERVER['DOCUMENT_ROOT']) ? str_replace('\\', '/', realpath($_SERVER['DOCUMENT_ROOT'])) : '';
+$prefix = rtrim(str_replace($docRoot, '', str_replace('\\', '/', $webRoot)), '/') . '/';
 
 $pageTitle = 'Forgot Password';
 ?>

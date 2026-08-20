@@ -913,9 +913,9 @@ class MemberController
             $stmt->execute([$photoPath, $userId]);
 
             // Compute the web-accessible URL
-            $docRoot = $_SERVER['DOCUMENT_ROOT'];
+            $docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
             $webRootDir = dirname(__DIR__); // /web directory
-            $relativePath = str_replace($docRoot, '', $webRootDir);
+            $relativePath = str_replace($docRoot, '', str_replace('\\', '/', $webRootDir));
             $webBasePath = str_replace('\\', '/', $relativePath) . '/';
             
             echo json_encode([

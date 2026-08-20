@@ -1,10 +1,23 @@
 <?php
-$currentFileDir = dirname(__FILE__);
-$webRootDir = dirname($currentFileDir);
-$docRoot = $_SERVER['DOCUMENT_ROOT'];
-$relativePath = str_replace($docRoot, '', $webRootDir);
-$webBasePath = str_replace('\\', '/', $relativePath) . '/';
-$prefix = $webBasePath;
+$webRootDir = realpath(dirname(__DIR__));
+$docRoot = realpath($_SERVER['DOCUMENT_ROOT'] ?? '');
+
+if ($webRootDir !== false && $docRoot !== false) {
+    $webRootNorm = str_replace('\\', '/', $webRootDir);
+    $docRootNorm = rtrim(str_replace('\\', '/', $docRoot), '/');
+
+    if (stripos($webRootNorm, $docRootNorm) === 0) {
+        $relativePath = ltrim(substr($webRootNorm, strlen($docRootNorm)), '/');
+        $prefix = '/' . ($relativePath !== '' ? $relativePath . '/' : '');
+    } else {
+        $prefix = '/web/';
+    }
+} else {
+    $prefix = '/web/';
+}
+
+$siteRoot = rtrim(dirname($prefix), '/');
+$siteRoot = ($siteRoot === '' || $siteRoot === '.') ? '/' : $siteRoot . '/';
 ?>
 <link rel="stylesheet" href="<?php echo $prefix; ?>css/navbar.css?v=<?php echo filemtime(__DIR__ . '/../css/navbar.css'); ?>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
@@ -14,7 +27,7 @@ $prefix = $webBasePath;
         <div class="nav-wrapper">
             <!-- Logo -->
             <div class="logo">
-                <a href="/index.php">
+                <a href="<?php echo $siteRoot; ?>index.php">
                     <img src="<?php echo $prefix; ?>images/logo/logo2.png" alt="NGEAR">
                 </a>
             </div>
@@ -23,7 +36,7 @@ $prefix = $webBasePath;
             <div class="nav-right">
                 <!-- Navigation Menu -->
                 <ul class="nav-menu" id="navMenu">
-                    <li><a href="/index.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>">Home</a></li>
+                    <li><a href="<?php echo $siteRoot; ?>index.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>">Home</a></li>
                     <?php
                     // Check if current page is a product page (ProductPage.php or ProductDetails.php)
                     $currentScript = $_SERVER['PHP_SELF'];

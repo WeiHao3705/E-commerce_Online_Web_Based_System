@@ -17,8 +17,8 @@ $webRootDir = dirname(dirname($currentFileDir)); // Gets web/
 $projectRoot = dirname($webRootDir); // Gets project root
 
 // Get the relative path from document root
-$docRoot = $_SERVER['DOCUMENT_ROOT'];
-$relativePath = str_replace($docRoot, '', $webRootDir);
+$docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
+$relativePath = str_replace($docRoot, '', str_replace('\\', '/', $webRootDir));
 $webBasePath = str_replace('\\', '/', $relativePath) . '/'; // Normalize slashes
 $imageBasePath = $webBasePath . 'images/'; // Images are in web/images/
 $controllerBasePath = $webBasePath . 'controller/'; // Controller files are in web/controller/

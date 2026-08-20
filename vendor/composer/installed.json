@@ -215,7 +215,7 @@
             },
             "time": "2024-10-24T15:14:25+00:00",
             "type": "library",
-            "installation-source": "source",
+            "installation-source": "dist",
             "autoload": {
                 "psr-4": {
                     "RobThree\\Auth\\": "lib"
@@ -291,7 +291,7 @@
             },
             "time": "2023-06-26T14:44:25+00:00",
             "type": "library",
-            "installation-source": "source",
+            "installation-source": "dist",
             "autoload": {
                 "classmap": [
                     "fpdf.php"
@@ -352,7 +352,7 @@
                     "dev-master": "2.0-dev"
                 }
             },
-            "installation-source": "source",
+            "installation-source": "dist",
             "autoload": {
                 "psr-4": {
                     "Stripe\\": "lib/"

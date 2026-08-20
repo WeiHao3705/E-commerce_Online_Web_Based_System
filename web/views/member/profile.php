@@ -20,8 +20,8 @@ require_once __DIR__ . '/../../service/MemberService.php';
 // Compute base paths (web root and public prefix)
 $currentFileDir = __DIR__;
 $webRootDir = dirname(dirname($currentFileDir)); // /web
-$docRoot = $_SERVER['DOCUMENT_ROOT'];
-$relativePath = str_replace($docRoot, '', $webRootDir);
+$docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
+$relativePath = str_replace($docRoot, '', str_replace('\\', '/', $webRootDir));
 $webBasePath = str_replace('\\', '/', $relativePath) . '/';
 $prefix = $webBasePath; // e.g. /E-commerce_Online_Web_Based_System/web/
 

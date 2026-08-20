@@ -5,8 +5,8 @@ if (empty($_SESSION['user'])) return;
 
 $currentFileDir = dirname(__FILE__); // Gets web/views/chat/
 $webRootDir = dirname(dirname($currentFileDir)); // Gets web/ (go up 2 levels)
-$docRoot = $_SERVER['DOCUMENT_ROOT'];
-$relativePath = str_replace($docRoot, '', $webRootDir);
+$docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
+$relativePath = str_replace($docRoot, '', str_replace('\\', '/', $webRootDir));
 $webBasePath = str_replace('\\', '/', $relativePath) . '/';
 $prefix = $webBasePath;
 ?>

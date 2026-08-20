@@ -97,8 +97,8 @@ $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
 // Calculate base path
 $currentFileDir = dirname(__FILE__);
 $webRootDir = dirname(dirname($currentFileDir));
-$docRoot = $_SERVER['DOCUMENT_ROOT'];
-$relativePath = str_replace($docRoot, '', $webRootDir);
+$docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
+$relativePath = str_replace($docRoot, '', str_replace('\\', '/', $webRootDir));
 $webBasePath = str_replace('\\', '/', $relativePath) . '/';
 $cssBasePath = $webBasePath . 'css/';
 $controllerBasePath = $webBasePath . 'controller/';

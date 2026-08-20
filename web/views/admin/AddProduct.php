@@ -27,8 +27,8 @@ $productService = new ProductService($conn);
 // Get base paths
 $currentFileDir = __DIR__;
 $webRootDir = dirname(dirname($currentFileDir));
-$docRoot = $_SERVER['DOCUMENT_ROOT'];
-$relativePath = str_replace($docRoot, '', $webRootDir);
+$docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
+$relativePath = str_replace($docRoot, '', str_replace('\\', '/', $webRootDir));
 $webBasePath = str_replace('\\', '/', $relativePath) . '/';
 $cssBasePath = $webBasePath . 'css/';
 $jsBasePath = $webBasePath . 'js/';

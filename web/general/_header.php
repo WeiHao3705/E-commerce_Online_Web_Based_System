@@ -1,12 +1,22 @@
 <?php
 // Calculate base path if not already set
 if (!isset($prefix)) {
-    $currentFileDir = dirname(__FILE__);
-    $webRootDir = dirname($currentFileDir);
-    $docRoot = $_SERVER['DOCUMENT_ROOT'];
-    $relativePath = str_replace($docRoot, '', $webRootDir);
-    $webBasePath = str_replace('\\', '/', $relativePath) . '/';
-    $prefix = $webBasePath;
+    $webRootDir = realpath(dirname(__DIR__));
+    $docRoot = realpath($_SERVER['DOCUMENT_ROOT'] ?? '');
+
+    if ($webRootDir !== false && $docRoot !== false) {
+        $webRootNorm = str_replace('\\', '/', $webRootDir);
+        $docRootNorm = rtrim(str_replace('\\', '/', $docRoot), '/');
+
+        if (stripos($webRootNorm, $docRootNorm) === 0) {
+            $relativePath = ltrim(substr($webRootNorm, strlen($docRootNorm)), '/');
+            $prefix = '/' . ($relativePath !== '' ? $relativePath . '/' : '');
+        } else {
+            $prefix = '/web/';
+        }
+    } else {
+        $prefix = '/web/';
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -18,7 +28,7 @@ if (!isset($prefix)) {
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title><?php echo isset($pageTitle) ? $pageTitle . ' - NGEAR' : 'NGEAR - Sports & Fitness Store'; ?></title>
     <!-- Use absolute path to shows due to certain pages do not capture the favicon correctly -->
-    <link rel="icon" type="image/png" href="/web/images/logo/logo1.png">
+    <link rel="icon" type="image/png" href="<?php echo $prefix; ?>images/logo/logo1.png">
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
